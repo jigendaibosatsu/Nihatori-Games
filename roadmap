@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>Niwatori Games – Roadmap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui; padding: 24px; line-height: 1.6; }
+    h1, h2, h3 { margin-top: 2em; }
+    ul { list-style: none; padding-left: 0; }
+    li { margin: 6px 0; }
+    input[type="checkbox"] { margin-right: 8px; }
+    .done { color: #777; text-decoration: line-through; }
+    .box { border-left: 4px solid #ddd; padding-left: 12px; margin: 16px 0; }
+  </style>
+</head>
+<body>
+
+<h1>開発ロードマップ（全体構成）</h1>
+
+<div class="box">
+<strong>制作 → 公開 → 対戦 → 収益化 を分離する</strong><br>
+Cursor → Cloudflare Pages → Workers + DO → itch.io / Steam
+</div>
+
+<h2>Phase 1（今）</h2>
+<ul>
+  <li><input type="checkbox" checked disabled><span class="done">Cloudflare Pages 公開</span></li>
+  <li><input type="checkbox" disabled> ババ抜きを Pages に配置</li>
+  <li><input type="checkbox" disabled> ゴーストAI（ルールベース）</li>
+  <li><input type="checkbox" disabled> 最低限UI完成</li>
+</ul>
+
+<h2>Phase 2</h2>
+<ul>
+  <li><input type="checkbox" disabled> 招待リンク対戦</li>
+  <li><input type="checkbox" disabled> Workers WebSocket 入口</li>
+  <li><input type="checkbox" disabled> Durable Objects でルーム管理</li>
+  <li><input type="checkbox" disabled> 再接続対応</li>
+</ul>
+
+<h2>Phase 3</h2>
+<ul>
+  <li><input type="checkbox" disabled> itch.io ページ作成</li>
+  <li><input type="checkbox" disabled> 支援導線（Pay what you want）</li>
+  <li><input type="checkbox" disabled> 次ゲーム横展開</li>
+</ul>
+
+<h2>Phase 4</h2>
+<ul>
+  <li><input type="checkbox" disabled> 当たった作品のみ Steam 申請</li>
+</ul>
+
+<hr>
+
+<p>
+このロードマップは「迷ったときに戻る地図」。<br>
+チェックは <strong>Gitで履歴として残す</strong>。
+</p>
+
+<p><a href="./index.html">← トップへ戻る</a></p>
+
+</body>
+</html>
