@@ -1,111 +1,114 @@
 /**
  * Niwatori Games – トップページ
- * タブ切替・セクション描画・data/feed.json 読み込み（未存在時はダミーデータ）
+ * タブ切替（URL ?tab= と pushState）、ヒーロー＋記事リスト、data/feed.json
  */
 
 (function () {
   'use strict';
 
-  const TAB_IDS = ['top', 'game', 'hobby', 'article', 'trending', 'recommended'];
+  var TAB_IDS = ['top', 'games', 'hobby', 'posts', 'trending', 'recommended'];
+  var TAB_PARAM = 'tab';
 
   /**
-   * feed.json 想定スキーマ（コメント）
-   * {
-   *   "items": [
-   *     {
-   *       "id": "string",
-   *       "type": "game" | "post",
-   *       "title": "string",
-   *       "thumbnail": "url | null",
-   *       "category": "string",
-   *       "time": "string (表示用)",
-   *       "badge": "string | null",
-   *       "url": "string | null",
-   *       "score": number,           // 並び順用
-   *       "trendingScore": number,   // 急上昇用（大きいほど上）
-   *       "recommendedScore": number // おすすめ用（大きいほど上）
-   *     }
-   *   ]
-   * }
+   * feed.json 想定スキーマ:
+   * items[]: id, type("game"|"post"), title, url, image, category("games"|"hobby"|"devlog"),
+   *   publishedAt(ISO), commentCount(number), isNew(boolean) or newUntil(ISO), recommended(boolean), trendingScore(number)
    */
 
-  const DUMMY_FEED = {
+  var DUMMY_FEED = {
     items: [
-      { id: '1', type: 'game', title: 'ババ抜き（準備中）', thumbnail: null, category: 'ゲーム', time: '1時間前', badge: 'NEW', url: './games/baba-nuki/', score: 100, trendingScore: 90, recommendedScore: 85 },
-      { id: '2', type: 'post', title: '開発ロードマップ公開', thumbnail: null, category: '記事', time: '2時間前', badge: null, url: '/roadmap.html', score: 90, trendingScore: 70, recommendedScore: 80 },
-      { id: '3', type: 'post', title: 'サイトオープンのお知らせ', thumbnail: null, category: 'お知らせ', time: '1日前', badge: null, url: null, score: 80, trendingScore: 50, recommendedScore: 60 },
-      { id: '4', type: 'game', title: '次のゲーム企画中', thumbnail: null, category: 'ゲーム', time: '3日前', badge: '準備中', url: null, score: 70, trendingScore: 40, recommendedScore: 50 },
-      { id: '5', type: 'post', title: '趣味：音楽制作', thumbnail: null, category: '趣味', time: '1週間前', badge: null, url: null, score: 60, trendingScore: 30, recommendedScore: 40 },
+      { id: '1', type: 'game', title: 'ババ抜き（準備中）', url: './games/baba-nuki/', image: null, category: 'games', publishedAt: '2026-01-31T10:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 90 },
+      { id: '2', type: 'post', title: '開発ロードマップ公開', url: '/roadmap.html', image: null, category: 'devlog', publishedAt: '2026-01-30T14:00:00+09:00', commentCount: 2, isNew: false, recommended: true, trendingScore: 70 },
+      { id: '3', type: 'post', title: 'サイトオープンのお知らせ', url: null, image: null, category: 'devlog', publishedAt: '2026-01-29T09:00:00+09:00', commentCount: 0, isNew: false, recommended: false, trendingScore: 50 },
+      { id: '4', type: 'game', title: '次のゲーム企画中', url: null, image: null, category: 'games', publishedAt: '2026-01-28T12:00:00+09:00', commentCount: 0, isNew: false, recommended: false, trendingScore: 40 },
+      { id: '5', type: 'post', title: '趣味：音楽制作', url: null, image: null, category: 'hobby', publishedAt: '2026-01-20T10:00:00+09:00', commentCount: 1, isNew: false, recommended: false, trendingScore: 30 },
     ],
   };
 
-  let feedData = { items: [] };
-  let currentTab = 'top';
+  var feedData = { items: [] };
 
-  function byScore(a, b) {
-    return (b.score ?? 0) - (a.score ?? 0);
+  function getTabFromUrl() {
+    var params = new URLSearchParams(window.location.search);
+    var tab = params.get(TAB_PARAM) || 'top';
+    return TAB_IDS.indexOf(tab) >= 0 ? tab : 'top';
+  }
+
+  function setUrlTab(tabId, replace) {
+    var url = new URL(window.location.href);
+    url.searchParams.set(TAB_PARAM, tabId);
+    var target = url.pathname + '?' + url.searchParams.toString();
+    if (replace) {
+      window.history.replaceState({ tab: tabId }, '', target);
+    } else {
+      window.history.pushState({ tab: tabId }, '', target);
+    }
+  }
+
+  function byPublishedAt(a, b) {
+    var ta = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+    var tb = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+    return tb - ta;
   }
   function byTrendingScore(a, b) {
     return (b.trendingScore ?? 0) - (a.trendingScore ?? 0);
   }
-  function byRecommendedScore(a, b) {
-    return (b.recommendedScore ?? 0) - (a.recommendedScore ?? 0);
-  }
 
   function getItemsForTab(tabId) {
-    const items = feedData.items || [];
+    var items = feedData.items || [];
     switch (tabId) {
-      case 'game':
-        return items.filter(function (i) { return i.type === 'game' || i.category === 'ゲーム'; }).sort(byScore);
+      case 'games':
+        return items.filter(function (i) { return i.type === 'game'; }).sort(byPublishedAt);
       case 'hobby':
-        return items.filter(function (i) { return i.category === '趣味'; }).sort(byScore);
-      case 'article':
-        return items.filter(function (i) { return i.type === 'post' || i.category === '記事' || i.category === 'お知らせ'; }).sort(byScore);
+        return items.filter(function (i) { return i.category === 'hobby'; }).sort(byPublishedAt);
+      case 'posts':
+        return items.filter(function (i) { return i.type === 'post'; }).sort(byPublishedAt);
       case 'trending':
-        return [...items].sort(byTrendingScore).slice(0, 5);
+        return items.slice().sort(byTrendingScore);
       case 'recommended':
-        return [...items].sort(byRecommendedScore).slice(0, 5);
+        return items.filter(function (i) { return i.recommended === true; }).sort(byPublishedAt);
       case 'top':
       default:
-        return [...items].sort(byScore);
+        return items.slice().sort(byPublishedAt);
     }
   }
 
-  function renderFeedCard(item) {
-    const url = item.url || '#';
-    const thumb = item.thumbnail
-      ? '<img class="thumb" src="' + escapeHtml(item.thumbnail) + '" alt="" loading="lazy" />'
-      : '<div class="thumb thumb-placeholder"></div>';
-    const badge = item.badge ? '<span class="badge">' + escapeHtml(item.badge) + '</span>' : '';
-    return (
-      '<a class="feed-card" href="' + escapeHtml(url) + '">' +
-        '<div class="thumb-wrap">' + thumb + '</div>' +
-        '<div class="body">' +
-          '<h3 class="title">' + escapeHtml(item.title) + '</h3>' +
-          '<div class="meta">' +
-            (item.category ? '<span>' + escapeHtml(item.category) + '</span>' : '') +
-            (item.time ? '<span>' + escapeHtml(item.time) + '</span>' : '') +
-            badge +
-          '</div>' +
-        '</div>' +
-      '</a>'
-    );
+  function formatTime(item) {
+    var raw = item.publishedAt;
+    if (!raw) return '';
+    var d = new Date(raw);
+    if (isNaN(d.getTime())) return '';
+    var now = Date.now();
+    var diff = (now - d.getTime()) / 1000;
+    if (diff < 60) return 'たった今';
+    if (diff < 3600) return Math.floor(diff / 60) + '分前';
+    if (diff < 86400) return Math.floor(diff / 3600) + '時間前';
+    if (diff < 604800) return Math.floor(diff / 86400) + '日前';
+    return d.getMonth() + 1 + '/' + d.getDate();
   }
 
-  function renderRowItem(item, className) {
-    const url = item.url || '#';
-    const thumb = item.thumbnail
-      ? '<img class="thumb" src="' + escapeHtml(item.thumbnail) + '" alt="" loading="lazy" />'
-      : '<div class="thumb thumb-placeholder"></div>';
-    return (
-      '<a class="' + className + '" href="' + escapeHtml(url) + '">' +
-        thumb +
-        '<div class="body">' +
-          '<span class="title">' + escapeHtml(item.title) + '</span>' +
-          '<div class="meta">' + escapeHtml(item.category || '') + ' · ' + escapeHtml(item.time || '') + '</div>' +
-        '</div>' +
-      '</a>'
-    );
+  function showNewBadge(item) {
+    if (item.isNew === true) return true;
+    if (item.newUntil) {
+      try { return new Date(item.newUntil).getTime() > Date.now(); } catch (e) { return false; }
+    }
+    return false;
+  }
+
+  function imagePlaceholderSvg(width, height) {
+    width = width || 100;
+    height = height || 70;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '"><rect width="100%" height="100%" fill="#e0e0e0"/></svg>';
+    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+  }
+
+  function imageSrc(itemImage) {
+    if (itemImage && typeof itemImage === 'string' && itemImage.trim() !== '') return itemImage.trim();
+    return imagePlaceholderSvg(400, 225);
+  }
+
+  function imageSrcRow(itemImage) {
+    if (itemImage && typeof itemImage === 'string' && itemImage.trim() !== '') return itemImage.trim();
+    return imagePlaceholderSvg(100, 70);
   }
 
   function escapeHtml(s) {
@@ -115,83 +118,95 @@
     return div.innerHTML;
   }
 
-  function hideSkeleton(id) {
-    var el = document.getElementById(id);
-    if (el) { el.setAttribute('aria-hidden', 'true'); el.classList.add('hidden'); }
+  function renderHero(item) {
+    var url = item.url || '#';
+    var src = imageSrc(item.image);
+    var timeStr = formatTime(item);
+    var newBadge = showNewBadge(item) ? '<span class="badge-new">NEW</span>' : '';
+    var commentStr = (item.commentCount != null && item.commentCount > 0) ? 'コメント' + item.commentCount : '';
+    var metaParts = [timeStr, newBadge, commentStr].filter(Boolean);
+    return (
+      '<a href="' + escapeHtml(url) + '">' +
+        '<div class="hero-image-wrap">' +
+          '<img src="' + escapeHtml(src) + '" alt="" loading="eager" />' +
+        '</div>' +
+        '<div class="hero-body">' +
+          '<h2 class="hero-title">' + escapeHtml(item.title) + '</h2>' +
+          '<div class="hero-meta">' + metaParts.join(' ') + '</div>' +
+        '</div>' +
+      '</a>'
+    );
   }
 
-  function showContent(id) {
-    var el = document.getElementById(id);
-    if (el) el.removeAttribute('hidden');
+  function renderRow(item) {
+    var url = item.url || '#';
+    var src = imageSrcRow(item.image);
+    var timeStr = formatTime(item);
+    var metaStr = (item.category || '') + (item.category && timeStr ? ' · ' : '') + timeStr;
+    return (
+      '<a class="article-row" href="' + escapeHtml(url) + '">' +
+        '<div class="row-thumb">' +
+          '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" />' +
+        '</div>' +
+        '<div class="row-body">' +
+          '<h3 class="row-title">' + escapeHtml(item.title) + '</h3>' +
+          '<div class="row-meta">' + escapeHtml(metaStr) + '</div>' +
+        '</div>' +
+      '</a>'
+    );
   }
 
-  function renderSections() {
-    var items = feedData.items || [];
-    var trending = [...items].sort(byTrendingScore).slice(0, 5);
-    var recommended = [...items].sort(byRecommendedScore).slice(0, 5);
-    var feed = getItemsForTab(currentTab);
+  function renderPage(tabId) {
+    var items = getItemsForTab(tabId);
+    var skeleton = document.getElementById('page-skeleton');
+    var tabPage = document.getElementById('tab-page');
+    var heroCard = document.getElementById('hero-card');
+    var articleList = document.getElementById('article-list');
 
-    // 急上昇
-    var trendingContainer = document.getElementById('trending-items');
-    var trendingSkeleton = document.getElementById('trending-skeleton');
-    if (trendingContainer && trendingSkeleton) {
-      if (trending.length > 0) {
-        trendingContainer.innerHTML = trending.map(function (i) { return renderRowItem(i, 'trending-item'); }).join('');
-        trendingSkeleton.setAttribute('aria-hidden', 'true');
-        trendingSkeleton.classList.add('hidden');
-        trendingContainer.removeAttribute('hidden');
-      } else {
-        trendingContainer.innerHTML = '<p class="meta">急上昇の記事はありません</p>';
-        trendingSkeleton.setAttribute('aria-hidden', 'true');
-        trendingSkeleton.classList.add('hidden');
-        trendingContainer.removeAttribute('hidden');
-      }
+    if (!tabPage || !heroCard || !articleList) return;
+
+    if (skeleton) {
+      skeleton.setAttribute('aria-hidden', 'true');
+      skeleton.classList.add('hidden');
+    }
+    tabPage.removeAttribute('hidden');
+
+    if (items.length === 0) {
+      heroCard.innerHTML = '';
+      articleList.innerHTML = '<p class="empty-message">表示するコンテンツがありません</p>';
+      return;
     }
 
-    // おすすめトピック
-    var recContainer = document.getElementById('recommended-items');
-    var recSkeleton = document.getElementById('recommended-skeleton');
-    if (recContainer && recSkeleton) {
-      if (recommended.length > 0) {
-        recContainer.innerHTML = recommended.map(function (i) { return renderRowItem(i, 'recommended-item'); }).join('');
-        recSkeleton.setAttribute('aria-hidden', 'true');
-        recSkeleton.classList.add('hidden');
-        recContainer.removeAttribute('hidden');
-      } else {
-        recContainer.innerHTML = '<p class="meta">おすすめトピックはありません</p>';
-        recSkeleton.setAttribute('aria-hidden', 'true');
-        recSkeleton.classList.add('hidden');
-        recContainer.removeAttribute('hidden');
-      }
-    }
+    var hero = items[0];
+    var list = items.slice(1);
+    heroCard.innerHTML = renderHero(hero);
+    heroCard.style.display = '';
 
-    // メインフィード
-    var feedContainer = document.getElementById('feed-items');
-    var feedSkeleton = document.getElementById('feed-skeleton');
-    if (feedContainer && feedSkeleton) {
-      feedSkeleton.setAttribute('aria-hidden', 'true');
-      feedSkeleton.classList.add('hidden');
-      if (feed.length > 0) {
-        feedContainer.innerHTML = feed.map(renderFeedCard).join('');
-      } else {
-        feedContainer.innerHTML = '<p class="meta">表示するコンテンツがありません</p>';
-      }
-      feedContainer.removeAttribute('hidden');
+    if (list.length > 0) {
+      articleList.innerHTML = list.map(renderRow).join('');
+    } else {
+      articleList.innerHTML = '';
     }
   }
 
-  function switchTab(tabId) {
-    currentTab = TAB_IDS.indexOf(tabId) >= 0 ? tabId : 'top';
+  function setActiveTab(tabId) {
     var tabs = document.querySelectorAll('.category-tabs .tab');
     tabs.forEach(function (tab) {
-      var isActive = tab.getAttribute('data-tab') === currentTab;
-      tab.classList.toggle('active', isActive);
-      tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      var id = tab.getAttribute('data-tab');
+      var active = id === tabId;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
     });
-    renderSections();
   }
 
-  function loadFeed() {
+  function switchTab(tabId, replace) {
+    var id = TAB_IDS.indexOf(tabId) >= 0 ? tabId : 'top';
+    setUrlTab(id, !!replace);
+    setActiveTab(id);
+    renderPage(id);
+  }
+
+  function loadFeed(callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'data/feed.json', true);
     xhr.onreadystatechange = function () {
@@ -206,19 +221,51 @@
       } else {
         feedData = DUMMY_FEED;
       }
-      renderSections();
+      if (callback) callback();
     };
     xhr.send();
   }
 
+  function initLogo() {
+    var img = document.querySelector('.site-logo .logo-img');
+    var fallback = document.querySelector('.site-logo .logo-fallback');
+    if (!img || !fallback) return;
+    img.onerror = function () {
+      img.setAttribute('hidden', '');
+      fallback.removeAttribute('hidden');
+    };
+    img.onload = function () {
+      img.removeAttribute('hidden');
+      fallback.setAttribute('hidden', '');
+    };
+    if (img.complete && img.naturalWidth > 0) {
+      fallback.setAttribute('hidden', '');
+    } else if (img.complete) {
+      img.setAttribute('hidden', '');
+      fallback.removeAttribute('hidden');
+    }
+  }
+
   function init() {
-    loadFeed();
+    initLogo();
+    loadFeed(function () {
+      var tabId = getTabFromUrl();
+      setActiveTab(tabId);
+      setUrlTab(tabId, true);
+      renderPage(tabId);
+    });
 
     document.querySelectorAll('.category-tabs .tab').forEach(function (tab) {
       tab.addEventListener('click', function () {
-        var tabId = tab.getAttribute('data-tab');
-        if (tabId) switchTab(tabId);
+        var id = tab.getAttribute('data-tab');
+        if (id) switchTab(id);
       });
+    });
+
+    window.addEventListener('popstate', function () {
+      var tabId = getTabFromUrl();
+      setActiveTab(tabId);
+      renderPage(tabId);
     });
   }
 

@@ -30,17 +30,6 @@ body {
   padding-top: 96px; /* header + tabs */
 }
 
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0,0,0,0);
-  border: 0;
-}
-
 /* ----- 固定ヘッダー ----- */
 .site-header {
   position: fixed;
@@ -63,21 +52,37 @@ body {
 .site-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  min-height: 32px;
   text-decoration: none;
   color: var(--text);
   font-weight: 700;
+  font-size: 1rem;
 }
 
-.site-icon {
-  font-size: 1.5rem;
+.logo-img {
+  display: block;
+  height: 28px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
 }
 
-.site-name {
-  font-size: 1.1rem;
+.logo-img[hidden],
+.logo-fallback[hidden] {
+  display: none !important;
 }
 
-.btn-search {
+.logo-fallback {
+  display: inline-block;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,7 +92,7 @@ body {
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 /* ----- カテゴリタブ（横スクロール） ----- */
@@ -163,16 +168,149 @@ body {
   min-width: 0;
 }
 
-/* ----- セクション共通 ----- */
-.section {
-  margin-bottom: 24px;
+/* ----- ページコンテンツ（タブごと差し替え） ----- */
+.page-content {
+  min-height: 200px;
 }
 
-.section-title {
-  margin: 0 0 12px;
-  font-size: 1rem;
-  font-weight: 700;
+.tab-page {
+  display: block;
+}
+
+.tab-page[hidden] {
+  display: none !important;
+}
+
+/* ----- ヒーローカード（1枚目・大） ----- */
+.hero-card {
+  margin-bottom: 12px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.hero-card:empty {
+  display: none;
+}
+
+.hero-card a {
+  display: block;
+  text-decoration: none;
   color: var(--text);
+}
+
+.hero-card .hero-image-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 220px;
+  background: var(--body-bg);
+  overflow: hidden;
+}
+
+.hero-card .hero-image-wrap img,
+.hero-card .hero-image-wrap .img-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-card .hero-body {
+  padding: 12px 14px;
+}
+
+.hero-card .hero-title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hero-card .hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-meta);
+}
+
+.hero-card .hero-meta .badge-new {
+  padding: 2px 6px;
+  background: #fee;
+  color: var(--tab-active);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ----- 記事リスト（2枚目以降・行型） ----- */
+.article-list {
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.article-list:empty {
+  display: none;
+}
+
+.article-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.article-row:last-child {
+  border-bottom: none;
+}
+
+.article-row .row-thumb {
+  flex-shrink: 0;
+  width: 100px;
+  height: 70px;
+  background: var(--body-bg);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.article-row .row-thumb img,
+.article-row .row-thumb .img-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.article-row .row-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.article-row .row-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.article-row .row-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-meta);
 }
 
 /* ----- スケルトン ----- */
@@ -182,8 +320,8 @@ body {
   gap: 12px;
 }
 
-.skeleton-item,
-.skeleton-card {
+.skeleton-hero {
+  height: 180px;
   background: linear-gradient(
     90deg,
     var(--skeleton-bg) 0%,
@@ -196,15 +334,16 @@ body {
 }
 
 .skeleton-item {
-  height: 48px;
-}
-
-.skeleton-card {
   height: 88px;
-}
-
-.feed-skeleton .skeleton-card {
-  height: 100px;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-bg) 0%,
+    var(--skeleton-shine) 50%,
+    var(--skeleton-bg) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shine 1.2s ease-in-out infinite;
+  border-radius: 8px;
 }
 
 @keyframes skeleton-shine {
@@ -212,136 +351,23 @@ body {
   100% { background-position: -200% 0; }
 }
 
-/* ----- 急上昇・おすすめ（行型リスト） ----- */
-.trending-list,
-.recommended-list {
-  background: var(--card-bg);
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-}
-
-.trending-items,
-.recommended-items {
+.skeleton-list[aria-hidden="false"] {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
-.trending-item,
-.recommended-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
-  text-decoration: none;
-  color: var(--text);
+.skeleton-list[aria-hidden="true"],
+.skeleton-list.hidden {
+  display: none;
 }
 
-.trending-item:last-child,
-.recommended-item:last-child {
-  border-bottom: none;
-}
-
-.trending-item .thumb,
-.recommended-item .thumb {
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  background: var(--body-bg);
-  border-radius: 6px;
-  object-fit: cover;
-}
-
-.trending-item .meta,
-.recommended-item .meta {
-  font-size: 12px;
+/* ----- 空メッセージ ----- */
+.empty-message {
+  padding: 24px 16px;
+  text-align: center;
   color: var(--text-meta);
-  margin-top: 2px;
-}
-
-/* ----- メインフィード（カード型） ----- */
-.feed-list {
-  background: transparent;
-}
-
-.feed-items {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.feed-card {
-  display: flex;
-  gap: 12px;
-  padding: 12px;
-  background: var(--card-bg);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  text-decoration: none;
-  color: var(--text);
-}
-
-.feed-card .thumb-wrap {
-  flex-shrink: 0;
-  width: 100px;
-  height: 72px;
-  background: var(--body-bg);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.feed-card .thumb,
-.feed-card .thumb-placeholder {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.feed-card .thumb-placeholder {
-  background: var(--body-bg);
-}
-
-.trending-item .thumb-placeholder,
-.recommended-item .thumb-placeholder {
-  background: var(--body-bg);
-}
-
-.feed-card .body {
-  flex: 1;
-  min-width: 0;
-}
-
-.feed-card .title {
-  margin: 0;
   font-size: 14px;
-  font-weight: 600;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.feed-card .meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--text-meta);
-}
-
-.feed-card .badge {
-  display: inline-block;
-  padding: 2px 6px;
-  background: #fee;
-  color: var(--tab-active);
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
+  background: var(--card-bg);
+  border-radius: 8px;
 }
 
 /* ----- サイドバー ----- */
@@ -392,30 +418,4 @@ body {
   .sidebar-links a:hover {
     text-decoration: underline;
   }
-}
-
-/* データ未ロード時：スケルトン表示 / ロード後：コンテンツ表示 */
-.skeleton-list[aria-hidden="false"] {
-  display: flex;
-}
-
-.skeleton-list[aria-hidden="true"],
-.skeleton-list.hidden {
-  display: none;
-}
-
-.trending-items[hidden],
-.recommended-items[hidden],
-.feed-items[hidden] {
-  display: none !important;
-}
-
-.trending-items:not([hidden]),
-.recommended-items:not([hidden]),
-.feed-items:not([hidden]) {
-  display: flex;
-}
-
-.feed-items:not([hidden]) {
-  flex-direction: column;
 }

@@ -10,66 +10,42 @@
   <header class="site-header">
     <div class="header-inner">
       <a href="/" class="site-logo" aria-label="トップ">
-        <span class="site-icon" aria-hidden="true">🐔</span>
-        <span class="site-name">Niwatori Games</span>
+        <img class="logo-img" src="/assets/logo.svg" alt="" width="120" height="32" />
+        <span class="logo-fallback" hidden>NIHATORI</span>
       </a>
-      <button type="button" class="btn-search" aria-label="検索">
-        <span class="search-icon" aria-hidden="true">🔍</span>
-      </button>
+      <div class="header-actions">
+        <button type="button" class="btn-icon btn-search" aria-label="検索">🔍</button>
+        <button type="button" class="btn-icon btn-menu" aria-label="メニュー">☰</button>
+      </div>
     </div>
   </header>
 
   <nav class="category-tabs" role="tablist" aria-label="カテゴリ">
     <div class="tabs-scroll">
-      <button type="button" class="tab active" data-tab="top" role="tab" aria-selected="true">トップ</button>
-      <button type="button" class="tab" data-tab="game" role="tab" aria-selected="false">ゲーム</button>
-      <button type="button" class="tab" data-tab="hobby" role="tab" aria-selected="false">趣味</button>
-      <button type="button" class="tab" data-tab="article" role="tab" aria-selected="false">記事</button>
-      <button type="button" class="tab" data-tab="trending" role="tab" aria-selected="false">急上昇</button>
-      <button type="button" class="tab" data-tab="recommended" role="tab" aria-selected="false">おすすめ</button>
+      <button type="button" class="tab" data-tab="top" role="tab">トップ</button>
+      <button type="button" class="tab" data-tab="games" role="tab">ゲーム</button>
+      <button type="button" class="tab" data-tab="hobby" role="tab">趣味</button>
+      <button type="button" class="tab" data-tab="posts" role="tab">記事</button>
+      <button type="button" class="tab" data-tab="trending" role="tab">急上昇</button>
+      <button type="button" class="tab" data-tab="recommended" role="tab">おすすめ</button>
     </div>
   </nav>
 
   <main class="layout">
     <div class="main-content">
-      <!-- 急上昇セクション（枠のみ・後で差し替え可能） -->
-      <section class="section trending-section" id="section-trending" aria-labelledby="heading-trending">
-        <h2 class="section-title" id="heading-trending">急上昇</h2>
-        <div class="trending-list" id="trending-container">
-          <div class="skeleton-list" id="trending-skeleton" aria-hidden="false">
-            <div class="skeleton-item"></div>
-            <div class="skeleton-item"></div>
-            <div class="skeleton-item"></div>
-          </div>
-          <div class="trending-items" id="trending-items" hidden></div>
+      <!-- タブごとのページ：ヒーローカード + 記事リスト（JSで差し替え） -->
+      <div class="page-content" id="page-content">
+        <div class="skeleton-list" id="page-skeleton" aria-hidden="false">
+          <div class="skeleton-hero"></div>
+          <div class="skeleton-item"></div>
+          <div class="skeleton-item"></div>
+          <div class="skeleton-item"></div>
         </div>
-      </section>
-
-      <!-- おすすめトピックセクション（枠のみ・後で差し替え可能） -->
-      <section class="section recommended-section" id="section-recommended" aria-labelledby="heading-recommended">
-        <h2 class="section-title" id="heading-recommended">おすすめトピック</h2>
-        <div class="recommended-list" id="recommended-container">
-          <div class="skeleton-list" id="recommended-skeleton" aria-hidden="false">
-            <div class="skeleton-item"></div>
-            <div class="skeleton-item"></div>
-          </div>
-          <div class="recommended-items" id="recommended-items" hidden></div>
+        <div class="tab-page" id="tab-page" hidden>
+          <article class="hero-card" id="hero-card"></article>
+          <div class="article-list" id="article-list"></div>
         </div>
-      </section>
-
-      <!-- メインフィード -->
-      <section class="section feed-section" id="section-feed" aria-labelledby="heading-feed">
-        <h2 class="section-title visually-hidden" id="heading-feed">フィード</h2>
-        <div class="feed-list" id="feed-container">
-          <div class="skeleton-list feed-skeleton" id="feed-skeleton" aria-hidden="false">
-            <div class="skeleton-card"></div>
-            <div class="skeleton-card"></div>
-            <div class="skeleton-card"></div>
-            <div class="skeleton-card"></div>
-          </div>
-          <div class="feed-items" id="feed-items" hidden></div>
-        </div>
-      </section>
+      </div>
     </div>
 
     <aside class="sidebar" id="sidebar">

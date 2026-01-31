@@ -1,70 +1,70 @@
 {
-  "_schema": "items[]: id, type('game'|'post'), title, thumbnail?, category?, time?, badge?, url?, score?, trendingScore?, recommendedScore?",
+  "_schema": "items[]: id, type('game'|'post'), title, url, image, category('games'|'hobby'|'devlog'), publishedAt(ISO), commentCount, isNew|newUntil, recommended, trendingScore",
   "items": [
     {
       "id": "1",
       "type": "game",
       "title": "ババ抜き（準備中）",
-      "thumbnail": null,
-      "category": "ゲーム",
-      "time": "1時間前",
-      "badge": "NEW",
       "url": "./games/baba-nuki/",
-      "score": 100,
-      "trendingScore": 90,
-      "recommendedScore": 85
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-01-31T10:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 90
     },
     {
       "id": "2",
       "type": "post",
       "title": "開発ロードマップ公開",
-      "thumbnail": null,
-      "category": "記事",
-      "time": "2時間前",
-      "badge": null,
       "url": "/roadmap.html",
-      "score": 90,
-      "trendingScore": 70,
-      "recommendedScore": 80
+      "image": null,
+      "category": "devlog",
+      "publishedAt": "2026-01-30T14:00:00+09:00",
+      "commentCount": 2,
+      "isNew": false,
+      "recommended": true,
+      "trendingScore": 70
     },
     {
       "id": "3",
       "type": "post",
       "title": "サイトオープンのお知らせ",
-      "thumbnail": null,
-      "category": "お知らせ",
-      "time": "1日前",
-      "badge": null,
       "url": null,
-      "score": 80,
-      "trendingScore": 50,
-      "recommendedScore": 60
+      "image": null,
+      "category": "devlog",
+      "publishedAt": "2026-01-29T09:00:00+09:00",
+      "commentCount": 0,
+      "isNew": false,
+      "recommended": false,
+      "trendingScore": 50
     },
     {
       "id": "4",
       "type": "game",
       "title": "次のゲーム企画中",
-      "thumbnail": null,
-      "category": "ゲーム",
-      "time": "3日前",
-      "badge": "準備中",
       "url": null,
-      "score": 70,
-      "trendingScore": 40,
-      "recommendedScore": 50
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-01-28T12:00:00+09:00",
+      "commentCount": 0,
+      "isNew": false,
+      "recommended": false,
+      "trendingScore": 40
     },
     {
       "id": "5",
       "type": "post",
       "title": "趣味：音楽制作",
-      "thumbnail": null,
-      "category": "趣味",
-      "time": "1週間前",
-      "badge": null,
       "url": null,
-      "score": 60,
-      "trendingScore": 30,
-      "recommendedScore": 40
+      "image": null,
+      "category": "hobby",
+      "publishedAt": "2026-01-20T10:00:00+09:00",
+      "commentCount": 1,
+      "isNew": false,
+      "recommended": false,
+      "trendingScore": 30
     }
   ]
 }

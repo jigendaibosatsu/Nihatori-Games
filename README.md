@@ -2,7 +2,6 @@
 
 ## トップページ（Yahoo!ニュース風 UI）
 
-- **変更・追加ファイル**: `index.html`, `styles.css`, `app.js`, `data/feed.json`
-- **ローカル確認**: ルートで `index.html` をブラウザで直接開くか、簡易サーバで配信する。
-  - 直接開く: `open index.html`（file:// のため `data/feed.json` は CORS で読めない環境がある）
-  - 推奨: `npx serve .` または `python3 -m http.server 8000` でルートをサーブし、`http://localhost:3000` や `http://localhost:8000` で表示
+- **変更・追加ファイル**: `index.html`, `styles.css`, `app.js`, `data/feed.json`, `assets/logo.svg`
+- **タブとURL**: `?tab=top` / `?tab=games` / `?tab=hobby` / `?tab=posts` / `?tab=trending` / `?tab=recommended` でタブを指定。ブラウザの戻る/進むに対応。
+- **ローカル確認**: ルートで簡易サーバを立てる。`npx serve .` または `python3 -m http.server 8000` のあと、`http://localhost:3000` や `http://localhost:8000` で表示。`data/feed.json` と `assets/logo.svg` は同じオリジンで配信すること。
