@@ -65,6 +65,19 @@
       "isNew": false,
       "recommended": false,
       "trendingScore": 30
+    },
+    {
+      "id": "6",
+      "type": "post",
+      "title": "開発メモ：トップをYahoo!ニュース風に",
+      "url": "/blog/2026-02-01-devlog.html",
+      "image": "/assets/thumbs/dummy-devlog.svg",
+      "category": "devlog",
+      "publishedAt": "2026-02-01T09:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 75
     }
   ]
 }
