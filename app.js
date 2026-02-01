@@ -8,6 +8,7 @@
 
   var TAB_IDS = ['top', 'games', 'hobby', 'posts', 'trending', 'recommended'];
   var TAB_PARAM = 'tab';
+  var SWIPE_THRESHOLD = 50;
 
   /**
    * feed.json 想定スキーマ:
@@ -206,6 +207,40 @@
     renderPage(id);
   }
 
+  function getCurrentTabIndex() {
+    return TAB_IDS.indexOf(getTabFromUrl());
+  }
+
+  function goToPrevTab() {
+    var i = getCurrentTabIndex();
+    if (i <= 0) return;
+    switchTab(TAB_IDS[i - 1]);
+  }
+
+  function goToNextTab() {
+    var i = getCurrentTabIndex();
+    if (i >= TAB_IDS.length - 1 || i < 0) return;
+    switchTab(TAB_IDS[i + 1]);
+  }
+
+  function initSwipe(el) {
+    if (!el) return;
+    var startX = 0, startY = 0;
+    el.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+    el.addEventListener('touchend', function (e) {
+      if (e.changedTouches.length !== 1) return;
+      var dx = e.changedTouches[0].clientX - startX;
+      var dy = e.changedTouches[0].clientY - startY;
+      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+      if (Math.abs(dy) > Math.abs(dx)) return;
+      if (dx > 0) goToPrevTab(); else goToNextTab();
+    }, { passive: true });
+  }
+
   function loadFeed(callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'data/feed.json', true);
@@ -246,6 +281,9 @@
       setActiveTab(tabId);
       renderPage(tabId);
     });
+
+    var pageContent = document.getElementById('page-content');
+    if (pageContent) initSwipe(pageContent);
   }
 
   if (document.readyState === 'loading') {

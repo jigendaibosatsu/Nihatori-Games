@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>おみくじ – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    html { height: 100%; }
+    body.game-page {
+      margin: 0;
+      padding-top: 48px;
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      min-height: 100dvh;
+      box-sizing: border-box;
+      font-family: sans-serif;
+    }
+    .omikuji-container {
+      max-width: 360px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+      text-align: center;
+    }
+    .omikuji-title {
+      color: #fff;
+      font-size: 1.25rem;
+      margin: 0 0 32px;
+    }
+    .omikuji-box {
+      background: rgba(255,255,255,0.95);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .omikuji-draw-btn {
+      display: block;
+      width: 100%;
+      max-width: 240px;
+      margin: 0 auto 16px;
+      padding: 14px 24px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .omikuji-draw-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+    .omikuji-draw-btn:active { transform: translateY(0); }
+    .omikuji-result {
+      display: none;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px dashed #ddd;
+    }
+    .omikuji-result.visible { display: block; }
+    .omikuji-rank {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .omikuji-rank.daikichi { color: #c41e3a; }
+    .omikuji-rank.kichi { color: #228b22; }
+    .omikuji-rank.chukichi { color: #2e8b57; }
+    .omikuji-rank.shokichi { color: #4169e1; }
+    .omikuji-rank.suekichi { color: #666; }
+    .omikuji-rank.kyo { color: #b8860b; }
+    .omikuji-rank.daikyo { color: #333; }
+    .omikuji-message {
+      font-size: 0.95rem;
+      color: #444;
+      line-height: 1.6;
+      margin: 0;
+    }
+    .omikuji-back {
+      display: inline-block;
+      margin-top: 24px;
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+      text-decoration: none;
+    }
+    .omikuji-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="omikuji-container">
+    <h1 class="omikuji-title">おみくじ</h1>
+    <div class="omikuji-box">
+      <button type="button" class="omikuji-draw-btn" id="draw-btn">おみくじを引く</button>
+      <div class="omikuji-result" id="result">
+        <p class="omikuji-rank" id="rank"></p>
+        <p class="omikuji-message" id="message"></p>
+      </div>
+    </div>
+    <a href="/index.html" class="omikuji-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+    (function () {
+      var fortunes = [
+        { rank: '大吉', class: 'daikichi', message: '今日はとても良い日。思い切った一歩を踏み出してみましょう。' },
+        { rank: '吉', class: 'kichi', message: '良いことがありそうです。人に親切にすると運が開けます。' },
+        { rank: '中吉', class: 'chukichi', message: 'まずまずの運勢。無理をせず、できることから進めましょう。' },
+        { rank: '小吉', class: 'shokichi', message: '小さな幸せが訪れます。日々の積み重ねを大切に。' },
+        { rank: '末吉', class: 'suekichi', message: '後半から運気上昇。焦らずに過ごすのがおすすめです。' },
+        { rank: '凶', class: 'kyo', message: '少し注意が必要。慎重に行動し、無理は禁物です。' },
+        { rank: '大凶', class: 'daikyo', message: '今日は控えめに。明日に回せることは明日に。休息も大切です。' }
+      ];
+
+      var drawBtn = document.getElementById('draw-btn');
+      var resultEl = document.getElementById('result');
+      var rankEl = document.getElementById('rank');
+      var messageEl = document.getElementById('message');
+
+      function draw() {
+        var i = Math.floor(Math.random() * fortunes.length);
+        var f = fortunes[i];
+        rankEl.textContent = f.rank;
+        rankEl.className = 'omikuji-rank ' + f.class;
+        messageEl.textContent = f.message;
+        resultEl.classList.add('visible');
+      }
+
+      if (drawBtn) drawBtn.addEventListener('click', draw);
+    })();
+  </script>
+</body>
+</html>

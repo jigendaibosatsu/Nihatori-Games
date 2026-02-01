@@ -17,7 +17,7 @@
     {
       "id": "2",
       "type": "post",
-      "title": "開発ロードマップ公開",
+      "title": "開発ロードマップ公開 今後の予定",
       "url": "/roadmap.html",
       "image": null,
       "category": "devlog",
@@ -30,8 +30,8 @@
     {
       "id": "3",
       "type": "post",
-      "title": "サイトオープンのお知らせ",
-      "url": null,
+      "title": "サイトオープン ブラウザゲーム始動",
+      "url": "/blog/2026-01-29-site-open.html",
       "image": null,
       "category": "devlog",
       "publishedAt": "2026-01-29T09:00:00+09:00",
@@ -43,8 +43,8 @@
     {
       "id": "4",
       "type": "game",
-      "title": "次のゲーム企画中",
-      "url": null,
+      "title": "次のゲーム企画中 内容検討中",
+      "url": "/blog/2026-01-28-next-game.html",
       "image": null,
       "category": "games",
       "publishedAt": "2026-01-28T12:00:00+09:00",
@@ -56,8 +56,8 @@
     {
       "id": "5",
       "type": "post",
-      "title": "趣味：音楽制作",
-      "url": null,
+      "title": "趣味で音楽制作 背景とツール",
+      "url": "/blog/2026-01-20-music.html",
       "image": null,
       "category": "hobby",
       "publishedAt": "2026-01-20T10:00:00+09:00",
@@ -67,9 +67,22 @@
       "trendingScore": 30
     },
     {
+      "id": "omikuji",
+      "type": "game",
+      "title": "おみくじ 運勢を引く",
+      "url": "/games/omikuji/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-01T12:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 82
+    },
+    {
       "id": "6",
       "type": "post",
-      "title": "開発メモ：トップをYahoo!ニュース風に",
+      "title": "トップYahoo!ニュース風に 開発メモ",
       "url": "/blog/2026-02-01-devlog.html",
       "image": "/assets/thumbs/dummy-devlog.svg",
       "category": "devlog",
