@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ババ抜き – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    body.game-page { padding-top: 48px; background: #0a5f2a; min-height: 100vh; }
+    .game-container { max-width: 480px; margin: 0 auto; padding: 16px; min-height: calc(100vh - 48px); display: flex; flex-direction: column; }
+    .game-title { color: #fff; text-align: center; font-size: 1.25rem; margin: 0 0 16px; }
+    .cpu-area { min-height: 100px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; }
+    .cpu-area .card-back { width: 48px; height: 68px; border-radius: 6px; background: linear-gradient(135deg, #1a3a8a 0%, #2d5aa0 100%); border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    .message { color: #fff; text-align: center; font-size: 1rem; margin: 12px 0; min-height: 1.5em; }
+    .your-hand { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; padding: 12px 0; }
+    .card { width: 52px; height: 72px; border-radius: 8px; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: transform 0.15s; }
+    .card.red { color: #c00; background: #fff; }
+    .card.black { color: #111; background: #fff; }
+    .card.joker { color: #c00; background: linear-gradient(135deg, #fff 0%, #ffe0e0 100%); font-size: 14px; }
+    .card .suit { font-size: 14px; }
+    .card.selected { transform: translateY(-8px); box-shadow: 0 6px 12px rgba(0,0,0,0.4); }
+    .card.disabled { opacity: 0.6; pointer-events: none; }
+    .btn-draw { display: block; width: 100%; max-width: 200px; margin: 12px auto; padding: 14px 24px; font-size: 1.1rem; font-weight: 700; color: #0a5f2a; background: #fff; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent; }
+    .btn-draw:active { transform: scale(0.98); }
+    .btn-draw:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-restart { margin-top: 8px; background: rgba(255,255,255,0.2); color: #fff; border: 2px solid #fff; }
+  </style>
+</head>
+<body class="game-page article-page">
+  <div id="site-header"></div>
+
+  <div class="game-container">
+    <h1 class="game-title">ババ抜き</h1>
+
+    <div class="cpu-area" id="cpu-area" aria-live="polite">
+      <!-- CPUの手札（裏表示） -->
+    </div>
+
+    <p class="message" id="message">あなたの番です。下の「1枚引く」で相手の手札から1枚引きます。</p>
+
+    <div class="your-hand" id="your-hand" role="list" aria-label="あなたの手札">
+      <!-- あなたの手札 -->
+    </div>
+
+    <button type="button" class="btn-draw" id="btn-draw">1枚引く</button>
+    <button type="button" class="btn-draw btn-restart" id="btn-restart" style="display:none;">もう一度遊ぶ</button>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  'use strict';
+
+  var SUITS = ['s', 'h', 'd', 'c'];
+  var SUIT_SYMBOLS = { s: '♠', h: '♥', d: '♦', c: '♣' };
+  var RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  var RED_SUITS = ['h', 'd'];
+
+  function createDeck() {
+    var deck = [];
+    for (var s = 0; s < SUITS.length; s++) {
+      for (var r = 0; r < RANKS.length; r++) {
+        deck.push({ rank: RANKS[r], suit: SUITS[s] });
+      }
+    }
+    deck.push({ joker: true });
+    return deck;
+  }
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function discardPairsSimple(hand) {
+    var byRank = {};
+    var jokers = [];
+    for (var i = 0; i < hand.length; i++) {
+      var c = hand[i];
+      if (c.joker) { jokers.push(c); continue; }
+      if (!byRank[c.rank]) byRank[c.rank] = [];
+      byRank[c.rank].push(c);
+    }
+    var out = jokers.slice();
+    for (var r in byRank) {
+      var arr = byRank[r];
+      while (arr.length >= 2) arr.pop(), arr.pop();
+      if (arr.length === 1) out.push(arr[0]);
+    }
+    return out;
+  }
+
+  var state = {
+    human: [],
+    cpu: [],
+    turn: 'human',
+    phase: 'playing'
+  };
+
+  function renderCard(card) {
+    if (card.joker) return '<span class="card joker">JOKER</span>';
+    var red = RED_SUITS.indexOf(card.suit) >= 0;
+    var cls = 'card ' + (red ? 'red' : 'black');
+    return '<span class="' + cls + '" data-rank="' + card.rank + '" data-suit="' + card.suit + '">' + card.rank + '<span class="suit">' + SUIT_SYMBOLS[card.suit] + '</span></span>';
+  }
+
+  function renderYourHand() {
+    var el = document.getElementById('your-hand');
+    if (!el) return;
+    el.innerHTML = state.human.map(function (c) { return renderCard(c); }).join('');
+  }
+
+  function renderCpuArea() {
+    var el = document.getElementById('cpu-area');
+    if (!el) return;
+    var html = '';
+    for (var i = 0; i < state.cpu.length; i++) {
+      html += '<span class="card-back"></span>';
+    }
+    el.innerHTML = html || '<span class="card-back"></span>';
+  }
+
+  function setMessage(text) {
+    var el = document.getElementById('message');
+    if (el) el.textContent = text;
+  }
+
+  function humanDraw() {
+    if (state.turn !== 'human' || state.phase !== 'playing' || state.cpu.length === 0) return;
+    var i = Math.floor(Math.random() * state.cpu.length);
+    var card = state.cpu.splice(i, 1)[0];
+    state.human.push(card);
+    state.human = discardPairsSimple(state.human);
+    renderYourHand();
+    renderCpuArea();
+    if (state.human.length === 0) {
+      state.phase = 'win';
+      setMessage('あなたの勝ちです！');
+      document.getElementById('btn-draw').style.display = 'none';
+      document.getElementById('btn-restart').style.display = 'block';
+      return;
+    }
+    if (state.cpu.length === 0) {
+      state.phase = 'lose';
+      setMessage('CPUの勝ちです。ババ（Joker）が残りました。');
+      document.getElementById('btn-draw').style.display = 'none';
+      document.getElementById('btn-restart').style.display = 'block';
+      return;
+    }
+    state.turn = 'cpu';
+    setMessage('CPUの番です…');
+    document.getElementById('btn-draw').disabled = true;
+    setTimeout(cpuTurn, 800);
+  }
+
+  function cpuTurn() {
+    if (state.turn !== 'cpu' || state.human.length === 0) {
+      document.getElementById('btn-draw').disabled = false;
+      setMessage('あなたの番です。');
+      state.turn = 'human';
+      return;
+    }
+    var i = Math.floor(Math.random() * state.human.length);
+    var card = state.human.splice(i, 1)[0];
+    state.cpu.push(card);
+    state.cpu = discardPairsSimple(state.cpu);
+    renderYourHand();
+    renderCpuArea();
+    if (state.cpu.length === 0) {
+      state.phase = 'lose';
+      setMessage('CPUの勝ちです！');
+      document.getElementById('btn-draw').style.display = 'none';
+      document.getElementById('btn-restart').style.display = 'block';
+      document.getElementById('btn-draw').disabled = false;
+      return;
+    }
+    if (state.human.length === 0) {
+      state.phase = 'win';
+      setMessage('あなたの勝ちです！ CPUがババを持ちました。');
+      document.getElementById('btn-draw').style.display = 'none';
+      document.getElementById('btn-restart').style.display = 'block';
+      document.getElementById('btn-draw').disabled = false;
+      return;
+    }
+    state.turn = 'human';
+    setMessage('あなたの番です。「1枚引く」で相手の手札から1枚引きます。');
+    document.getElementById('btn-draw').disabled = false;
+  }
+
+  function startGame() {
+    var deck = shuffle(createDeck());
+    state.human = discardPairsSimple(deck.slice(0, 26));
+    state.cpu = discardPairsSimple(deck.slice(26, 53));
+    state.turn = 'human';
+    state.phase = 'playing';
+    renderYourHand();
+    renderCpuArea();
+    setMessage('あなたの番です。下の「1枚引く」で相手の手札から1枚引きます。');
+    document.getElementById('btn-draw').style.display = 'block';
+    document.getElementById('btn-draw').disabled = false;
+    document.getElementById('btn-restart').style.display = 'none';
+  }
+
+  document.getElementById('btn-draw').addEventListener('click', humanDraw);
+  document.getElementById('btn-restart').addEventListener('click', startGame);
+
+  startGame();
+})();
+  </script>
+</body>
+</html>

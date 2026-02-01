@@ -1,4 +1,4 @@
-# Niwatori-Games
+# Nihatori-Games
 
 ## トップページ（Yahoo!ニュース風 UI）
 

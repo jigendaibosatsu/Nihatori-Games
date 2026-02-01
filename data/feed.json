@@ -4,8 +4,8 @@
     {
       "id": "1",
       "type": "game",
-      "title": "ババ抜き（準備中）",
-      "url": "./games/baba-nuki/",
+      "title": "ババ抜き",
+      "url": "/games/baba-nuki/",
       "image": null,
       "category": "games",
       "publishedAt": "2026-01-31T10:00:00+09:00",

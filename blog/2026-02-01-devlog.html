@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <title>開発メモ：トップをYahoo!ニュース風に – Niwatori Games</title>
+  <title>開発メモ：トップをYahoo!ニュース風に – Nihatori Games</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="/styles.css" />
   <style>
@@ -11,18 +11,7 @@
   </style>
 </head>
 <body class="article-page">
-  <header class="site-header">
-    <div class="header-inner">
-      <a href="/" class="site-logo" aria-label="トップ">
-        <img class="logo-img" src="/assets/logo.svg" alt="" width="120" height="32" />
-        <span class="logo-fallback" hidden>NIHATORI</span>
-      </a>
-      <div class="header-actions">
-        <button type="button" class="btn-icon btn-search" aria-label="検索">🔍</button>
-        <button type="button" class="btn-icon btn-menu" aria-label="メニュー">☰</button>
-      </div>
-    </div>
-  </header>
+  <div id="site-header"></div>
 
   <main class="article-body">
     <h1>開発メモ：トップをYahoo!ニュース風に</h1>
@@ -40,18 +29,6 @@
     <p><a href="/index.html">← トップへ戻る</a></p>
   </main>
 
-  <script>
-    (function () {
-      var img = document.querySelector('.article-page .site-logo .logo-img');
-      var fallback = document.querySelector('.article-page .site-logo .logo-fallback');
-      if (!img || !fallback) return;
-      function showFallback() { img.setAttribute('hidden', ''); fallback.removeAttribute('hidden'); }
-      img.onerror = function () {
-        if (img.src && img.src.indexOf('.svg') !== -1) { img.src = '/assets/logo.png'; img.onerror = showFallback; } else { showFallback(); }
-      };
-      img.onload = function () { img.removeAttribute('hidden'); fallback.setAttribute('hidden', ''); };
-      if (img.complete && img.naturalWidth > 0) fallback.setAttribute('hidden', ''); else if (img.complete) img.onerror();
-    })();
-  </script>
+  <script src="/assets/header.js"></script>
 </body>
 </html>

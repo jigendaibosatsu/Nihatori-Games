@@ -1,5 +1,5 @@
 /**
- * Niwatori Games – トップページ
+ * Nihatori Games – トップページ
  * タブ切替（URL ?tab= と pushState）、ヒーロー＋記事リスト、data/feed.json
  */
 
@@ -226,35 +226,7 @@
     xhr.send();
   }
 
-  function initLogo() {
-    var img = document.querySelector('.site-logo .logo-img');
-    var fallback = document.querySelector('.site-logo .logo-fallback');
-    if (!img || !fallback) return;
-    function showFallback() {
-      img.setAttribute('hidden', '');
-      fallback.removeAttribute('hidden');
-    }
-    img.onerror = function () {
-      if (img.src && img.src.indexOf('.svg') !== -1) {
-        img.src = '/assets/logo.png';
-        img.onerror = showFallback;
-      } else {
-        showFallback();
-      }
-    };
-    img.onload = function () {
-      img.removeAttribute('hidden');
-      fallback.setAttribute('hidden', '');
-    };
-    if (img.complete && img.naturalWidth > 0) {
-      fallback.setAttribute('hidden', '');
-    } else if (img.complete) {
-      img.onerror();
-    }
-  }
-
   function init() {
-    initLogo();
     loadFeed(function () {
       var tabId = getTabFromUrl();
       setActiveTab(tabId);
