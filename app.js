@@ -230,9 +230,17 @@
     var img = document.querySelector('.site-logo .logo-img');
     var fallback = document.querySelector('.site-logo .logo-fallback');
     if (!img || !fallback) return;
-    img.onerror = function () {
+    function showFallback() {
       img.setAttribute('hidden', '');
       fallback.removeAttribute('hidden');
+    }
+    img.onerror = function () {
+      if (img.src && img.src.indexOf('.svg') !== -1) {
+        img.src = '/assets/logo.png';
+        img.onerror = showFallback;
+      } else {
+        showFallback();
+      }
     };
     img.onload = function () {
       img.removeAttribute('hidden');
@@ -241,8 +249,7 @@
     if (img.complete && img.naturalWidth > 0) {
       fallback.setAttribute('hidden', '');
     } else if (img.complete) {
-      img.setAttribute('hidden', '');
-      fallback.removeAttribute('hidden');
+      img.onerror();
     }
   }
 

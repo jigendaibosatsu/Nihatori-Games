@@ -4,27 +4,54 @@
   <meta charset="utf-8" />
   <title>開発メモ：トップをYahoo!ニュース風に – Niwatori Games</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/styles.css" />
   <style>
-    body { font-family: system-ui; padding: 24px; line-height: 1.6; max-width: 720px; margin: 0 auto; }
-    h1, h2, h3 { margin-top: 2em; }
-    .meta { color: #666; font-size: 14px; margin-bottom: 1.5em; }
+    .article-body h1, .article-body h2, .article-body h3 { margin-top: 1.5em; }
+    .article-body .meta { color: var(--text-meta); font-size: 14px; margin-bottom: 1.5em; }
   </style>
 </head>
-<body>
+<body class="article-page">
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="site-logo" aria-label="トップ">
+        <img class="logo-img" src="/assets/logo.svg" alt="" width="120" height="32" />
+        <span class="logo-fallback" hidden>NIHATORI</span>
+      </a>
+      <div class="header-actions">
+        <button type="button" class="btn-icon btn-search" aria-label="検索">🔍</button>
+        <button type="button" class="btn-icon btn-menu" aria-label="メニュー">☰</button>
+      </div>
+    </div>
+  </header>
 
-<h1>開発メモ：トップをYahoo!ニュース風に</h1>
-<p class="meta">2026-02-01 · devlog</p>
+  <main class="article-body">
+    <h1>開発メモ：トップをYahoo!ニュース風に</h1>
+    <p class="meta">2026-02-01 · devlog</p>
 
-<p>
-トップページをYahoo!ニュース（スマホ版）風のUIに変更しました。タブ切替で「トップ」「ゲーム」「趣味」「記事」「急上昇」「おすすめ」を切り替えられ、表示は <code>data/feed.json</code> で制御しています。
-</p>
+    <p>
+      トップページをYahoo!ニュース（スマホ版）風のUIに変更しました。タブ切替で「トップ」「ゲーム」「趣味」「記事」「急上昇」「おすすめ」を切り替えられ、表示は <code>data/feed.json</code> で制御しています。
+    </p>
 
-<h2>今回の追加</h2>
-<p>
-記事は <code>blog/</code> 配下に1記事＝1HTMLで作成し、ゲームは <code>games/{slug}/</code> に配置するルールにしました。この開発メモはその最初の記事です。
-</p>
+    <h2>今回の追加</h2>
+    <p>
+      記事は <code>blog/</code> 配下に1記事＝1HTMLで作成し、ゲームは <code>games/{slug}/</code> に配置するルールにしました。この開発メモはその最初の記事です。
+    </p>
 
-<p><a href="/index.html">← トップへ戻る</a></p>
+    <p><a href="/index.html">← トップへ戻る</a></p>
+  </main>
 
+  <script>
+    (function () {
+      var img = document.querySelector('.article-page .site-logo .logo-img');
+      var fallback = document.querySelector('.article-page .site-logo .logo-fallback');
+      if (!img || !fallback) return;
+      function showFallback() { img.setAttribute('hidden', ''); fallback.removeAttribute('hidden'); }
+      img.onerror = function () {
+        if (img.src && img.src.indexOf('.svg') !== -1) { img.src = '/assets/logo.png'; img.onerror = showFallback; } else { showFallback(); }
+      };
+      img.onload = function () { img.removeAttribute('hidden'); fallback.setAttribute('hidden', ''); };
+      if (img.complete && img.naturalWidth > 0) fallback.setAttribute('hidden', ''); else if (img.complete) img.onerror();
+    })();
+  </script>
 </body>
 </html>

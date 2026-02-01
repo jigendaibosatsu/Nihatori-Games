@@ -30,6 +30,26 @@ body {
   padding-top: 96px; /* header + tabs */
 }
 
+/* 記事ページ：上段固定ヘッダーのみ・本文はスクロール */
+body.article-page {
+  padding-top: 48px;
+}
+body.article-page .site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+}
+.article-body {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  min-height: 100vh;
+}
+
 /* ----- 固定ヘッダー ----- */
 .site-header {
   position: fixed;
@@ -144,17 +164,18 @@ body {
   border-bottom-color: var(--tab-active);
 }
 
-/* ----- レイアウト（メイン＋サイドバー） ----- */
+/* ----- レイアウト（メイン＋サイドバー）・幅を狭く ----- */
 .layout {
-  max-width: 1200px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 12px;
+  padding: 12px 16px;
 }
 
 @media (min-width: 768px) {
   .layout {
+    max-width: 960px;
     display: grid;
-    grid-template-columns: 1fr 280px;
+    grid-template-columns: 1fr 220px;
     gap: 24px;
     padding: 16px 24px;
   }
