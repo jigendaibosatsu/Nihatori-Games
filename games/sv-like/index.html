@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>シャチクバース – Nihatori Games</title>
+  <link rel="icon" href="/assets/shachikuverse-icon.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/assets/shachikuverse-icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+      font-family: sans-serif;
+      color: #e8e0e8;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+    .sv-wrap { max-width: 480px; margin: 0 auto; padding: 12px; }
+    .sv-title { font-size: 1rem; text-align: center; margin: 0 0 12px; color: #a0a0c0; }
+    .sv-leader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 8px 12px; background: rgba(0,0,0,0.4); border-radius: 8px; }
+    .sv-leader .hp { font-weight: bold; color: #f88; }
+    .sv-leader .name { font-size: 14px; }
+    .sv-leader.sv-attack-target { cursor: pointer; border: 2px solid #f88; }
+    .sv-mana { text-align: center; margin-bottom: 8px; font-size: 14px; color: #88f; }
+    .sv-board {
+      display: flex; gap: 8px; justify-content: center; margin-bottom: 16px;
+      min-height: 72px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px;
+    }
+    .sv-slot {
+      width: 64px; height: 88px; background: rgba(80,60,100,0.4); border: 2px dashed #606;
+      border-radius: 6px; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: #888; cursor: pointer;
+    }
+    .sv-slot.has-card { border-style: solid; border-color: #808; background: rgba(100,60,120,0.6); cursor: pointer; }
+    .sv-slot.has-card .card-inner { width: 100%; height: 100%; border-radius: 4px; padding: 4px; text-align: center; font-size: 12px; color: #fff; display: flex; flex-direction: column; justify-content: center; }
+    .sv-slot.has-card .atk { color: #f88; }
+    .sv-slot.has-card .def { color: #8f8; }
+    .sv-slot.has-card.sv-cant-attack { opacity: 0.5; }
+    .sv-slot.has-card.sv-attacker-selected { border-color: #f0f; box-shadow: 0 0 10px rgba(255,0,255,0.6); }
+    .sv-hand {
+      display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; min-height: 80px;
+    }
+    .sv-card {
+      width: 56px; height: 76px; background: linear-gradient(145deg, #2a2a4a 0%, #1a1a3a 100%);
+      border: 2px solid #606; border-radius: 6px; padding: 4px; text-align: center; cursor: pointer;
+      font-size: 11px; color: #fff; display: flex; flex-direction: column; justify-content: center;
+    }
+    .sv-card:hover { border-color: #a0a; }
+    .sv-card.selected { border-color: #f0f; box-shadow: 0 0 12px rgba(255,0,255,0.5); }
+    .sv-card .cost { color: #88f; font-weight: bold; }
+    .sv-card .atk { color: #f88; }
+    .sv-card .def { color: #8f8; }
+    .sv-card.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+    .sv-actions { text-align: center; margin-bottom: 12px; }
+    .sv-btn {
+      padding: 10px 24px; font-size: 14px; font-weight: bold; color: #fff;
+      background: linear-gradient(180deg, #604080 0%, #402060 100%);
+      border: 1px solid #8060a0; border-radius: 8px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .sv-log { min-height: 40px; font-size: 12px; color: #aaa; margin-bottom: 12px; padding: 8px; background: rgba(0,0,0,0.4); border-radius: 6px; white-space: pre-line; }
+    .sv-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 20; padding: 48px 16px 0; }
+    .sv-overlay.visible { display: flex; }
+    .sv-overlay-box { background: #2a2a4a; border-radius: 12px; padding: 24px; text-align: center; max-width: 320px; }
+    .sv-overlay-box h2 { margin-bottom: 12px; font-size: 1.25rem; }
+    .sv-overlay-box .btn { display: inline-block; padding: 12px 24px; margin-top: 12px; background: #604080; color: #fff; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; text-decoration: none; }
+    .sv-back { display: inline-block; margin-top: 16px; color: #a080a0; font-size: 14px; text-decoration: none; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="sv-wrap">
+    <h1 class="sv-title">シャチクバース</h1>
+
+    <div class="sv-leader" id="enemyLeader">
+      <span class="name">相手</span>
+      <span class="hp" id="enemyHp">20 / 20</span>
+    </div>
+
+    <div class="sv-board" id="enemyBoard"></div>
+
+    <div class="sv-mana" id="manaDisplay">マナ 1/1</div>
+
+    <div class="sv-board" id="playerBoard"></div>
+
+    <div class="sv-leader" id="playerLeader">
+      <span class="name">自分</span>
+      <span class="hp" id="playerHp">20 / 20</span>
+    </div>
+
+    <div class="sv-hand" id="playerHand"></div>
+
+    <div class="sv-actions">
+      <button type="button" class="sv-btn" id="btnEndTurn">ターン終了</button>
+    </div>
+
+    <div class="sv-log" id="log"></div>
+
+    <a href="/index.html" class="sv-back">← トップへ戻る</a>
+  </div>
+
+  <div class="sv-overlay" id="overlayStart">
+    <div class="sv-overlay-box">
+      <h2>シャチクバース</h2>
+      <p>マナでフォロワーを出し、相手リーダーにダメージを与えて勝利しよう。</p>
+      <button type="button" class="sv-btn" id="btnStart">スタート</button>
+    </div>
+  </div>
+  <div class="sv-overlay" id="overlayWin">
+    <div class="sv-overlay-box">
+      <h2>勝利！</h2>
+      <button type="button" class="sv-btn" id="btnRetry">もう一度</button>
+      <a href="/index.html" class="sv-back">トップへ戻る</a>
+    </div>
+  </div>
+  <div class="sv-overlay" id="overlayLose">
+    <div class="sv-overlay-box">
+      <h2>敗北…</h2>
+      <button type="button" class="sv-btn" id="btnRetryLose">やり直す</button>
+      <a href="/index.html" class="sv-back">トップへ戻る</a>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var CARD_TEMPLATES = [
+    { id: 'c1', name: 'スライム', cost: 1, atk: 1, def: 2 },
+    { id: 'c2', name: 'バット', cost: 1, atk: 1, def: 1 },
+    { id: 'c3', name: 'ゴブリン', cost: 2, atk: 2, def: 2 },
+    { id: 'c4', name: 'ウルフ', cost: 2, atk: 2, def: 3 },
+    { id: 'c5', name: 'スケルトン', cost: 2, atk: 2, def: 1 },
+    { id: 'c6', name: 'ナイト', cost: 3, atk: 3, def: 3 },
+    { id: 'c7', name: 'オーク', cost: 3, atk: 3, def: 2 },
+    { id: 'c8', name: 'プリースト', cost: 3, atk: 2, def: 4 },
+    { id: 'c9', name: 'ドラゴン', cost: 4, atk: 4, def: 4 },
+    { id: 'c10', name: 'グリフォン', cost: 4, atk: 3, def: 4 },
+    { id: 'c11', name: 'ヴァンパイア', cost: 4, atk: 4, def: 3 },
+    { id: 'c12', name: 'デーモン', cost: 5, atk: 5, def: 5 },
+    { id: 'c13', name: 'ヒドラ', cost: 5, atk: 5, def: 4 },
+    { id: 'c14', name: 'フェニックス', cost: 6, atk: 5, def: 5 }
+  ];
+
+  function makeDeck() {
+    var d = [];
+    CARD_TEMPLATES.forEach(function (t) {
+      d.push({ id: t.id + '-' + d.length, name: t.name, cost: t.cost, atk: t.atk, def: t.def });
+      d.push({ id: t.id + '-' + d.length, name: t.name, cost: t.cost, atk: t.atk, def: t.def });
+    });
+    for (var i = d.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = d[i]; d[i] = d[j]; d[j] = tmp;
+    }
+    return d;
+  }
+
+  var state = {
+    playerHp: 20, enemyHp: 20,
+    playerMana: 1, playerManaMax: 1, turn: 0,
+    enemyMana: 1, enemyManaMax: 1,
+    playerHand: [], playerBoard: [], playerDeck: [],
+    enemyHand: [], enemyBoard: [], enemyDeck: [],
+    isPlayerTurn: true,
+    selectedCard: null,
+    selectedSlot: null,
+    attackSource: null
+  };
+
+  var BOARD_SIZE = 3;
+  var logEl = document.getElementById('log');
+  var manaDisplay = document.getElementById('manaDisplay');
+  var playerHpEl = document.getElementById('playerHp');
+  var enemyHpEl = document.getElementById('enemyHp');
+  var playerHandEl = document.getElementById('playerHand');
+  var playerBoardEl = document.getElementById('playerBoard');
+  var enemyBoardEl = document.getElementById('enemyBoard');
+
+  function countOnBoard(board) {
+    var n = 0;
+    for (var i = 0; i < BOARD_SIZE; i++) {
+      if (board[i]) n++;
+    }
+    return n;
+  }
+
+  function log(msg) {
+    if (!logEl) return;
+    logEl.textContent = msg + (logEl.textContent ? '\n' + logEl.textContent : '');
+    logEl.scrollTop = 0;
+  }
+
+  function logTurn(msg) {
+    if (!logEl) return;
+    logEl.textContent = msg + (logEl.textContent ? '\n\n' + logEl.textContent : '');
+    logEl.scrollTop = 0;
+  }
+
+  function draw(hand, deck, count) {
+    for (var i = 0; i < count && deck.length > 0; i++) {
+      hand.push(deck.shift());
+    }
+  }
+
+  function startGame() {
+    state.playerHp = 20;
+    state.enemyHp = 20;
+    state.playerMana = 1;
+    state.playerManaMax = 1;
+    state.enemyMana = 1;
+    state.enemyManaMax = 1;
+    state.turn = 0;
+    state.playerHand = [];
+    state.playerBoard = [];
+    state.enemyHand = [];
+    state.enemyBoard = [];
+    state.playerDeck = makeDeck();
+    state.enemyDeck = makeDeck();
+    state.isPlayerTurn = Math.random() >= 0.5;
+    state.selectedCard = null;
+    state.attackSource = null;
+    draw(state.playerHand, state.playerDeck, 3);
+    draw(state.enemyHand, state.enemyDeck, 3);
+    logTurn('ゲーム開始' + (state.isPlayerTurn ? '（あなたが先行）' : '（相手が先行）'));
+    render();
+  }
+
+  function startTurn() {
+    state.turn++;
+    if (state.isPlayerTurn) {
+      state.playerManaMax = Math.min(10, (state.turn + 1) >> 1);
+      state.playerMana = state.playerManaMax;
+      draw(state.playerHand, state.playerDeck, 1);
+      logTurn('あなたのターン ' + state.turn);
+    } else {
+      draw(state.enemyHand, state.enemyDeck, 1);
+      logTurn('相手のターン');
+      setTimeout(enemyTurn, 800);
+    }
+    state.selectedCard = null;
+    state.attackSource = null;
+    render();
+  }
+
+  function render() {
+    playerHpEl.textContent = state.playerHp + ' / 20';
+    enemyHpEl.textContent = state.enemyHp + ' / 20';
+    var enemyLeaderEl = document.getElementById('enemyLeader');
+    if (enemyLeaderEl) enemyLeaderEl.classList.toggle('sv-attack-target', state.isPlayerTurn && state.attackSource !== null);
+    manaDisplay.textContent = 'マナ ' + state.playerMana + '/' + state.playerManaMax;
+    if (!state.isPlayerTurn) manaDisplay.textContent = '相手のターン';
+
+    playerHandEl.innerHTML = state.playerHand.map(function (c, i) {
+      var canPlay = state.isPlayerTurn && state.playerMana >= c.cost && countOnBoard(state.playerBoard) < BOARD_SIZE;
+      var cls = 'sv-card' + (state.selectedCard === i && state.attackSource === null ? ' selected' : '') + (canPlay ? '' : ' disabled');
+      return '<div class="' + cls + '" data-hand-index="' + i + '">' +
+        '<span class="cost">' + c.cost + '</span>' + c.name + '<br><span class="atk">' + c.atk + '</span>/<span class="def">' + c.def + '</span></div>';
+    }).join('');
+
+    playerBoardEl.innerHTML = Array(BOARD_SIZE).fill(0).map(function (_, i) {
+      var c = state.playerBoard[i];
+      if (c) {
+        var canSelectAttacker = state.isPlayerTurn && state.attackSource === null && c.canAttack;
+        var isSelectedAttacker = state.attackSource === i;
+        var cantAttack = state.attackSource === null && !c.canAttack;
+        return '<div class="sv-slot has-card' + (cantAttack ? ' sv-cant-attack' : '') + (isSelectedAttacker ? ' sv-attacker-selected' : '') + '" data-board-index="' + i + '" data-side="player"' + (canSelectAttacker ? ' data-can-attack="1"' : '') + '>' +
+          '<div class="card-inner">' + c.name + ' <span class="atk">' + c.atk + '</span>/<span class="def">' + c.def + '</span></div></div>';
+      }
+      var canPlace = state.isPlayerTurn && state.selectedCard !== null && typeof state.selectedCard === 'number' && state.playerHand[state.selectedCard] && state.playerMana >= state.playerHand[state.selectedCard].cost;
+      return '<div class="sv-slot' + (canPlace ? ' can-place' : '') + '" data-board-index="' + i + '" data-side="player">空</div>';
+    }).join('');
+
+    enemyBoardEl.innerHTML = Array(BOARD_SIZE).fill(0).map(function (_, i) {
+      var c = state.enemyBoard[i];
+      if (c) {
+        var isAttackTarget = state.isPlayerTurn && state.attackSource !== null;
+        return '<div class="sv-slot has-card" data-board-index="' + i + '" data-side="enemy">' +
+          '<div class="card-inner">' + c.name + ' <span class="atk">' + c.atk + '</span>/<span class="def">' + c.def + '</span></div></div>';
+      }
+      return '<div class="sv-slot" data-board-index="' + i + '" data-side="enemy">空</div>';
+    }).join('');
+  }
+
+  function playCard(handIndex, boardIndex) {
+    var c = state.playerHand[handIndex];
+    if (!c || state.playerMana < c.cost || state.playerBoard[boardIndex] || countOnBoard(state.playerBoard) >= BOARD_SIZE) return;
+    state.playerHand.splice(handIndex, 1);
+    state.playerBoard[boardIndex] = { name: c.name, cost: c.cost, atk: c.atk, def: c.def, canAttack: false };
+    state.playerMana -= c.cost;
+    state.selectedCard = null;
+    log(c.name + 'を召喚');
+    render();
+  }
+
+  function doAttack(attackerBoardIndex, targetSide, targetIndex) {
+    var board = state.playerBoard;
+    var attacker = board[attackerBoardIndex];
+    if (!attacker || !attacker.canAttack) return;
+    if (targetSide === 'enemy') {
+      if (targetIndex === -1) {
+        state.enemyHp -= attacker.atk;
+        log(attacker.name + 'が相手リーダーに' + attacker.atk + 'ダメージ');
+      } else {
+        var target = state.enemyBoard[targetIndex];
+        if (!target) return;
+        target.def -= attacker.atk;
+        attacker.def -= target.atk;
+        if (target.def <= 0) state.enemyBoard[targetIndex] = null;
+        if (attacker.def <= 0) state.playerBoard[attackerBoardIndex] = null;
+        log(attacker.name + 'が' + target.name + 'に攻撃');
+      }
+      attacker.canAttack = false;
+    }
+    state.attackSource = null;
+    checkWin();
+    render();
+  }
+
+  function checkWin() {
+    if (state.enemyHp <= 0) document.getElementById('overlayWin').classList.add('visible');
+    if (state.playerHp <= 0) document.getElementById('overlayLose').classList.add('visible');
+  }
+
+  var ENEMY_ACTION_DELAY = 750;
+
+  function enemyEmptySlot() {
+    for (var s = 0; s < BOARD_SIZE; s++) {
+      if (!state.enemyBoard[s]) return s;
+    }
+    return -1;
+  }
+
+  function enemyTurn() {
+    state.enemyManaMax = Math.min(10, state.turn >> 1);
+    state.enemyMana = state.enemyManaMax;
+    state.enemyBoard.forEach(function (c) { if (c) c.canAttack = true; });
+
+    var tempHand = state.enemyHand.slice();
+    var tempBoard = [];
+    for (var s = 0; s < BOARD_SIZE; s++) tempBoard[s] = state.enemyBoard[s];
+    var tempMana = state.enemyMana;
+    var summonsToDo = [];
+    while (tempMana >= 1) {
+      var slot = -1;
+      for (var s = 0; s < BOARD_SIZE; s++) { if (!tempBoard[s]) { slot = s; break; } }
+      if (slot < 0) break;
+      var best = null;
+      for (var i = 0; i < tempHand.length; i++) {
+        var c = tempHand[i];
+        if (c.cost <= tempMana && (best === null || c.atk >= best.atk)) best = { card: c, index: i };
+      }
+      if (!best) break;
+      var card = tempHand.splice(best.index, 1)[0];
+      tempBoard[slot] = { name: card.name, atk: card.atk, def: card.def, canAttack: false };
+      tempMana -= card.cost;
+      summonsToDo.push({ card: card, slot: slot });
+    }
+
+    function runSummonStep(idx) {
+      if (idx >= summonsToDo.length) {
+        runAttackPhase();
+        return;
+      }
+      var s = summonsToDo[idx];
+      var hi = state.enemyHand.indexOf(s.card);
+      if (hi >= 0) state.enemyHand.splice(hi, 1);
+      state.enemyBoard[s.slot] = { name: s.card.name, atk: s.card.atk, def: s.card.def, canAttack: false };
+      log('相手が' + s.card.name + 'を召喚');
+      render();
+      setTimeout(function () { runSummonStep(idx + 1); }, ENEMY_ACTION_DELAY);
+    }
+
+    function runAttackPhase() {
+      function doOneAttack() {
+        if (state.playerHp <= 0) { finishEnemyTurn(); return; }
+        var i = -1;
+        for (var k = 0; k < BOARD_SIZE; k++) {
+          if (state.enemyBoard[k] && state.enemyBoard[k].canAttack) { i = k; break; }
+        }
+        if (i < 0) { finishEnemyTurn(); return; }
+        var c = state.enemyBoard[i];
+        var j = state.playerBoard.findIndex(function (x) { return x; });
+        if (j >= 0) {
+          var t = state.playerBoard[j];
+          t.def -= c.atk;
+          c.def -= t.atk;
+          if (t.def <= 0) state.playerBoard[j] = null;
+          if (c.def <= 0) state.enemyBoard[i] = null;
+          log('相手の' + c.name + 'が' + t.name + 'に攻撃');
+          c.canAttack = false;
+        } else {
+          state.playerHp -= c.atk;
+          log('相手の' + c.name + 'がリーダーに' + c.atk + 'ダメージ');
+          c.canAttack = false;
+        }
+        checkWin();
+        render();
+        setTimeout(doOneAttack, ENEMY_ACTION_DELAY);
+      }
+      doOneAttack();
+    }
+
+    function finishEnemyTurn() {
+      if (state.playerHp > 0 && state.enemyHp > 0) {
+        state.isPlayerTurn = true;
+        startTurn();
+      }
+    }
+
+    if (summonsToDo.length > 0) {
+      setTimeout(function () { runSummonStep(0); }, ENEMY_ACTION_DELAY);
+    } else {
+      runAttackPhase();
+    }
+  }
+
+  playerHandEl.addEventListener('click', function (e) {
+    var card = e.target.closest('.sv-card:not(.disabled)');
+    if (!card || !state.isPlayerTurn) return;
+    if (state.attackSource !== null) return;
+    var i = parseInt(card.dataset.handIndex, 10);
+    state.selectedCard = state.selectedCard === i ? null : i;
+    render();
+  });
+
+  playerBoardEl.addEventListener('click', function (e) {
+    var slot = e.target.closest('.sv-slot[data-side="player"]');
+    if (!slot || !state.isPlayerTurn) return;
+    var i = parseInt(slot.dataset.boardIndex, 10);
+    var c = state.playerBoard[i];
+    if (state.attackSource !== null) {
+      if (i === state.attackSource) {
+        state.attackSource = null;
+        render();
+      } else if (c && c.canAttack) {
+        state.attackSource = i;
+        state.selectedCard = null;
+        render();
+      }
+      return;
+    }
+    if (c && c.canAttack) {
+      state.attackSource = i;
+      state.selectedCard = null;
+      render();
+      return;
+    }
+    if (state.selectedCard !== null && typeof state.selectedCard === 'number' && !c) {
+      playCard(state.selectedCard, i);
+    }
+  });
+
+  enemyBoardEl.addEventListener('click', function (e) {
+    var slot = e.target.closest('.sv-slot[data-side="enemy"]');
+    if (!slot || !state.isPlayerTurn || state.attackSource === null) return;
+    var i = parseInt(slot.dataset.boardIndex, 10);
+    if (state.enemyBoard[i]) {
+      doAttack(state.attackSource, 'enemy', i);
+    }
+  });
+
+  document.getElementById('enemyLeader').addEventListener('click', function () {
+    if (!state.isPlayerTurn || state.attackSource === null) return;
+    doAttack(state.attackSource, 'enemy', -1);
+  });
+
+  document.getElementById('btnEndTurn').addEventListener('click', function () {
+    if (!state.isPlayerTurn) return;
+    state.playerBoard.forEach(function (c) { if (c) c.canAttack = true; });
+    state.isPlayerTurn = false;
+    startTurn();
+  });
+
+  document.getElementById('btnStart').addEventListener('click', function () {
+    document.getElementById('overlayStart').classList.remove('visible');
+    startGame();
+    startTurn();
+  });
+
+  document.getElementById('btnRetry').addEventListener('click', function () {
+    document.getElementById('overlayWin').classList.remove('visible');
+    startGame();
+    startTurn();
+  });
+  document.getElementById('btnRetryLose').addEventListener('click', function () {
+    document.getElementById('overlayLose').classList.remove('visible');
+    startGame();
+    startTurn();
+  });
+
+  document.getElementById('overlayStart').classList.add('visible');
+})();
+  </script>
+</body>
+</html>

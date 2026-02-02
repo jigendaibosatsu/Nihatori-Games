@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>悪魔契約 – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; }
+    html { height: 100%; }
+    body.game-page {
+      margin: 0;
+      padding-top: 48px;
+      background: linear-gradient(180deg, #1a0a1a 0%, #2d1b2d 50%, #1a0a1a 100%);
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #e8e0e8;
+    }
+    .smt-container { max-width: 420px; margin: 0 auto; padding: 16px; }
+    .smt-title { font-size: 1.2rem; text-align: center; margin: 0 0 20px; color: #c0a0c0; }
+    .smt-screen { display: none; }
+    .smt-screen.visible { display: block; }
+    .smt-box {
+      background: rgba(0,0,0,0.5);
+      border: 2px solid #604060;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .smt-msg { margin: 0 0 12px; line-height: 1.5; font-size: 14px; }
+    .smt-hp { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 13px; }
+    .smt-hp .label { min-width: 72px; }
+    .smt-hp .bar { flex: 1; height: 12px; background: #333; border-radius: 4px; overflow: hidden; }
+    .smt-hp .fill { height: 100%; background: linear-gradient(90deg, #800 0%, #c44 100%); transition: width 0.2s; }
+    .smt-hp .fill.mp { background: linear-gradient(90deg, #248 0%, #48c 100%); }
+    .smt-hp .num { min-width: 44px; text-align: right; font-size: 11px; color: #aaa; }
+    .smt-log {
+      min-height: 70px; margin: 10px 0; padding: 8px;
+      background: rgba(0,0,0,0.6); border-radius: 4px; font-size: 13px; line-height: 1.45;
+    }
+    .smt-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+    .smt-btn {
+      padding: 10px 16px; font-size: 14px; font-weight: bold; color: #fff;
+      background: linear-gradient(180deg, #604060 0%, #402040 100%);
+      border: 1px solid #806080; border-radius: 6px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .smt-btn:hover { opacity: 0.95; }
+    .smt-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .smt-btn.talk { background: linear-gradient(180deg, #406060 0%, #204040 100%); border-color: #608080; }
+    .smt-choices { display: none; margin-top: 10px; }
+    .smt-choices.visible { display: block; }
+    .smt-choices .smt-btn { display: block; width: 100%; margin-bottom: 6px; }
+    .smt-back { display: inline-block; margin-top: 16px; color: #a080a0; font-size: 14px; text-decoration: none; }
+    .smt-back:hover { text-decoration: underline; }
+    .smt-result { margin-top: 8px; padding: 8px; background: rgba(80,60,80,0.5); border-radius: 4px; font-size: 13px; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="smt-container">
+    <h1 class="smt-title">悪魔契約</h1>
+
+    <div class="smt-screen visible" id="screen-start">
+      <div class="smt-box">
+        <p class="smt-msg">廃墟に迷い込んだ。悪魔と交渉し、仲魔として従えながら戦え。</p>
+        <button type="button" class="smt-btn" id="btn-start">始める</button>
+      </div>
+    </div>
+
+    <div class="smt-screen" id="screen-battle">
+      <div class="smt-box">
+        <p class="smt-msg" id="battle-encounter">○○があらわれた！</p>
+        <div class="smt-hp"><span class="label">敵</span><div class="bar"><div class="fill" id="enemy-hp" style="width:100%"></div></div><span class="num" id="enemy-hp-num">0/0</span></div>
+        <div class="smt-hp"><span class="label">主人公</span><div class="bar"><div class="fill" id="hero-hp" style="width:100%"></div></div><span class="num" id="hero-hp-num">0/0</span></div>
+        <div class="smt-hp"><span class="label">MP</span><div class="bar"><div class="fill mp" id="hero-mp" style="width:100%"></div></div><span class="num" id="hero-mp-num">0/0</span></div>
+        <div id="demon-hps"></div>
+        <div class="smt-log" id="battle-log"></div>
+        <div class="smt-actions" id="battle-actions">
+          <button type="button" class="smt-btn" data-cmd="attack">攻撃</button>
+          <button type="button" class="smt-btn" data-cmd="magic">魔法(MP)</button>
+          <button type="button" class="smt-btn talk" data-cmd="talk">交渉</button>
+        </div>
+        <div class="smt-choices" id="talk-choices">
+          <button type="button" class="smt-btn" data-talk="flatter">おだてる</button>
+          <button type="button" class="smt-btn" data-talk="threaten">脅す</button>
+          <button type="button" class="smt-btn" data-talk="bribe">マカを渡す</button>
+        </div>
+        <div class="smt-result" id="talk-result" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="smt-screen" id="screen-victory">
+      <div class="smt-box">
+        <p class="smt-msg" id="victory-msg">勝利！</p>
+        <button type="button" class="smt-btn" id="btn-next">次へ</button>
+      </div>
+    </div>
+
+    <div class="smt-screen" id="screen-clear">
+      <div class="smt-box">
+        <p class="smt-msg">廃墟を抜けた。悪魔たちとの契約は、まだ続く……。</p>
+        <a href="/index.html" class="smt-back">トップへ戻る</a>
+      </div>
+    </div>
+
+    <div class="smt-screen" id="screen-dead">
+      <div class="smt-box">
+        <p class="smt-msg">主人公は力尽きた……。</p>
+        <button type="button" class="smt-btn" id="btn-retry">やり直す</button>
+        <a href="/index.html" class="smt-back">トップへ戻る</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var hero = { hp: 35, maxHp: 35, mp: 10, maxMp: 10, atk: 5, matk: 12 };
+  var demons = [];
+  var maxDemons = 2;
+  var macca = 0;
+  var battleCount = 0;
+  var currentEnemy = null;
+  var isPlayerTurn = true;
+  var talkResultShown = false;
+
+  var enemyPool = [
+    { name: 'ピクシー', hp: 12, maxHp: 12, atk: 2, recruit: true, macca: 5 },
+    { name: 'スライム', hp: 15, maxHp: 15, atk: 3, recruit: true, macca: 8 },
+    { name: 'ゴブリン', hp: 18, maxHp: 18, atk: 4, recruit: true, macca: 10 },
+    { name: 'ジャックフロスト', hp: 22, maxHp: 22, atk: 5, recruit: true, macca: 15 }
+  ];
+  var demonTemplates = [
+    { name: 'ピクシー', hp: 12, maxHp: 12, atk: 3 },
+    { name: 'スライム', hp: 15, maxHp: 15, atk: 4 },
+    { name: 'ゴブリン', hp: 18, maxHp: 18, atk: 5 },
+    { name: 'ジャックフロスト', hp: 22, maxHp: 22, atk: 6 }
+  ];
+
+  var logEl = document.getElementById('battle-log');
+  var encounterEl = document.getElementById('battle-encounter');
+  var enemyHpEl = document.getElementById('enemy-hp');
+  var enemyHpNumEl = document.getElementById('enemy-hp-num');
+  var heroHpEl = document.getElementById('hero-hp');
+  var heroHpNumEl = document.getElementById('hero-hp-num');
+  var heroMpEl = document.getElementById('hero-mp');
+  var heroMpNumEl = document.getElementById('hero-mp-num');
+  var demonHpsEl = document.getElementById('demon-hps');
+  var battleActions = document.getElementById('battle-actions');
+  var talkChoices = document.getElementById('talk-choices');
+  var talkResultEl = document.getElementById('talk-result');
+
+  function log(msg) {
+    if (!logEl) return;
+    logEl.textContent = (logEl.textContent ? logEl.textContent + '\n' : '') + msg;
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.smt-screen').forEach(function (s) { s.classList.remove('visible'); });
+    var el = document.getElementById(id);
+    if (el) el.classList.add('visible');
+  }
+
+  function updateBars() {
+    if (currentEnemy) {
+      var ep = Math.max(0, (currentEnemy.hp / currentEnemy.maxHp) * 100);
+      enemyHpEl.style.width = ep + '%';
+      enemyHpNumEl.textContent = currentEnemy.hp + '/' + currentEnemy.maxHp;
+    }
+    var hpP = Math.max(0, (hero.hp / hero.maxHp) * 100);
+    heroHpEl.style.width = hpP + '%';
+    heroHpNumEl.textContent = hero.hp + '/' + hero.maxHp;
+    var mpP = Math.max(0, (hero.mp / hero.maxMp) * 100);
+    heroMpEl.style.width = mpP + '%';
+    heroMpNumEl.textContent = hero.mp + '/' + hero.maxMp;
+    demonHpsEl.innerHTML = demons.map(function (d, i) {
+      var p = Math.max(0, (d.hp / d.maxHp) * 100);
+      return '<div class="smt-hp"><span class="label">' + d.name + '</span><div class="bar"><div class="fill" style="width:' + p + '%"></div></div><span class="num">' + d.hp + '/' + d.maxHp + '</span></div>';
+    }).join('');
+  }
+
+  function getDemonByName(name) {
+    for (var i = 0; i < demonTemplates.length; i++) {
+      if (demonTemplates[i].name === name) return demonTemplates[i];
+    }
+    return null;
+  }
+
+  function startBattle() {
+    battleCount++;
+    var isBoss = battleCount >= 4;
+    var idx = isBoss ? 3 : Math.min(Math.floor(Math.random() * (battleCount + 1)), enemyPool.length - 1);
+    var t = enemyPool[idx];
+    currentEnemy = { name: t.name, hp: t.maxHp, maxHp: t.maxHp, atk: t.atk, recruit: t.recruit, macca: t.macca };
+    encounterEl.textContent = currentEnemy.name + 'があらわれた！';
+    logEl.textContent = '';
+    log(currentEnemy.name + 'が あらわれた！');
+    isPlayerTurn = true;
+    talkChoices.classList.remove('visible');
+    talkResultEl.style.display = 'none';
+    battleActions.style.display = 'flex';
+    updateBars();
+    showScreen('screen-battle');
+  }
+
+  function enemyTurn(callback) {
+    if (!currentEnemy || currentEnemy.hp <= 0) { if (callback) callback(); return; }
+    var dmg = currentEnemy.atk + Math.floor(Math.random() * 3);
+    dmg = Math.max(1, dmg);
+    hero.hp -= dmg;
+    hero.hp = Math.max(0, hero.hp);
+    log(currentEnemy.name + 'の 攻撃！ 主人公に' + dmg + 'のダメージ！');
+    updateBars();
+    if (hero.hp <= 0) {
+      showScreen('screen-dead');
+      return;
+    }
+    for (var i = 0; i < demons.length; i++) {
+      if (demons[i].hp <= 0) continue;
+      var edmg = Math.floor(Math.random() * 2) + 1;
+      currentEnemy.hp -= (demons[i].atk + edmg);
+      currentEnemy.hp = Math.max(0, currentEnemy.hp);
+      log(demons[i].name + 'の 攻撃！ ' + currentEnemy.name + 'に' + (demons[i].atk + edmg) + 'のダメージ！');
+      updateBars();
+      if (currentEnemy.hp <= 0) break;
+    }
+    if (currentEnemy.hp <= 0) {
+      winBattle();
+      return;
+    }
+    isPlayerTurn = true;
+    if (callback) callback();
+  }
+
+  function winBattle() {
+    var mc = currentEnemy.macca || 10;
+    macca += mc;
+    log('勝利！ マカ' + mc + 'を手に入れた。');
+    document.getElementById('victory-msg').textContent = '勝利！ マカ' + mc + 'を手に入れた。' + (demons.length > 0 ? ' 仲魔' + demons.length + '体' : '');
+    showScreen('screen-victory');
+  }
+
+  function doAttack() {
+    if (!isPlayerTurn || !currentEnemy) return;
+    var dmg = hero.atk + Math.floor(Math.random() * 4);
+    dmg = Math.max(2, dmg);
+    currentEnemy.hp -= dmg;
+    currentEnemy.hp = Math.max(0, currentEnemy.hp);
+    log('主人公の 攻撃！ ' + currentEnemy.name + 'に' + dmg + 'のダメージ！');
+    updateBars();
+    if (currentEnemy.hp <= 0) { winBattle(); return; }
+    isPlayerTurn = false;
+    battleActions.querySelectorAll('.smt-btn').forEach(function (b) { b.disabled = true; });
+    setTimeout(function () { enemyTurn(function () { battleActions.querySelectorAll('.smt-btn').forEach(function (b) { b.disabled = false; }); }); }, 1200);
+  }
+
+  function doMagic() {
+    if (!isPlayerTurn || !currentEnemy || hero.mp < 3) return;
+    hero.mp -= 3;
+    var dmg = hero.matk + Math.floor(Math.random() * 5);
+    dmg = Math.max(5, dmg);
+    currentEnemy.hp -= dmg;
+    currentEnemy.hp = Math.max(0, currentEnemy.hp);
+    log('主人公の 魔法！ ' + currentEnemy.name + 'に' + dmg + 'のダメージ！');
+    updateBars();
+    if (currentEnemy.hp <= 0) { winBattle(); return; }
+    isPlayerTurn = false;
+    battleActions.querySelectorAll('.smt-btn').forEach(function (b) { b.disabled = true; });
+    setTimeout(function () { enemyTurn(function () { battleActions.querySelectorAll('.smt-btn').forEach(function (b) { b.disabled = (b.dataset.cmd === 'magic' && hero.mp < 3); }); }); }, 1200);
+  }
+
+  function doTalk(choice) {
+    if (!isPlayerTurn || !currentEnemy) return;
+    battleActions.style.display = 'none';
+    talkChoices.classList.remove('visible');
+    var r = Math.random();
+    var joined = false;
+    var gotMacca = false;
+    if (currentEnemy.recruit && demons.length < maxDemons && r < 0.4) {
+      var t = getDemonByName(currentEnemy.name);
+      if (t) {
+        demons.push({ name: t.name, hp: t.maxHp, maxHp: t.maxHp, atk: t.atk });
+        log(currentEnemy.name + 'が 仲魔になった！');
+        joined = true;
+      }
+    }
+    if (!joined && r < 0.6) {
+      var mc = Math.floor(currentEnemy.macca * 0.5) + 1;
+      macca += mc;
+      log(currentEnemy.name + 'から マカ' + mc + 'を もらった！');
+      gotMacca = true;
+    }
+    if (!joined && !gotMacca) {
+      log(currentEnemy.name + 'は 怒った！');
+      isPlayerTurn = false;
+      talkResultEl.style.display = 'block';
+      talkResultEl.textContent = '交渉に失敗した……。';
+      setTimeout(function () {
+        talkResultEl.style.display = 'none';
+        battleActions.style.display = 'flex';
+        enemyTurn(function () {
+          battleActions.querySelectorAll('.smt-btn').forEach(function (b) { b.disabled = false; });
+        });
+      }, 800);
+      return;
+    }
+    talkResultEl.style.display = 'block';
+    talkResultEl.textContent = joined ? '仲魔に加わった！' : 'マカを手に入れた！';
+    isPlayerTurn = false;
+    setTimeout(function () {
+      talkResultEl.style.display = 'none';
+      battleActions.style.display = 'flex';
+      enemyTurn(function () {
+        battleActions.querySelectorAll('.smt-btn').forEach(function (b) { b.disabled = false; });
+      });
+    }, 1000);
+  }
+
+  function showTalkChoices() {
+    if (!isPlayerTurn || !currentEnemy) return;
+    talkChoices.classList.add('visible');
+    talkResultEl.style.display = 'none';
+  }
+
+  document.getElementById('btn-start').addEventListener('click', function () {
+    hero.hp = hero.maxHp;
+    hero.mp = hero.maxMp;
+    demons = [];
+    battleCount = 0;
+    macca = 0;
+    startBattle();
+  });
+
+  document.getElementById('btn-next').addEventListener('click', function () {
+    if (battleCount >= 4) {
+      showScreen('screen-clear');
+      return;
+    }
+    startBattle();
+  });
+
+  document.getElementById('btn-retry').addEventListener('click', function () {
+    hero.hp = hero.maxHp;
+    hero.mp = hero.maxMp;
+    demons = [];
+    battleCount = 0;
+    startBattle();
+  });
+
+  battleActions.addEventListener('click', function (e) {
+    var cmd = e.target.dataset.cmd;
+    if (cmd === 'attack') doAttack();
+    if (cmd === 'magic') doMagic();
+    if (cmd === 'talk') showTalkChoices();
+  });
+
+  talkChoices.addEventListener('click', function (e) {
+    var t = e.target.dataset.talk;
+    if (t) doTalk(t);
+  });
+})();
+  </script>
+</body>
+</html>

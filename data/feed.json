@@ -67,6 +67,45 @@
       "trendingScore": 30
     },
     {
+      "id": "sv-like",
+      "type": "game",
+      "title": "シャチクバース フォロワーで相手を討つ",
+      "url": "/games/sv-like/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-01T22:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 83
+    },
+    {
+      "id": "box-maker",
+      "type": "game",
+      "title": "ボックスメーカー はこをふやそう",
+      "url": "/games/box-maker/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-01T20:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 84
+    },
+    {
+      "id": "megami-like",
+      "type": "game",
+      "title": "悪魔契約 交渉して仲魔と戦え",
+      "url": "/games/megami-like/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-01T18:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 86
+    },
+    {
       "id": "jump-action",
       "type": "game",
       "title": "ジャンプアクション ゴールを目指せ",
