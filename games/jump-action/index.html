@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>ジャンプアクション – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; touch-action: none; -webkit-tap-highlight-color: transparent; }
+    body.game-page {
+      padding-top: 48px;
+      background: #5c94fc;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .game-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 480px;
+      padding: 8px;
+    }
+    .game-canvas-wrap {
+      width: 100%;
+      max-height: 50vh;
+      aspect-ratio: 4/3;
+      max-width: 100%;
+      background: #5c94fc;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .game-ui {
+      margin-top: 12px;
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .game-keys {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .game-btn {
+      width: 56px;
+      height: 56px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-size: 24px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    .game-btn:active { transform: scale(0.95); background: rgba(220,220,255,0.95); }
+    .game-btn.jump {
+      width: 80px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .game-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 48px 16px 0;
+    }
+    .game-overlay.visible { display: flex; }
+    .game-overlay-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      max-width: 320px;
+    }
+    .game-overlay-box h2 { margin-bottom: 12px; font-size: 1.25rem; }
+    .game-overlay-box p { margin-bottom: 16px; color: #666; font-size: 14px; }
+    .game-overlay-box .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #5c94fc;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .game-overlay-box .btn:active { opacity: 0.9; }
+    .game-back { display: inline-block; margin-top: 16px; color: #fff; font-size: 14px; text-decoration: none; }
+    .game-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="game-wrap">
+    <div class="game-canvas-wrap">
+      <canvas id="gameCanvas" width="400" height="300"></canvas>
+    </div>
+    <div class="game-ui">
+      <div class="game-keys">
+        <button type="button" class="game-btn" id="btnLeft" aria-label="左">←</button>
+        <button type="button" class="game-btn" id="btnRight" aria-label="右">→</button>
+      </div>
+      <button type="button" class="game-btn jump" id="btnJump" aria-label="ジャンプ">ジャンプ</button>
+    </div>
+  </div>
+
+  <div class="game-overlay" id="overlayStart">
+    <div class="game-overlay-box">
+      <h2>ジャンプアクション</h2>
+      <p>←→で移動、ジャンプで敵の上から踏もう。ゴールを目指せ！</p>
+      <button type="button" class="btn" id="btnStart">スタート</button>
+    </div>
+  </div>
+  <div class="game-overlay" id="overlayClear">
+    <div class="game-overlay-box">
+      <h2>クリア！</h2>
+      <p>ゴールにたどり着いた！</p>
+      <button type="button" class="btn" id="btnRetry">もう一度</button>
+      <a href="/index.html" class="game-back">トップへ戻る</a>
+    </div>
+  </div>
+  <div class="game-overlay" id="overlayDead">
+    <div class="game-overlay-box">
+      <h2>ゲームオーバー</h2>
+      <p>敵に当たった…</p>
+      <button type="button" class="btn" id="btnRetryDead">やり直す</button>
+      <a href="/index.html" class="game-back">トップへ戻る</a>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var canvas = document.getElementById('gameCanvas');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width;
+  var H = canvas.height;
+  var TILE = 32;
+
+  var keys = { left: false, right: false, jump: false };
+  var player = { x: 48, y: 0, w: 24, h: 28, vx: 0, vy: 0, onGround: false };
+  var GRAVITY = 0.6;
+  var MOVE_SPEED = 4;
+  var JUMP_FORCE = -11;
+  var GROUND_Y = H - TILE - player.h;
+
+  var platforms = [
+    { x: 0, y: H - TILE, w: W, h: TILE },
+    { x: 120, y: H - TILE - 64, w: 80, h: 16 },
+    { x: 240, y: H - TILE - 96, w: 80, h: 16 },
+    { x: 360, y: H - TILE - 48, w: 48, h: 16 }
+  ];
+
+  var enemies = [
+    { x: 160, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 120, max: 220 },
+    { x: 280, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 260, max: 360 }
+  ];
+
+  var goal = { x: W - 48, y: H - TILE - 48, w: 32, h: 48 };
+  var gameState = 'start';
+  var cameraX = 0;
+
+  function drawRect(x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+  }
+
+  function drawBlock(x, y, w, h) {
+    ctx.fillStyle = '#c04000';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#804020';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+  }
+
+  function drawPlayer() {
+    var px = player.x - cameraX;
+    var py = player.y;
+    if (px < -player.w || px > W + player.w) return;
+    ctx.fillStyle = '#e00000';
+    ctx.fillRect(px, py, player.w, player.h);
+    ctx.strokeStyle = '#800000';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(px, py, player.w, player.h);
+  }
+
+  function drawEnemy(e) {
+    var ex = e.x - cameraX;
+    if (ex < -e.w || ex > W + e.w) return;
+    ctx.fillStyle = '#333';
+    ctx.fillRect(ex, e.y, e.w, e.h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(ex + 4, e.y + 6, 6, 6);
+    ctx.fillRect(ex + 14, e.y + 6, 6, 6);
+  }
+
+  function drawGoal() {
+    var gx = goal.x - cameraX;
+    if (gx < -goal.w || gx > W + goal.w) return;
+    ctx.fillStyle = '#f0e000';
+    ctx.fillRect(gx, goal.y, goal.w, goal.h);
+    ctx.strokeStyle = '#a08000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(gx, goal.y, goal.w, goal.h);
+  }
+
+  function aabb(ax, ay, aw, ah, bx, by, bw, bh) {
+    return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+  }
+
+  function updateCamera() {
+    var target = player.x - W * 0.4;
+    cameraX = Math.max(0, Math.min(target, 400));
+  }
+
+  function updatePlayer(dt) {
+    if (keys.left) player.vx = -MOVE_SPEED;
+    else if (keys.right) player.vx = MOVE_SPEED;
+    else player.vx *= 0.8;
+    if (keys.jump && player.onGround) {
+      player.vy = JUMP_FORCE;
+      player.onGround = false;
+    }
+    player.vy += GRAVITY;
+    player.x += player.vx * (dt / 16);
+    player.y += player.vy * (dt / 16);
+    player.onGround = false;
+    player.x = Math.max(0, Math.min(player.x, W - player.w - 16));
+    if (player.y >= GROUND_Y) {
+      player.y = GROUND_Y;
+      player.vy = 0;
+      player.onGround = true;
+    }
+    for (var i = 0; i < platforms.length; i++) {
+      var p = platforms[i];
+      if (p.y === H - TILE) continue;
+      if (player.vx !== 0 && aabb(player.x, player.y, player.w, player.h, p.x, p.y, p.w, p.h)) {
+        var overlapLeft = (player.x + player.w) - p.x;
+        var overlapRight = (p.x + p.w) - player.x;
+        var overlapTop = (player.y + player.h) - p.y;
+        var overlapBottom = (p.y + p.h) - player.y;
+        var minX = Math.min(overlapLeft, overlapRight);
+        var minY = Math.min(overlapTop, overlapBottom);
+        if (minY < minX) {
+          if (overlapTop < overlapBottom) {
+            player.y = p.y - player.h;
+            player.vy = 0;
+            player.onGround = true;
+          } else {
+            player.y = p.y + p.h;
+            player.vy = 0;
+          }
+        } else {
+          if (overlapLeft < overlapRight) player.x = p.x - player.w;
+          else player.x = p.x + p.w;
+          player.vx = 0;
+        }
+      }
+      if (player.vy > 0 && aabb(player.x, player.y, player.w, player.h, p.x, p.y, p.w, p.h)) {
+        var prevBottom = player.y + player.h - player.vy * (dt / 16);
+        if (prevBottom <= p.y + 8) {
+          player.y = p.y - player.h;
+          player.vy = 0;
+          player.onGround = true;
+        }
+      }
+      if (player.vy < 0 && aabb(player.x, player.y, player.w, player.h, p.x, p.y, p.w, p.h)) {
+        if (player.y <= p.y + p.h && player.y + player.vy * (1/16) >= p.y + p.h) {
+          player.y = p.y + p.h;
+          player.vy = 0;
+        }
+      }
+    }
+  }
+
+  function updateEnemies(dt) {
+    for (var i = 0; i < enemies.length; i++) {
+      var e = enemies[i];
+      e.x += e.vx * (dt / 16);
+      if (e.x <= e.min) { e.x = e.min; e.vx = -e.vx; }
+      if (e.x >= e.max) { e.x = e.max; e.vx = -e.vx; }
+    }
+  }
+
+  function checkEnemies() {
+    for (var i = 0; i < enemies.length; i++) {
+      var e = enemies[i];
+      if (!aabb(player.x, player.y, player.w, player.h, e.x, e.y, e.w, e.h)) continue;
+      if (player.vy > 0 && player.y + player.h - 8 <= e.y + 12) {
+        enemies.splice(i, 1);
+        player.vy = -6;
+        return;
+      }
+      gameState = 'dead';
+      document.getElementById('overlayDead').classList.add('visible');
+      return;
+    }
+  }
+
+  function checkGoal() {
+    if (aabb(player.x, player.y, player.w, player.h, goal.x, goal.y, goal.w, goal.h)) {
+      gameState = 'clear';
+      document.getElementById('overlayClear').classList.add('visible');
+    }
+  }
+
+  function reset() {
+    player.x = 48;
+    player.y = GROUND_Y;
+    player.vx = 0;
+    player.vy = 0;
+    player.onGround = true;
+    enemies.length = 0;
+    enemies.push(
+      { x: 160, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 120, max: 220 },
+      { x: 280, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 260, max: 360 }
+    );
+    gameState = 'play';
+  }
+
+  var lastTime = 0;
+  function loop(now) {
+    var dt = Math.min(now - lastTime, 50);
+    lastTime = now;
+    if (gameState === 'play') {
+      updatePlayer(dt);
+      updateEnemies(dt);
+      checkEnemies();
+      checkGoal();
+      updateCamera();
+    }
+    ctx.fillStyle = '#5c94fc';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#8b4513';
+    ctx.fillRect(-cameraX, H - TILE, W + cameraX + 200, TILE);
+    for (var i = 0; i < platforms.length; i++) {
+      var p = platforms[i];
+      if (p.y < H - TILE) drawBlock(p.x - cameraX, p.y, p.w, p.h);
+    }
+    drawGoal();
+    for (var i = 0; i < enemies.length; i++) drawEnemy(enemies[i]);
+    drawPlayer();
+    requestAnimationFrame(loop);
+  }
+
+  document.getElementById('btnStart').addEventListener('click', function () {
+    document.getElementById('overlayStart').classList.remove('visible');
+    gameState = 'play';
+  });
+  document.getElementById('btnRetry').addEventListener('click', function () {
+    document.getElementById('overlayClear').classList.remove('visible');
+    reset();
+  });
+  document.getElementById('btnRetryDead').addEventListener('click', function () {
+    document.getElementById('overlayDead').classList.remove('visible');
+    reset();
+  });
+
+  document.getElementById('btnLeft').addEventListener('touchstart', function (e) { e.preventDefault(); keys.left = true; });
+  document.getElementById('btnLeft').addEventListener('touchend', function (e) { e.preventDefault(); keys.left = false; });
+  document.getElementById('btnLeft').addEventListener('mousedown', function () { keys.left = true; });
+  document.getElementById('btnLeft').addEventListener('mouseup', function () { keys.left = false; });
+  document.getElementById('btnLeft').addEventListener('mouseleave', function () { keys.left = false; });
+
+  document.getElementById('btnRight').addEventListener('touchstart', function (e) { e.preventDefault(); keys.right = true; });
+  document.getElementById('btnRight').addEventListener('touchend', function (e) { e.preventDefault(); keys.right = false; });
+  document.getElementById('btnRight').addEventListener('mousedown', function () { keys.right = true; });
+  document.getElementById('btnRight').addEventListener('mouseup', function () { keys.right = false; });
+  document.getElementById('btnRight').addEventListener('mouseleave', function () { keys.right = false; });
+
+  document.getElementById('btnJump').addEventListener('touchstart', function (e) { e.preventDefault(); keys.jump = true; });
+  document.getElementById('btnJump').addEventListener('touchend', function (e) { e.preventDefault(); keys.jump = false; });
+  document.getElementById('btnJump').addEventListener('mousedown', function () { keys.jump = true; });
+  document.getElementById('btnJump').addEventListener('mouseup', function () { keys.jump = false; });
+  document.getElementById('btnJump').addEventListener('mouseleave', function () { keys.jump = false; });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.code === 'ArrowLeft') { keys.left = true; e.preventDefault(); }
+    if (e.code === 'ArrowRight') { keys.right = true; e.preventDefault(); }
+    if (e.code === 'Space' || e.code === 'ArrowUp') { keys.jump = true; e.preventDefault(); }
+  });
+  document.addEventListener('keyup', function (e) {
+    if (e.code === 'ArrowLeft') keys.left = false;
+    if (e.code === 'ArrowRight') keys.right = false;
+    if (e.code === 'Space' || e.code === 'ArrowUp') keys.jump = false;
+  });
+
+  document.getElementById('overlayStart').classList.add('visible');
+  requestAnimationFrame(loop);
+})();
+  </script>
+</body>
+</html>

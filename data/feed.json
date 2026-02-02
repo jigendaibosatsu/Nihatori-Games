@@ -67,6 +67,32 @@
       "trendingScore": 30
     },
     {
+      "id": "jump-action",
+      "type": "game",
+      "title": "ジャンプアクション ゴールを目指せ",
+      "url": "/games/jump-action/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-01T16:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 88
+    },
+    {
+      "id": "mini-dq",
+      "type": "game",
+      "title": "小さな冒険 洞窟でスライムと戦う",
+      "url": "/games/mini-dq/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-01T14:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 85
+    },
+    {
       "id": "omikuji",
       "type": "game",
       "title": "おみくじ 運勢を引く",
@@ -78,6 +104,19 @@
       "isNew": true,
       "recommended": true,
       "trendingScore": 82
+    },
+    {
+      "id": "update-template",
+      "type": "post",
+      "title": "日常更新テンプレ 最短・確実",
+      "url": "/blog/2026-01-31-update-template.html",
+      "image": null,
+      "category": "devlog",
+      "publishedAt": "2026-01-31T12:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 72
     },
     {
       "id": "6",
