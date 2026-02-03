@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>日本列島合戦 – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #1b5e20;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .war-wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 8px;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .war-title { font-size: 1.1rem; margin-bottom: 12px; text-align: center; font-weight: bold; }
+    .war-setup {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    .war-setup label { font-size: 12px; color: #2e7d32; }
+    .war-setup-row { display: flex; gap: 8px; align-items: center; width: 100%; }
+    .war-setup-row input[type="text"] { flex: 1; padding: 6px 8px; border: 2px solid #66bb6a; border-radius: 6px; font-size: 14px; }
+    .war-setup-row input[type="color"] { width: 36px; height: 32px; padding: 2px; border: 2px solid #66bb6a; border-radius: 6px; cursor: pointer; }
+    .war-setup input { padding: 6px 8px; border: 2px solid #66bb6a; border-radius: 6px; font-size: 14px; width: 100%; }
+    .war-btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #43a047, #2e7d32);
+      border: 2px solid #66bb6a;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .war-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .war-map-wrap {
+      background: #e0e0e0;
+      border: 2px solid #2e7d32;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      text-align: center;
+      position: relative;
+      min-height: min(60vh, 400px);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .war-map-inner { position: relative; width: 100%; flex: 1; min-height: min(50vh, 320px); }
+    .war-canvas { display: block; width: 100%; height: 100%; pointer-events: none; }
+    @media (max-width: 480px) { .war-wrap { padding: 6px; } .war-map-wrap { min-height: 50vh; } }
+    .war-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; justify-content: center; }
+    .war-stat {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .war-stat .war-lv { font-size: 10px; opacity: 0.9; }
+    .war-ranking { margin-bottom: 8px; font-size: 12px; color: #1b5e20; }
+    .war-ranking .war-rank-item { margin: 2px 0; }
+    .war-log {
+      min-height: 100px;
+      max-height: 160px;
+      overflow-y: auto;
+      padding: 10px;
+      background: rgba(0,0,0,0.08);
+      border: 2px solid #81c784;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+    .war-back { display: inline-block; margin-top: 12px; color: #2e7d32; font-size: 14px; text-decoration: none; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="war-wrap">
+    <h1 class="war-title">日本列島合戦</h1>
+
+    <div class="war-setup" id="setup">
+      <label>ゲーム速度</label>
+      <div class="war-setup-row">
+        <select id="gameSpeed">
+          <option value="1" selected>1倍</option>
+          <option value="1.5">1.5倍</option>
+          <option value="2">2倍</option>
+          <option value="2.5">2.5倍</option>
+        </select>
+      </div>
+      <label>陣営1</label>
+      <div class="war-setup-row"><input type="text" id="name0" value="東軍" maxlength="10" placeholder="名前" /><input type="text" id="igii0" value="義" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color0" value="#e53935" title="色" /></div>
+      <label>陣営2</label>
+      <div class="war-setup-row"><input type="text" id="name1" value="西軍" maxlength="10" placeholder="名前" /><input type="text" id="igii1" value="礼" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color1" value="#1e88e5" title="色" /></div>
+      <label>陣営3</label>
+      <div class="war-setup-row"><input type="text" id="name2" value="北軍" maxlength="10" placeholder="名前" /><input type="text" id="igii2" value="仁" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color2" value="#43a047" title="色" /></div>
+      <label>陣営4</label>
+      <div class="war-setup-row"><input type="text" id="name3" value="南軍" maxlength="10" placeholder="名前" /><input type="text" id="igii3" value="智" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color3" value="#fb8c00" title="色" /></div>
+    </div>
+
+    <button type="button" class="war-btn" id="btnStart">合戦開始</button>
+
+    <div class="war-map-wrap" id="mapWrap" style="display:none">
+      <div class="war-map-inner" id="warMapInner">
+        <canvas class="war-canvas" id="warCanvas" width="512" height="1024"></canvas>
+      </div>
+    </div>
+
+    <div class="war-stats" id="warStats" style="display:none"></div>
+    <div class="war-ranking" id="warRanking" style="display:none"></div>
+    <div class="war-log" id="warLog">陣営の名前を いれて 合戦開始を おそう！</div>
+
+    <a href="/index.html" class="war-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var GRID_COLS = 20;
+  var GRID_ROWS = 10;
+  var NUM_BASES = GRID_COLS * GRID_ROWS;
+  var NEUTRAL = -1;
+  var REQUIRED_HITS = [];
+  for (var i = 0; i < 500; i++) REQUIRED_HITS[i] = 1 + (i % 4);
+
+  var CAMP_COLORS = ['#e53935', '#1e88e5', '#43a047', '#fb8c00'];
+  var CAMP_NAMES = ['東軍', '西軍', '北軍', '南軍'];
+  var NUM_CAMPS = 4;
+
+  var CANVAS_W = 512, CANVAS_H = 512;
+  var pathW = 512, pathH = 512;
+  var cellSize = 20;
+  var cellW = 20, cellH = 20;
+  var gridW = 400, gridH = 200;
+  var GRID_X0 = 56, GRID_Y0 = 156;
+  var BASE_R = 8;
+  var BALL_R = 5;
+
+  function resizeCanvas() {
+    var inner = document.getElementById('warMapInner');
+    var canvas = document.getElementById('warCanvas');
+    if (!inner || !canvas) return;
+    var w = inner.clientWidth || 300;
+    var h = inner.clientHeight || 300;
+    if (w < 100) w = 300;
+    if (h < 100) h = 300;
+    canvas.width = w;
+    canvas.height = h;
+    CANVAS_W = w;
+    CANVAS_H = h;
+    pathW = w;
+    pathH = h;
+    GRID_ROWS = Math.max(10, Math.round(GRID_COLS * pathH / pathW));
+    NUM_BASES = GRID_COLS * GRID_ROWS;
+    for (var i = 0; i < NUM_BASES; i++) REQUIRED_HITS[i] = 1 + (i % 4);
+    cellSize = Math.min(pathW / GRID_COLS, pathH / GRID_ROWS);
+    cellW = cellSize;
+    cellH = cellSize;
+    gridW = GRID_COLS * cellSize;
+    gridH = GRID_ROWS * cellSize;
+    GRID_X0 = (pathW - gridW) / 2;
+    GRID_Y0 = (pathH - gridH) / 2;
+    BASE_R = cellSize * 0.4;
+  }
+
+  var BASE_SPEED = 1.0;
+  var GAME_SPEED = 1;
+  var HIT_COOLDOWN = 30;
+  var SWORD_ORBIT_R_BALL = 14;
+  var SWORD_TIP_BASE = 8;
+  var SWORD_BASE_BASE = 6;
+
+  var XP_FOR_LEVEL = [0, 280, 700, 1260, 1960, 2800, 3780, 4900, 6160, 7560, 9100, 10800, 12800, 15100, 17700, 20600, 23800, 27300, 31100, 35200];
+  var XP_PER_CONQUEST_BASE = 12;
+  var XP_PER_REQUIRED_HIT = 1;
+
+  var KANJI_ONE = ['信', '秀', '家', '龍', '政', '謙', '玄', '氏', '元', '尊', '正', '頼', '清', '道', '鑑', '空', '最', '北', '諭', '重', '博', '松', '忠', '光', '景', '輝', '昌', '盛', '康', '泰'];
+  var state = {
+    running: false,
+    owner: [],
+    regionHits: [],
+    names: CAMP_NAMES.slice(),
+    colors: CAMP_COLORS.slice(),
+    igii: ['義', '礼', '仁', '智'],
+    cellSwordTint: [],
+    log: [],
+    balls: [],
+    ballCooldown: {},
+    animId: null,
+    eliminated: {},
+    eliminationOrder: [],
+    eliminationRank: {},
+    hadTerritory: {}
+  };
+
+  function getBallRadius(level) {
+    return BALL_R + Math.min(20, (level || 1) * 0.8);
+  }
+
+  function drawCrown(ctx, x, y, size) {
+    var s = size / 64;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(s, s);
+    ctx.translate(-32, -32);
+    ctx.fillStyle = '#FFD400';
+    ctx.strokeStyle = '#b8860b';
+    ctx.lineWidth = 1.5 / s;
+    ctx.beginPath();
+    ctx.moveTo(6, 24);
+    ctx.lineTo(12, 40);
+    ctx.lineTo(20, 26);
+    ctx.lineTo(28, 40);
+    ctx.lineTo(32, 18);
+    ctx.lineTo(36, 40);
+    ctx.lineTo(44, 26);
+    ctx.lineTo(52, 40);
+    ctx.lineTo(58, 24);
+    ctx.lineTo(54, 52);
+    ctx.quadraticCurveTo(53, 56, 49, 56);
+    ctx.lineTo(15, 56);
+    ctx.quadraticCurveTo(11, 56, 10, 52);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function getUsedSecondsForIgii(igii, excludeBall) {
+    var used = {};
+    for (var i = 0; i < state.balls.length; i++) {
+      var b = state.balls[i];
+      if (b === excludeBall || b.dead || !b.figureName) continue;
+      if (b.figureName[0] === igii && b.figureName[1]) used[b.figureName[1]] = true;
+    }
+    return used;
+  }
+
+  function pickSecondKanji(igii) {
+    var pool = [];
+    for (var k = 0; k < KANJI_ONE.length; k++) if (KANJI_ONE[k] !== igii) pool.push(KANJI_ONE[k]);
+    var arr = pool.length > 0 ? pool : KANJI_ONE;
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function getFigureName(ball) {
+    if ((ball.level || 0) < 5) return '';
+    if (!ball.figureName) {
+      var igii = (state.igii && state.igii[ball.camp]) || '義';
+      var used = getUsedSecondsForIgii(igii, ball);
+      var pool = [];
+      for (var k = 0; k < KANJI_ONE.length; k++) {
+        if (KANJI_ONE[k] !== igii && !used[KANJI_ONE[k]]) pool.push(KANJI_ONE[k]);
+      }
+      var second = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : pickSecondKanji(igii);
+      ball.figureName = igii + second;
+    }
+    return ball.figureName;
+  }
+
+  var IGII_POOL = ['義', '礼', '仁', '智', '忠', '信', '孝', '和', '勇', '誠'];
+  function getIgii() {
+    var el = document.getElementById('igii0');
+    if (!el) return state.igii || ['義', '礼', '仁', '智'];
+    function one(camp) {
+      var id = 'igii' + camp;
+      var v = (document.getElementById(id) && document.getElementById(id).value.trim()) || '';
+      if (v) return v.slice(0, 1);
+      return IGII_POOL[Math.floor(Math.random() * IGII_POOL.length)];
+    }
+    return [one(0), one(1), one(2), one(3)];
+  }
+
+  var WEAPON_TYPES = ['sword', 'shield'];
+  var WEAPON_DOUBLE_PROB = 0.001;
+  var WEAPON_TRIPLE_PROB = 0.0001;
+
+  function rollWeaponCount(ball) {
+    if (ball.weaponCount !== undefined) return ball.weaponCount;
+    var r = Math.random();
+    ball.weaponCount = r < WEAPON_TRIPLE_PROB ? 3 : (r < WEAPON_DOUBLE_PROB ? 2 : 1);
+    return ball.weaponCount;
+  }
+
+  function getWeaponType(ball) {
+    if (ball.weaponType !== undefined) return ball.weaponType;
+    if ((ball.level || 0) >= 3) ball.weaponType = WEAPON_TYPES[Math.floor(Math.random() * WEAPON_TYPES.length)];
+    return ball.weaponType;
+  }
+
+  function getSwordCount(level, ball) {
+    if (level < 3) return 0;
+    var wt = ball && getWeaponType(ball);
+    if (wt !== 'sword') return 0;
+    rollWeaponCount(ball);
+    return ball.weaponCount;
+  }
+
+  function getShieldCount(level, ball) {
+    if (level < 3) return 0;
+    if (ball && ball.shieldLost) return 0;
+    if (ball && getWeaponType(ball) !== 'shield') return 0;
+    rollWeaponCount(ball);
+    return ball.weaponCount;
+  }
+
+  function getAttackPower(level) {
+    return 1 + Math.floor(level / 2);
+  }
+
+  function getLevelFromXP(xp) {
+    var lv = 1;
+    for (var i = XP_FOR_LEVEL.length - 1; i >= 0; i--) {
+      if (xp >= XP_FOR_LEVEL[i]) { lv = i + 1; break; }
+    }
+    return lv;
+  }
+
+  function getSwordTipLen(level, ball) {
+    var base = SWORD_TIP_BASE + (level || 1) * 3;
+    return base + ((ball && ball.swordLengthBonus) || 0);
+  }
+
+  function getSwordRotationSpeed(level, ball) {
+    var base = 0.02 + (level || 1) * 0.008;
+    return base + ((ball && ball.weaponRotationBonus) || 0);
+  }
+
+  function getSwordBaseSize(level) {
+    return SWORD_BASE_BASE + level * 1.2;
+  }
+
+  function getNames() {
+    return [
+      document.getElementById('name0').value.trim() || '東軍',
+      document.getElementById('name1').value.trim() || '西軍',
+      document.getElementById('name2').value.trim() || '北軍',
+      document.getElementById('name3').value.trim() || '南軍'
+    ];
+  }
+
+  function getGameSpeed() {
+    var el = document.getElementById('gameSpeed');
+    return el ? parseFloat(el.value) || 1 : 1;
+  }
+
+  function getColors() {
+    var el0 = document.getElementById('color0');
+    if (!el0) return CAMP_COLORS.slice();
+    return [
+      (el0.value || CAMP_COLORS[0]),
+      (document.getElementById('color1').value || CAMP_COLORS[1]),
+      (document.getElementById('color2').value || CAMP_COLORS[2]),
+      (document.getElementById('color3').value || CAMP_COLORS[3])
+    ];
+  }
+
+  function getCellCenter(k) {
+    var col = k % GRID_COLS;
+    var row = Math.floor(k / GRID_COLS);
+    return { x: GRID_X0 + (col + 0.5) * cellSize, y: GRID_Y0 + (row + 0.5) * cellSize };
+  }
+
+  function getCellAt(px, py) {
+    var col = Math.floor((px - GRID_X0) / cellSize);
+    var row = Math.floor((py - GRID_Y0) / cellSize);
+    if (col < 0 || col >= GRID_COLS || row < 0 || row >= GRID_ROWS) return -1;
+    return row * GRID_COLS + col;
+  }
+
+  function snapBallToGrid(ball) {
+    var idx = getCellAt(ball.x, ball.y);
+    if (idx >= 0) return;
+    var col = Math.max(0, Math.min(GRID_COLS - 1, Math.floor((ball.x - GRID_X0) / cellSize)));
+    var row = Math.max(0, Math.min(GRID_ROWS - 1, Math.floor((ball.y - GRID_Y0) / cellSize)));
+    var cen = getCellCenter(row * GRID_COLS + col);
+    ball.x = cen.x;
+    ball.y = cen.y;
+  }
+
+  function getBallCount(camp) {
+    var n = countTerritory(camp);
+    if (n <= 0) return 0;
+    return Math.max(1, 1 + Math.floor(n / 25));
+  }
+
+  function getSpeedForLevel(level, ball) {
+    var base = BASE_SPEED + Math.max(0, level || 1) * 0.08;
+    return base + ((ball && ball.speedBonus) || 0);
+  }
+
+  function applyLevelUpBonus(ball, newLevel) {
+    if (newLevel >= 3 && !ball.weaponType) {
+      ball.weaponType = WEAPON_TYPES[Math.floor(Math.random() * WEAPON_TYPES.length)];
+      rollWeaponCount(ball);
+    }
+  }
+
+  function initMap() {
+    state.owner = [];
+    state.regionHits = [];
+    state.cellSwordTint = [];
+    state.eliminated = {};
+    state.eliminationOrder = [];
+    state.eliminationRank = {};
+    state.hadTerritory = {};
+    for (var i = 0; i < NUM_BASES; i++) {
+      state.owner[i] = NEUTRAL;
+      state.regionHits[i] = 0;
+      state.cellSwordTint[i] = -1;
+    }
+    state.owner.length = NUM_BASES;
+    state.regionHits.length = NUM_BASES;
+    state.cellSwordTint.length = NUM_BASES;
+    state.names = getNames();
+    state.colors = getColors();
+    state.igii = getIgii();
+    GAME_SPEED = getGameSpeed();
+    state.log = [];
+    state.balls = [];
+    state.ballCooldown = {};
+    addLog('合戦開始！ 攻略で経験値→レベルアップ…');
+    spawnBalls();
+  }
+
+  function spawnBalls() {
+    state.balls = [];
+    for (var c = 0; c < NUM_CAMPS; c++) {
+      var n = getBallCount(c);
+      if (n <= 0) n = 1;
+      var owned = [];
+      for (var r = 0; r < NUM_BASES; r++) if (state.owner[r] === c) owned.push(r);
+      for (var i = 0; i < n; i++) {
+        var x, y;
+        if (owned.length > 0) {
+          var idx = owned[Math.floor(Math.random() * owned.length)];
+          var cen = getCellCenter(idx);
+          x = cen.x;
+          y = cen.y;
+        } else {
+          x = GRID_X0 + Math.random() * gridW;
+          y = GRID_Y0 + Math.random() * gridH;
+        }
+        var angle = Math.random() * Math.PI * 2;
+        var lv1 = 1;
+        var speed = getSpeedForLevel(lv1, null);
+        var ball = {
+          camp: c,
+          xp: 0,
+          level: lv1,
+          convertedBySword: false,
+          x: x, y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          speed: speed,
+          swordAngle: Math.random() * Math.PI * 2,
+          swordCount: 0,
+          attackPower: getAttackPower(lv1)
+        };
+        state.balls.push(ball);
+      }
+    }
+  }
+
+  function countCampsWithBalls() {
+    var n = 0;
+    for (var c = 0; c < NUM_CAMPS; c++) {
+      var bc = 0;
+      for (var bi = 0; bi < state.balls.length; bi++) if (state.balls[bi].camp === c) bc++;
+      if (bc > 0) n++;
+    }
+    return n;
+  }
+
+  function syncBallCountAndSpeed() {
+    var campsWithBalls = countCampsWithBalls();
+    for (var c = 0; c < NUM_CAMPS; c++) {
+      var campBalls = [];
+      for (var b = 0; b < state.balls.length; b++) if (state.balls[b].camp === c) campBalls.push(state.balls[b]);
+      var want = getBallCount(c);
+      if (campsWithBalls === 2 && want > campBalls.length) want = campBalls.length;
+      for (var b = 0; b < campBalls.length; b++) {
+        var ball = campBalls[b];
+        ball.speed = getSpeedForLevel(ball.level, ball);
+        ball.swordCount = getSwordCount(ball.level, ball);
+        ball.attackPower = getAttackPower(ball.level);
+        var mag = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy) || 1;
+        ball.vx = (ball.vx / mag) * ball.speed;
+        ball.vy = (ball.vy / mag) * ball.speed;
+      }
+      var owned = [];
+      for (var r = 0; r < NUM_BASES; r++) if (state.owner[r] === c) owned.push(r);
+      var mayReduce = (want > 0 || state.hadTerritory[c]);
+      while (campBalls.length > want && mayReduce) {
+        var removed = campBalls.pop();
+        var idx = state.balls.indexOf(removed);
+        if (idx !== -1) state.balls.splice(idx, 1);
+      }
+      var needGrowth = Math.min(want - campBalls.length, 1);
+      for (var g = 0; g < needGrowth; g++) {
+        var x, y;
+        if (owned.length > 0) {
+          var idx = owned[Math.floor(Math.random() * owned.length)];
+          var cen = getCellCenter(idx);
+          x = cen.x;
+          y = cen.y;
+        } else {
+          x = GRID_X0 + Math.random() * gridW;
+          y = GRID_Y0 + Math.random() * gridH;
+        }
+        var angle = Math.random() * Math.PI * 2;
+        var lv1 = 1;
+        var speed = getSpeedForLevel(lv1, null);
+        var ball = {
+          camp: c,
+          xp: 0,
+          level: lv1,
+          convertedBySword: false,
+          x: x, y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          speed: speed,
+          swordAngle: Math.random() * Math.PI * 2,
+          swordCount: 0,
+          attackPower: getAttackPower(lv1)
+        };
+        state.balls.push(ball);
+        campBalls.push(ball);
+      }
+    }
+  }
+
+  function addLog(msg) {
+    state.log.unshift(msg);
+    if (state.log.length > 50) state.log.pop();
+    var el = document.getElementById('warLog');
+    el.textContent = state.log.join('\n');
+    el.scrollTop = 0;
+  }
+
+  function countTerritory(camp) {
+    var n = 0;
+    for (var i = 0; i < NUM_BASES; i++) {
+      if (i >= state.owner.length) break;
+      if (state.owner[i] === camp) n++;
+    }
+    return n;
+  }
+
+  function tryAttack(ball, regionIdx) {
+    if (regionIdx < 0 || regionIdx >= NUM_BASES || regionIdx >= state.owner.length) return;
+    var owner = state.owner[regionIdx];
+    if (owner === ball.camp) return;
+    var key = ball.camp + '-' + regionIdx;
+    if (state.ballCooldown[key]) return;
+    state.ballCooldown[key] = HIT_COOLDOWN;
+    if (owner === NEUTRAL) {
+      state.owner[regionIdx] = ball.camp;
+      var gain = Math.floor(XP_PER_CONQUEST_BASE + REQUIRED_HITS[regionIdx] * XP_PER_REQUIRED_HIT);
+      ball.xp = (ball.xp || 0) + gain;
+      var newLv = getLevelFromXP(ball.xp);
+      ball.level = newLv;
+      applyLevelUpBonus(ball, newLv);
+      ball.speed = getSpeedForLevel(ball.level, ball);
+      ball.swordCount = getSwordCount(ball.level, ball);
+      ball.attackPower = getAttackPower(ball.level);
+      addLog(state.names[ball.camp] + ' が 拠点を 攻略！（+' + gain + 'XP）');
+      syncBallCountAndSpeed();
+      return;
+    }
+    state.regionHits[regionIdx] += ball.attackPower;
+    if (state.regionHits[regionIdx] >= REQUIRED_HITS[regionIdx]) {
+      state.owner[regionIdx] = ball.camp;
+      state.regionHits[regionIdx] = 0;
+      var gain = Math.floor(XP_PER_CONQUEST_BASE + REQUIRED_HITS[regionIdx] * XP_PER_REQUIRED_HIT);
+      ball.xp = (ball.xp || 0) + gain;
+      var newLv = getLevelFromXP(ball.xp);
+      ball.level = newLv;
+      applyLevelUpBonus(ball, newLv);
+      ball.speed = getSpeedForLevel(ball.level, ball);
+      ball.swordCount = getSwordCount(ball.level, ball);
+      ball.attackPower = getAttackPower(ball.level);
+      addLog(state.names[ball.camp] + ' が 拠点を 攻略！（+' + gain + 'XP）');
+      syncBallCountAndSpeed();
+    }
+  }
+
+  function pointInTriangle(px, py, ax, ay, bx, by, cx, cy) {
+    var s = (ax - cx) * (py - cy) - (ay - cy) * (px - cx);
+    var t = (bx - ax) * (py - ay) - (by - ay) * (px - ax);
+    var u = (cx - bx) * (py - by) - (cy - by) * (px - bx);
+    return (s >= 0 && t >= 0 && u >= 0) || (s <= 0 && t <= 0 && u <= 0);
+  }
+
+  function distPointToSegment(px, py, x1, y1, x2, y2) {
+    var dx = x2 - x1, dy = y2 - y1;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (len * len)));
+    var qx = x1 + t * dx, qy = y1 + t * dy;
+    return Math.sqrt((px - qx) * (px - qx) + (py - qy) * (py - qy));
+  }
+
+  function getWeaponAngle(ball, index, count) {
+    return ball.swordAngle + (index / (count || 1)) * Math.PI * 2;
+  }
+
+  function getBallSwordTri(ownerBall, swordIndex) {
+    var a = getWeaponAngle(ownerBall, swordIndex, ownerBall.swordCount || 1);
+    var tipLen = getSwordTipLen(ownerBall.level, ownerBall);
+    var baseSize = getSwordBaseSize(ownerBall.level);
+    var cx = ownerBall.x + SWORD_ORBIT_R_BALL * Math.cos(a);
+    var cy = ownerBall.y + SWORD_ORBIT_R_BALL * Math.sin(a);
+    var tipX = cx + tipLen * Math.cos(a);
+    var tipY = cy + tipLen * Math.sin(a);
+    var baseX1 = cx - baseSize * Math.sin(a) - 5 * Math.cos(a);
+    var baseY1 = cy + baseSize * Math.cos(a) - 5 * Math.sin(a);
+    var baseX2 = cx - baseSize * Math.sin(a) + 5 * Math.cos(a);
+    var baseY2 = cy + baseSize * Math.cos(a) + 5 * Math.sin(a);
+    return { cx: cx, cy: cy, tipX: tipX, tipY: tipY, baseX1: baseX1, baseY1: baseY1, baseX2: baseX2, baseY2: baseY2 };
+  }
+
+  function shieldBlocksTip(victimBall, tipX, tipY) {
+    if (getWeaponType(victimBall) !== 'shield' || getShieldCount(victimBall.level, victimBall) <= 0) return false;
+    var dx = tipX - victimBall.x, dy = tipY - victimBall.y;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1e-6;
+    var nx = dx / len, ny = dy / len;
+    var dot = nx * Math.cos(victimBall.swordAngle) + ny * Math.sin(victimBall.swordAngle);
+    return dot > 0.3;
+  }
+
+  function ballHitBySword(victimBall, ownerBall) {
+    if (ownerBall.swordCount <= 0) return false;
+    if (ownerBall.camp === victimBall.camp) return false;
+    var victimR = getBallRadius(victimBall.level);
+    var anyHit = false;
+    for (var si = 0; si < ownerBall.swordCount; si++) {
+      var tri = getBallSwordTri(ownerBall, si);
+      if (shieldBlocksTip(victimBall, tri.tipX, tri.tipY)) continue;
+      if (pointInTriangle(victimBall.x, victimBall.y, tri.tipX, tri.tipY, tri.baseX1, tri.baseY1, tri.baseX2, tri.baseY2)) { anyHit = true; break; }
+      if (distPointToSegment(victimBall.x, victimBall.y, tri.tipX, tri.tipY, tri.baseX1, tri.baseY1) < victimR) { anyHit = true; break; }
+      if (distPointToSegment(victimBall.x, victimBall.y, tri.tipX, tri.tipY, tri.baseX2, tri.baseY2) < victimR) { anyHit = true; break; }
+      if (distPointToSegment(victimBall.x, victimBall.y, tri.baseX1, tri.baseY1, tri.baseX2, tri.baseY2) < victimR) { anyHit = true; break; }
+    }
+    return anyHit;
+  }
+
+  function shieldClash(attacker, victim) {
+    if (attacker.swordCount <= 0) return false;
+    if (getWeaponType(victim) !== 'shield' || getShieldCount(victim.level, victim) <= 0) return false;
+    var victimR = getBallRadius(victim.level);
+    var nearDist = victimR + 14;
+    var anyTipNear = false;
+    var allBlocked = true;
+    for (var si = 0; si < attacker.swordCount; si++) {
+      var tri = getBallSwordTri(attacker, si);
+      var dx = tri.tipX - victim.x, dy = tri.tipY - victim.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < nearDist) {
+        anyTipNear = true;
+        if (!shieldBlocksTip(victim, tri.tipX, tri.tipY)) allBlocked = false;
+      }
+    }
+    return anyTipNear && allBlocked;
+  }
+
+  function segmentToSegmentDist(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2) {
+    var d = Infinity;
+    var adx = ax2 - ax1, ady = ay2 - ay1;
+    var bdx = bx2 - bx1, bdy = by2 - by1;
+    for (var i = 0; i <= 4; i++) {
+      var t = i / 4;
+      var px = ax1 + adx * t, py = ay1 + ady * t;
+      d = Math.min(d, distPointToSegment(px, py, bx1, by1, bx2, by2));
+    }
+    for (var j = 0; j <= 4; j++) {
+      var u = j / 4;
+      var px = bx1 + bdx * u, py = by1 + bdy * u;
+      d = Math.min(d, distPointToSegment(px, py, ax1, ay1, ax2, ay2));
+    }
+    return d;
+  }
+
+  function swordsClash(ballA, ballB) {
+    if (ballA.camp === ballB.camp) return false;
+    var CLASH_DIST = 6;
+    for (var si = 0; si < (ballA.swordCount || 0); si++) {
+      var triA = getBallSwordTri(ballA, si);
+      for (var sj = 0; sj < (ballB.swordCount || 0); sj++) {
+        var triB = getBallSwordTri(ballB, sj);
+        if (segmentToSegmentDist(triA.cx, triA.cy, triA.tipX, triA.tipY, triB.cx, triB.cy, triB.tipX, triB.tipY) < CLASH_DIST) return true;
+      }
+    }
+    return false;
+  }
+
+  function updateSwordTint() {
+    if (state.cellSwordTint.length !== NUM_BASES) {
+      state.cellSwordTint.length = NUM_BASES;
+      for (var i = 0; i < NUM_BASES; i++) if (state.cellSwordTint[i] === undefined) state.cellSwordTint[i] = -1;
+    }
+    for (var i = 0; i < state.balls.length; i++) {
+      var b = state.balls[i];
+      if (b.dead) continue;
+      if ((b.swordCount || 0) > 0) {
+        for (var si = 0; si < b.swordCount; si++) {
+          var tri = getBallSwordTri(b, si);
+          var steps = 12;
+          for (var t = 0; t <= steps; t++) {
+            var sx = tri.cx + (tri.tipX - tri.cx) * (t / steps);
+            var sy = tri.cy + (tri.tipY - tri.cy) * (t / steps);
+            var idx = getCellAt(sx, sy);
+            if (idx >= 0 && idx < NUM_BASES) { state.cellSwordTint[idx] = b.camp; state.owner[idx] = b.camp; }
+          }
+        }
+      }
+      if (getWeaponType(b) === 'shield' && getShieldCount(b.level, b) > 0) {
+        var sc = getShieldCount(b.level, b);
+        for (var ssi = 0; ssi < sc; ssi++) {
+          var a = getWeaponAngle(b, ssi, sc);
+          var sx = b.x + SWORD_ORBIT_R_BALL * Math.cos(a);
+          var sy = b.y + SWORD_ORBIT_R_BALL * Math.sin(a);
+          var shieldR = 14;
+          for (var r = 0; r <= shieldR; r += 4) {
+            for (var th = -0.5; th <= 0.5; th += 0.25) {
+              var tx = sx + r * Math.cos(a + th * Math.PI);
+              var ty = sy + r * Math.sin(a + th * Math.PI);
+              var idx = getCellAt(tx, ty);
+              if (idx >= 0 && idx < NUM_BASES) { state.cellSwordTint[idx] = b.camp; state.owner[idx] = b.camp; }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  function updateBalls() {
+    state.balls = state.balls.filter(function (b) { return !b.dead; });
+    for (var c = 0; c < NUM_CAMPS; c++) {
+      if (countTerritory(c) > 0) state.hadTerritory[c] = true;
+      if (countTerritory(c) === 0 && state.hadTerritory[c]) {
+        for (var bi = 0; bi < state.balls.length; bi++) {
+          if (state.balls[bi].camp === c) state.balls[bi].dead = true;
+        }
+        state.eliminated[c] = true;
+        if (state.eliminationOrder.indexOf(c) === -1) {
+          state.eliminationOrder.push(c);
+          state.eliminationRank[c] = NUM_CAMPS - state.eliminationOrder.length + 1;
+        }
+      }
+      var ballCount = 0;
+      for (var bi = 0; bi < state.balls.length; bi++) if (state.balls[bi].camp === c) ballCount++;
+      if (ballCount === 0) {
+        state.eliminated[c] = true;
+        if (state.eliminationOrder.indexOf(c) === -1) {
+          state.eliminationOrder.push(c);
+          state.eliminationRank[c] = NUM_CAMPS - state.eliminationOrder.length + 1;
+        }
+      }
+    }
+    state.balls = state.balls.filter(function (b) { return !b.dead; });
+    var l = GRID_X0, r = GRID_X0 + gridW, t = GRID_Y0, b = GRID_Y0 + gridH;
+    for (var k in state.ballCooldown) {
+      state.ballCooldown[k]--;
+      if (state.ballCooldown[k] <= 0) delete state.ballCooldown[k];
+    }
+    for (var i = 0; i < state.balls.length; i++) {
+      var ball = state.balls[i];
+      if (ball.dead) continue;
+      snapBallToGrid(ball);
+      ball.swordAngle += getSwordRotationSpeed(ball.level, ball);
+      var oldX = ball.x, oldY = ball.y;
+      ball.x += ball.vx * GAME_SPEED;
+      ball.y += ball.vy * GAME_SPEED;
+      var br = getBallRadius(ball.level);
+      if (ball.x - br < l) { ball.x = l + br; ball.vx = Math.abs(ball.vx); }
+      if (ball.x + br > r) { ball.x = r - br; ball.vx = -Math.abs(ball.vx); }
+      if (ball.y - br < t) { ball.y = t + br; ball.vy = Math.abs(ball.vy); }
+      if (ball.y + br > b) { ball.y = b - br; ball.vy = -Math.abs(ball.vy); }
+      var hitCell = -1;
+      var pathSteps = 32;
+      for (var step = 0; step <= pathSteps; step++) {
+        var tt = step / pathSteps;
+        var sx = oldX + (ball.x - oldX) * tt;
+        var sy = oldY + (ball.y - oldY) * tt;
+        var cellIdx = getCellAt(sx, sy);
+        if (cellIdx >= 0 && cellIdx < NUM_BASES && cellIdx < state.owner.length && state.owner[cellIdx] !== ball.camp) {
+          hitCell = cellIdx;
+          break;
+        }
+      }
+      if (hitCell >= 0) {
+        var cen = getCellCenter(hitCell);
+        tryAttack(ball, hitCell);
+        if ((ball.level || 0) < 10) {
+          var cx = ball.x - cen.x, cy = ball.y - cen.y;
+          var d = Math.sqrt(cx * cx + cy * cy) || 1;
+          if (d > 0.1) {
+            var nx = cx / d, ny = cy / d;
+            var dot = ball.vx * nx + ball.vy * ny;
+            if (dot < 0) { ball.vx -= 2 * dot * nx; ball.vy -= 2 * dot * ny; }
+            var push = BASE_R + br;
+            ball.x = cen.x + nx * push;
+            ball.y = cen.y + ny * push;
+          }
+        }
+      }
+      var pathSteps = 48;
+      for (var step = 0; step <= pathSteps; step++) {
+        var tt = step / pathSteps;
+        var px = oldX + (ball.x - oldX) * tt;
+        var py = oldY + (ball.y - oldY) * tt;
+        var cellIdx = getCellAt(px, py);
+        if (cellIdx >= 0 && cellIdx < NUM_BASES) {
+          state.owner[cellIdx] = ball.camp;
+          state.cellSwordTint[cellIdx] = ball.camp;
+        }
+      }
+      for (var bi = 0; bi < state.balls.length; bi++) {
+        if (bi === i) continue;
+        var other = state.balls[bi];
+        if (other.dead) continue;
+        if (ballHitBySword(ball, other)) {
+          var xpGain = Math.floor((ball.xp || 0) * 0.5);
+          if ((ball.level || 0) >= 10) {
+            other.xp = (other.xp || 0) + xpGain;
+            var newLv = getLevelFromXP(other.xp);
+            other.level = newLv;
+            applyLevelUpBonus(other, newLv);
+            other.speed = getSpeedForLevel(other.level, other);
+            other.swordCount = getSwordCount(other.level, other);
+            other.attackPower = getAttackPower(other.level);
+            ball.dead = true;
+            addLog(state.names[ball.camp] + ' のボールが ' + state.names[other.camp] + ' の剣で 滅ぼされた！（+' + xpGain + 'XP）');
+          } else if ((other.level || 0) >= 10) {
+            other.xp = (other.xp || 0) + xpGain;
+            var newLv = getLevelFromXP(other.xp);
+            other.level = newLv;
+            applyLevelUpBonus(other, newLv);
+            other.speed = getSpeedForLevel(other.level, other);
+            other.swordCount = getSwordCount(other.level, other);
+            other.attackPower = getAttackPower(other.level);
+            ball.dead = true;
+            addLog(state.names[ball.camp] + ' のボールが ' + state.names[other.camp] + ' の攻撃で 崩壊！（+' + xpGain + 'XP）');
+          } else if (!ball.convertedBySword) {
+            var prevCamp = ball.camp;
+            ball.camp = other.camp;
+            ball.convertedBySword = true;
+            var killerName = getFigureName(other);
+            var convName = ball.figureName || ((state.igii && state.igii[ball.camp]) || '義') + KANJI_ONE[0];
+            var igiiKiller = (state.igii && state.igii[other.camp]) || '義';
+            if (!killerName) {
+              ball.figureName = igiiKiller + (convName[1] || convName[0] || pickSecondKanji(igiiKiller));
+            } else {
+              var first = killerName[1] || killerName[0];
+              var usedConv = getUsedSecondsForIgii(first, ball);
+              var poolConv = [];
+              for (var kc = 0; kc < KANJI_ONE.length; kc++) {
+                if (KANJI_ONE[kc] !== first && !usedConv[KANJI_ONE[kc]]) poolConv.push(KANJI_ONE[kc]);
+              }
+              var second = convName[1] || convName[0];
+              if (second === first || usedConv[second]) second = poolConv.length > 0 ? poolConv[Math.floor(Math.random() * poolConv.length)] : pickSecondKanji(first);
+              ball.figureName = first + second;
+            }
+            addLog(state.names[prevCamp] + ' のボールが ' + state.names[other.camp] + ' に寝返った！');
+          } else {
+            other.xp = (other.xp || 0) + xpGain;
+            var newLv = getLevelFromXP(other.xp);
+            other.level = newLv;
+            applyLevelUpBonus(other, newLv);
+            other.speed = getSpeedForLevel(other.level, other);
+            other.swordCount = getSwordCount(other.level, other);
+            other.attackPower = getAttackPower(other.level);
+            ball.dead = true;
+            addLog(state.names[ball.camp] + ' のボールが ' + state.names[other.camp] + ' の剣で 滅ぼされた！（+' + xpGain + 'XP）');
+          }
+          break;
+        }
+        if (shieldClash(other, ball)) break;
+        if (bi > i && swordsClash(ball, other)) {
+          var odx = ball.x - other.x, ody = ball.y - other.y;
+          var len = Math.sqrt(odx * odx + ody * ody) || 1;
+          var nx = odx / len, ny = ody / len;
+          var kick = 0.5;
+          ball.vx += nx * kick;
+          ball.vy += ny * kick;
+          other.vx -= nx * kick;
+          other.vy -= ny * kick;
+        }
+      }
+      for (var bj = i + 1; bj < state.balls.length; bj++) {
+        var ob = state.balls[bj];
+        if (ob.dead) continue;
+        var dx = ball.x - ob.x, dy = ball.y - ob.y;
+        var dist = Math.sqrt(dx * dx + dy * dy) || 1e-6;
+        var r1 = getBallRadius(ball.level);
+        var r2 = getBallRadius(ob.level);
+        var minDist = r1 + r2;
+        if (dist < minDist) {
+          var nx = dx / dist, ny = dy / dist;
+          var overlap = minDist - dist;
+          ball.x += nx * (overlap * 0.5);
+          ball.y += ny * (overlap * 0.5);
+          ob.x -= nx * (overlap * 0.5);
+          ob.y -= ny * (overlap * 0.5);
+          var v1n = ball.vx * nx + ball.vy * ny;
+          var v2n = ob.vx * nx + ob.vy * ny;
+          ball.vx = ball.vx - v1n * nx + v2n * nx;
+          ball.vy = ball.vy - v1n * ny + v2n * ny;
+          ob.vx = ob.vx - v2n * nx + v1n * nx;
+          ob.vy = ob.vy - v2n * ny + v1n * ny;
+        }
+      }
+      snapBallToGrid(ball);
+    }
+    syncBallCountAndSpeed();
+  }
+
+  function drawMap(ctx) {
+    var colors = state.colors || CAMP_COLORS;
+    ctx.fillStyle = '#e0e0e0';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    for (var row = 0; row < GRID_ROWS; row++) {
+      for (var col = 0; col < GRID_COLS; col++) {
+        var k = row * GRID_COLS + col;
+        if (k >= NUM_BASES) break;
+        var owner = (k < state.owner.length) ? state.owner[k] : NEUTRAL;
+        var tint = (state.cellSwordTint && k < state.cellSwordTint.length && state.cellSwordTint[k] >= 0) ? state.cellSwordTint[k] : -1;
+        ctx.fillStyle = tint >= 0 ? colors[tint] : (owner === NEUTRAL ? '#ffffff' : colors[owner]);
+        ctx.fillRect(GRID_X0 + col * cellSize, GRID_Y0 + row * cellSize, cellSize, cellSize);
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(GRID_X0 + col * cellSize, GRID_Y0 + row * cellSize, cellSize, cellSize);
+      }
+    }
+    for (var i = 0; i < state.balls.length; i++) {
+      var b = state.balls[i];
+      if (b.dead) continue;
+      var wt = getWeaponType(b);
+      if (wt === 'sword' && (b.swordCount || 0) > 0) {
+        for (var si = 0; si < b.swordCount; si++) {
+          var tri = getBallSwordTri(b, si);
+          ctx.fillStyle = colors[b.camp];
+          ctx.globalAlpha = 0.85;
+          ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(tri.tipX, tri.tipY);
+          ctx.lineTo(tri.baseX1, tri.baseY1);
+          ctx.lineTo(tri.baseX2, tri.baseY2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      } else if (wt === 'shield' && getShieldCount(b.level, b) > 0) {
+        var sc = getShieldCount(b.level, b);
+        for (var ssi = 0; ssi < sc; ssi++) {
+          var a = getWeaponAngle(b, ssi, sc);
+          var sx = b.x + SWORD_ORBIT_R_BALL * Math.cos(a);
+          var sy = b.y + SWORD_ORBIT_R_BALL * Math.sin(a);
+          var shieldR = 12;
+          ctx.fillStyle = colors[b.camp];
+          ctx.globalAlpha = 0.85;
+          ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(sx, sy, shieldR, a - Math.PI * 0.5, a + Math.PI * 0.5);
+          ctx.lineTo(sx, sy);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      }
+      var br = getBallRadius(b.level);
+      ctx.fillStyle = colors[b.camp];
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, br, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      if ((b.level || 0) >= 2) {
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.font = 'bold ' + Math.max(8, Math.min(14, br * 1.4)) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        var lvNum = String(b.level || 1);
+        ctx.strokeText(lvNum, b.x, b.y);
+        ctx.fillText(lvNum, b.x, b.y);
+      }
+      if ((b.level || 0) >= 10) {
+        drawCrown(ctx, b.x, b.y - br - 6, 22);
+      }
+      var fig = getFigureName(b);
+      if (fig) {
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.98)';
+        ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+        ctx.lineWidth = 2;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        var lvY = b.y + br + 4;
+        ctx.strokeText(fig, b.x, lvY);
+        ctx.fillText(fig, b.x, lvY);
+      }
+    }
+  }
+
+  function gameLoop() {
+    if (!state.running) return;
+    updateBalls();
+    updateSwordTint();
+    var ctx = document.getElementById('warCanvas').getContext('2d');
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    drawMap(ctx);
+    renderStats();
+
+    var alive = 0, winner = -1;
+    for (var c = 0; c < NUM_CAMPS; c++) {
+      var territory = countTerritory(c);
+      var ballCount = 0;
+      for (var bi = 0; bi < state.balls.length; bi++) if (state.balls[bi].camp === c) ballCount++;
+      if (territory > 0 && ballCount > 0) { alive++; winner = c; }
+    }
+    if (alive === 1) {
+      state.running = false;
+      cancelAnimationFrame(state.animId);
+      state.animId = null;
+      document.getElementById('btnStart').textContent = 'もういちど';
+      document.getElementById('btnStart').disabled = false;
+      addLog('★ ' + state.names[winner] + ' の 統一だ！ ★');
+      return;
+    }
+    state.animId = requestAnimationFrame(gameLoop);
+  }
+
+  function renderStats() {
+    var el = document.getElementById('warStats');
+    el.innerHTML = '';
+    for (var c = 0; c < NUM_CAMPS; c++) {
+      var n = countTerritory(c);
+      var campBalls = [];
+      for (var b = 0; b < state.balls.length; b++) if (state.balls[b].camp === c) campBalls.push(state.balls[b]);
+      var balls = campBalls.length;
+      var totalXP = 0;
+      var sumLv = 0;
+      if (campBalls.length > 0) {
+        for (var b = 0; b < campBalls.length; b++) {
+          totalXP += Math.floor(campBalls[b].xp || 0);
+          sumLv += campBalls[b].level || 1;
+        }
+      }
+      var avgLv = campBalls.length > 0 ? Math.floor(sumLv / campBalls.length) : 1;
+      var box = document.createElement('div');
+      box.className = 'war-stat';
+      box.style.background = (state.colors && state.colors[c]) || CAMP_COLORS[c];
+      var dead = state.eliminated[c];
+      if (dead) box.style.opacity = '0.5';
+      var atk = getAttackPower(avgLv);
+      var nextXP = avgLv < XP_FOR_LEVEL.length ? XP_FOR_LEVEL[avgLv] : XP_FOR_LEVEL[XP_FOR_LEVEL.length - 1];
+      var xpText = avgLv >= XP_FOR_LEVEL.length ? totalXP + 'XP' : totalXP + '/' + nextXP + 'XP';
+      var status = dead ? ' 滅亡' : '';
+      box.innerHTML = state.names[c] + ' ' + n + '拠点 ボール×' + balls + status + '<span class="war-lv"> Lv.' + avgLv + ' ' + xpText + ' 攻撃+' + atk + '</span>';
+      el.appendChild(box);
+    }
+    renderRanking();
+  }
+
+  function renderRanking() {
+    var el = document.getElementById('warRanking');
+    if (!el) return;
+    var list = [];
+    var living = [];
+    for (var c = 0; c < NUM_CAMPS; c++) {
+      if (state.eliminated[c]) continue;
+      var t = countTerritory(c);
+      living.push({ camp: c, territory: t });
+    }
+    living.sort(function (a, b) { return b.territory - a.territory; });
+    var r = 1;
+    for (var i = 0; i < living.length; i++) {
+      list.push({ camp: living[i].camp, territory: living[i].territory, rank: r });
+      r++;
+    }
+    for (var c = 0; c < NUM_CAMPS; c++) {
+      if (!state.eliminated[c]) continue;
+      list.push({ camp: c, territory: countTerritory(c), rank: state.eliminationRank[c] || 4 });
+    }
+    list.sort(function (a, b) { return a.rank - b.rank; });
+    el.innerHTML = '';
+    for (var i = 0; i < list.length; i++) {
+      var item = document.createElement('div');
+      item.className = 'war-rank-item';
+      var camp = list[i].camp;
+      var dead = state.eliminated[camp];
+      item.textContent = list[i].rank + '位: ' + state.names[camp] + ' ' + list[i].territory + '拠点' + (dead ? ' 滅亡' : '');
+      if (dead) item.style.opacity = '0.6';
+      el.appendChild(item);
+    }
+  }
+
+  document.getElementById('btnStart').addEventListener('click', function () {
+    if (state.running) {
+      document.getElementById('setup').style.display = 'grid';
+      document.getElementById('btnStart').textContent = '合戦開始';
+      state.running = false;
+      if (state.animId) cancelAnimationFrame(state.animId);
+      state.animId = null;
+      return;
+    }
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('mapWrap').style.display = 'block';
+    document.getElementById('warStats').style.display = 'flex';
+    var rankEl = document.getElementById('warRanking');
+    if (rankEl) rankEl.style.display = 'block';
+    var self = this;
+    requestAnimationFrame(function () {
+      resizeCanvas();
+      initMap();
+      state.running = true;
+      self.textContent = '合戦中…';
+      self.disabled = true;
+      renderStats();
+      state.animId = requestAnimationFrame(gameLoop);
+    });
+  });
+})();
+  </script>
+</body>
+</html>

@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ポケもんバトル – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #87ceeb 0%, #e0f6ff 50%, #90ee90 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #333;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+    .poke-wrap { max-width: 420px; margin: 0 auto; padding: 12px; }
+    .poke-title { font-size: 1.1rem; text-align: center; margin: 0 0 12px; color: #333; font-weight: bold; }
+    .poke-battle {
+      background: rgba(255,255,255,0.7);
+      border: 4px solid #8b4513;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      min-height: 180px;
+    }
+    .poke-side-label {
+      font-size: 11px;
+      font-weight: bold;
+      margin-bottom: 2px;
+      padding: 2px 6px;
+      display: inline-block;
+      border-radius: 4px;
+    }
+    .poke-enemy .poke-side-label { background: #fcc; color: #800; }
+    .poke-player .poke-side-label { background: #cfc; color: #080; }
+    .poke-enemy { margin-bottom: 24px; }
+    .poke-enemy .poke-mon { text-align: right; }
+    .poke-player .poke-mon { text-align: left; }
+    .poke-mon-name { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+    .poke-mon-name .lv { font-size: 12px; color: #666; font-weight: normal; margin-left: 4px; }
+    .poke-hp-row { display: flex; align-items: center; gap: 6px; }
+    .poke-hp-bar {
+      flex: 1;
+      height: 10px;
+      background: #ccc;
+      border: 2px solid #666;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .poke-hp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0a0 0%, #6f6 100%);
+      transition: width 0.25s;
+    }
+    .poke-hp-fill.low { background: linear-gradient(90deg, #a00 0%, #f66 100%); }
+    .poke-hp-fill.mid { background: linear-gradient(90deg, #a80 0%, #fc6 100%); }
+    .poke-hp-num { font-size: 11px; min-width: 36px; text-align: right; }
+    .poke-msg {
+      min-height: 48px;
+      padding: 10px;
+      margin-bottom: 12px;
+      background: rgba(0,0,0,0.08);
+      border: 2px solid #999;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .poke-menu { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .poke-btn {
+      flex: 1 1 45%;
+      padding: 14px 12px;
+      font-size: 15px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #4a90d9 0%, #2d6cb0 100%);
+      border: 2px solid #6ba3e8;
+      border-radius: 8px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .poke-btn:hover { opacity: 0.95; }
+    .poke-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .poke-btn.fight { background: linear-gradient(180deg, #e85a5a 0%, #b03030 100%); border-color: #f08080; }
+    .poke-moves-wrap {
+      margin-bottom: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.95);
+      border: 3px solid #8b4513;
+      border-radius: 10px;
+    }
+    .poke-moves-label {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .poke-moves {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 100px;
+      margin-bottom: 10px;
+    }
+    .poke-move {
+      flex: 1 1 45%;
+      min-height: 52px;
+      padding: 12px 8px;
+      font-size: 13px;
+      text-align: left;
+      color: #333;
+      background: #fff;
+      border: 2px solid #8b4513;
+      border-radius: 8px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .poke-move:hover { background: #f5e6d3; }
+    .poke-move:active { background: #e8d4b8; }
+    .poke-move .type { font-size: 10px; color: #666; margin-top: 2px; }
+    .poke-move .power { font-size: 11px; color: #888; }
+    .poke-back { display: inline-block; margin-top: 8px; font-size: 14px; color: #666; cursor: pointer; text-decoration: underline; }
+    .poke-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 48px 16px 0;
+    }
+    .poke-overlay.visible { display: flex; }
+    .poke-overlay-box {
+      background: #fff;
+      border: 4px solid #8b4513;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      max-width: 320px;
+    }
+    .poke-overlay-box h2 { margin-bottom: 12px; font-size: 1.3rem; color: #333; }
+    .poke-overlay-box .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      margin-top: 12px;
+      background: linear-gradient(180deg, #4a90d9 0%, #2d6cb0 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .poke-back-link { display: inline-block; margin-top: 16px; color: #666; font-size: 14px; text-decoration: none; }
+    .type-fire { color: #c00; }
+    .type-water { color: #06c; }
+    .type-grass { color: #080; }
+    .type-electric { color: #c90; }
+    .type-normal { color: #666; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="poke-wrap">
+    <h1 class="poke-title">ポケもんバトル</h1>
+
+    <div class="poke-battle">
+      <div class="poke-enemy">
+        <div class="poke-side-label">てき</div>
+        <div class="poke-mon">
+          <div class="poke-mon-name"><span id="enemyNameText">???</span><span class="lv" id="enemyLv"></span></div>
+          <div class="poke-hp-row">
+            <div class="poke-hp-bar"><div class="poke-hp-fill" id="enemyHpBar" style="width:100%"></div></div>
+            <span class="poke-hp-num" id="enemyHpNum">? / ?</span>
+          </div>
+        </div>
+      </div>
+      <div class="poke-player">
+        <div class="poke-side-label">みかた</div>
+        <div class="poke-mon">
+          <div class="poke-mon-name"><span id="playerNameText">???</span><span class="lv" id="playerLv"></span></div>
+          <div class="poke-hp-row">
+            <div class="poke-hp-bar"><div class="poke-hp-fill" id="playerHpBar" style="width:100%"></div></div>
+            <span class="poke-hp-num" id="playerHpNum">? / ?</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="poke-msg" id="msg">野生の ??? が あらわれた！</div>
+
+    <div class="poke-menu" id="menu">
+      <button type="button" class="poke-btn fight" id="btnFight">たたかう</button>
+      <button type="button" class="poke-btn" id="btnRun">にげる</button>
+    </div>
+
+    <div class="poke-moves-wrap" id="movesWrap" style="display:none">
+      <div class="poke-moves-label">わざを えらんでください</div>
+      <div class="poke-moves" id="moves"></div>
+      <div class="poke-back" id="btnBack">← まえにもどる</div>
+    </div>
+
+    <a href="/index.html" class="poke-back-link">← トップへ戻る</a>
+  </div>
+
+  <div class="poke-overlay" id="overlayStart">
+    <div class="poke-overlay-box">
+      <h2>ポケもんバトル</h2>
+      <p>ポケモンをえらんで たたかおう！</p>
+      <button type="button" class="poke-overlay-box btn" id="btnStart">はじめる</button>
+    </div>
+  </div>
+  <div class="poke-overlay" id="overlayWin">
+    <div class="poke-overlay-box">
+      <h2>しょうり！</h2>
+      <p>たいせんに かった！</p>
+      <button type="button" class="poke-overlay-box btn" id="btnRetry">もういちど</button>
+      <a href="/index.html" class="poke-back-link">トップへ戻る</a>
+    </div>
+  </div>
+  <div class="poke-overlay" id="overlayLose">
+    <div class="poke-overlay-box">
+      <h2>まけちゃった…</h2>
+      <p>ポケモンが たおれた</p>
+      <button type="button" class="poke-overlay-box btn" id="btnRetryLose">やり直す</button>
+      <a href="/index.html" class="poke-back-link">トップへ戻る</a>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var TYPES = { normal: 'ノーマル', fire: 'ほのお', water: 'みず', grass: 'くさ', electric: 'でんき' };
+  var TYPE_CHART = {
+    fire:    { fire: 0.5, water: 0.5, grass: 2, electric: 1, normal: 1 },
+    water:   { fire: 2,   water: 0.5, grass: 0.5, electric: 0.5, normal: 1 },
+    grass:   { fire: 0.5, water: 2,   grass: 0.5, electric: 1, normal: 1 },
+    electric: { fire: 1,  water: 2,   grass: 0.5, electric: 0.5, normal: 1 },
+    normal:  { fire: 1,   water: 1,   grass: 1,   electric: 1, normal: 1 }
+  };
+
+  var MOVE_POOL = [
+    { name: 'たいあたり', type: 'normal', power: 35 },
+    { name: 'ひのこ', type: 'fire', power: 40 },
+    { name: 'みずでっぽう', type: 'water', power: 40 },
+    { name: 'つるのムチ', type: 'grass', power: 40 },
+    { name: 'でんきショック', type: 'electric', power: 40 },
+    { name: 'かえんほうしゃ', type: 'fire', power: 90 },
+    { name: 'ハイドロポンプ', type: 'water', power: 110 },
+    { name: 'ソーラービーム', type: 'grass', power: 120 },
+    { name: '10まんボルト', type: 'electric', power: 90 },
+    { name: 'のしかかり', type: 'normal', power: 85 }
+  ];
+
+  var MON_POOL = [
+    { name: 'ヒノアラシ', type: 'fire', hp: 39, atk: 52, def: 43, moves: ['ひのこ', 'たいあたり', 'かえんほうしゃ', 'のしかかり'] },
+    { name: 'ワニノコ', type: 'water', hp: 50, atk: 48, def: 65, moves: ['みずでっぽう', 'たいあたり', 'ハイドロポンプ', 'のしかかり'] },
+    { name: 'キモリ', type: 'grass', hp: 45, atk: 49, def: 65, moves: ['つるのムチ', 'たいあたり', 'ソーラービーム', 'のしかかり'] },
+    { name: 'ピカチュウ', type: 'electric', hp: 35, atk: 55, def: 40, moves: ['でんきショック', 'たいあたり', '10まんボルト', 'のしかかり'] },
+    { name: 'ゼニガメ', type: 'water', hp: 44, atk: 48, def: 65, moves: ['みずでっぽう', 'たいあたり', 'ハイドロポンプ', 'のしかかり'] },
+    { name: 'フシギダネ', type: 'grass', hp: 45, atk: 49, def: 49, moves: ['つるのムチ', 'たいあたり', 'ソーラービーム', 'のしかかり'] }
+  ];
+
+  function getMove(name) {
+    for (var i = 0; i < MOVE_POOL.length; i++) {
+      if (MOVE_POOL[i].name === name) return MOVE_POOL[i];
+    }
+    return MOVE_POOL[0];
+  }
+
+  function makeMon(template, level) {
+    level = level || 5;
+    var hp = Math.floor(template.hp * level / 5) + 10;
+    return {
+      name: template.name,
+      type: template.type,
+      level: level,
+      hp: hp,
+      maxHp: hp,
+      atk: Math.floor(template.atk * level / 5) + 5,
+      def: Math.floor(template.def * level / 5) + 5,
+      moves: template.moves.slice()
+    };
+  }
+
+  function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  var state = {
+    player: null,
+    enemy: null,
+    phase: 'menu',
+    message: ''
+  };
+
+  var msgEl = document.getElementById('msg');
+  var menuEl = document.getElementById('menu');
+  var movesEl = document.getElementById('moves');
+  var movesWrap = document.getElementById('movesWrap');
+  var btnBack = document.getElementById('btnBack');
+
+  function setMsg(txt) {
+    state.message = txt;
+    if (msgEl) msgEl.textContent = txt;
+  }
+
+  function renderHp() {
+    var p = state.player;
+    var e = state.enemy;
+    if (!p || !e) return;
+    var el;
+    el = document.getElementById('playerNameText');
+    if (el) el.textContent = p.name;
+    el = document.getElementById('playerLv');
+    if (el) el.textContent = 'Lv.' + p.level;
+    document.getElementById('playerHpNum').textContent = p.hp + ' / ' + p.maxHp;
+    var pct = (p.hp / p.maxHp) * 100;
+    var bar = document.getElementById('playerHpBar');
+    bar.style.width = pct + '%';
+    bar.className = 'poke-hp-fill' + (pct <= 25 ? ' low' : pct <= 50 ? ' mid' : '');
+    el = document.getElementById('enemyNameText');
+    if (el) el.textContent = e.name;
+    el = document.getElementById('enemyLv');
+    if (el) el.textContent = 'Lv.' + e.level;
+    document.getElementById('enemyHpNum').textContent = e.hp + ' / ' + e.maxHp;
+    pct = (e.hp / e.maxHp) * 100;
+    bar = document.getElementById('enemyHpBar');
+    bar.style.width = pct + '%';
+    bar.className = 'poke-hp-fill' + (e.hp / e.maxHp <= 0.25 ? ' low' : e.hp / e.maxHp <= 0.5 ? ' mid' : '');
+  }
+
+  function showMenu() {
+    state.phase = 'menu';
+    if (menuEl) menuEl.style.display = 'flex';
+    if (movesWrap) movesWrap.style.display = 'none';
+    var btnFight = document.getElementById('btnFight');
+    var btnRun = document.getElementById('btnRun');
+    if (btnFight) btnFight.disabled = false;
+    if (btnRun) btnRun.disabled = false;
+    setMsg('どうする？');
+  }
+
+  function setMenuEnabled(enabled) {
+    var btnFight = document.getElementById('btnFight');
+    var btnRun = document.getElementById('btnRun');
+    if (btnFight) btnFight.disabled = !enabled;
+    if (btnRun) btnRun.disabled = !enabled;
+  }
+
+  function damage(attacker, defender, move) {
+    var mult = (TYPE_CHART[move.type] && TYPE_CHART[move.type][defender.type]) ? TYPE_CHART[move.type][defender.type] : 1;
+    var base = Math.floor((move.power * (attacker.atk / defender.def)) / 8) + 2;
+    var dmg = Math.max(1, Math.floor(base * mult * (0.85 + Math.random() * 0.15)));
+    return dmg;
+  }
+
+  function effectiveness(moveType, defType) {
+    var mult = (TYPE_CHART[moveType] && TYPE_CHART[moveType][defType]) ? TYPE_CHART[moveType][defType] : 1;
+    if (mult >= 2) return 'super';
+    if (mult <= 0.5) return 'weak';
+    return 'normal';
+  }
+
+  function useMove(user, target, moveName) {
+    var move = getMove(moveName);
+    var dmg = damage(user, target, move);
+    target.hp = Math.max(0, target.hp - dmg);
+    var eff = effectiveness(move.type, target.type);
+    var line = user.name + ' の ' + move.name + '！';
+    setMsg(line);
+    renderHp();
+    setTimeout(function () {
+      if (eff === 'super') setMsg('こうかはばつぐん！');
+      else if (eff === 'weak') setMsg('こうかはいまひとつ…');
+      if (target.hp <= 0) {
+        setTimeout(function () {
+          setMsg(target.name + ' は たおれた！');
+          renderHp();
+          setTimeout(function () {
+            if (target === state.enemy) document.getElementById('overlayWin').classList.add('visible');
+            else document.getElementById('overlayLose').classList.add('visible');
+          }, 800);
+        }, 600);
+      } else {
+        setTimeout(function () {
+          enemyTurn();
+        }, 600);
+      }
+    }, 500);
+  }
+
+  function enemyTurn() {
+    setMenuEnabled(false);
+    var moveName = pickRandom(state.enemy.moves);
+    var move = getMove(moveName);
+    setMsg(state.enemy.name + ' の ' + move.name + '！');
+    renderHp();
+    setTimeout(function () {
+      var dmg = damage(state.enemy, state.player, move);
+      state.player.hp = Math.max(0, state.player.hp - dmg);
+      var eff = effectiveness(move.type, state.player.type);
+      if (eff === 'super') setMsg('こうかはばつぐん！');
+      else if (eff === 'weak') setMsg('こうかはいまひとつ…');
+      renderHp();
+      setTimeout(function () {
+        if (state.player.hp <= 0) {
+          setMsg(state.player.name + ' は たおれた…');
+          setTimeout(function () {
+            document.getElementById('overlayLose').classList.add('visible');
+          }, 800);
+        } else {
+          showMenu();
+        }
+      }, 600);
+    }, 600);
+  }
+
+  function doPlayerMove(moveName) {
+    state.phase = 'busy';
+    setMenuEnabled(false);
+    menuEl.style.display = 'none';
+    if (movesWrap) movesWrap.style.display = 'none';
+    useMove(state.player, state.enemy, moveName);
+  }
+
+  function fillMoveButtons() {
+    movesEl.innerHTML = '';
+    if (!state.player || !state.player.moves) return;
+    state.player.moves.forEach(function (name) {
+      var m = getMove(name);
+      var typeCls = 'type-' + m.type;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'poke-move';
+      btn.setAttribute('data-move', name);
+      btn.innerHTML = m.name + '<br><span class="type ' + typeCls + '">' + TYPES[m.type] + '</span> <span class="power">威力' + m.power + '</span>';
+      movesEl.appendChild(btn);
+    });
+  }
+
+  function startBattle() {
+    var starters = MON_POOL.slice(0, 3);
+    state.player = makeMon(pickRandom(starters), 5);
+    state.enemy = makeMon(pickRandom(MON_POOL), 4 + Math.floor(Math.random() * 3));
+    state.phase = 'menu';
+    setMsg('野生の ' + state.enemy.name + ' が あらわれた！');
+    renderHp();
+    state.phase = 'menu';
+    setMenuEnabled(true);
+    if (menuEl) menuEl.style.display = 'flex';
+    if (movesWrap) movesWrap.style.display = 'none';
+    fillMoveButtons();
+  }
+
+  movesEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.poke-move');
+    if (!btn || state.phase !== 'menu') return;
+    var name = btn.getAttribute('data-move');
+    if (name) doPlayerMove(name);
+  });
+
+  document.getElementById('btnFight').addEventListener('click', function () {
+    if (state.phase !== 'menu') return;
+    fillMoveButtons();
+    menuEl.style.display = 'none';
+    if (movesWrap) movesWrap.style.display = 'block';
+    setMsg('わざを えらんでください');
+  });
+
+  document.getElementById('btnBack').addEventListener('click', function () {
+    showMenu();
+  });
+
+  document.getElementById('btnRun').addEventListener('click', function () {
+    if (state.phase !== 'menu') return;
+    if (Math.random() < 0.6) {
+      setMsg('にげられた！');
+      setTimeout(function () {
+        startBattle();
+      }, 1200);
+    } else {
+      setMsg('にげられなかった！');
+      setTimeout(enemyTurn, 800);
+    }
+  });
+
+  document.getElementById('btnStart').addEventListener('click', function () {
+    document.getElementById('overlayStart').classList.remove('visible');
+    startBattle();
+  });
+
+  document.getElementById('btnRetry').addEventListener('click', function () {
+    document.getElementById('overlayWin').classList.remove('visible');
+    startBattle();
+  });
+
+  document.getElementById('btnRetryLose').addEventListener('click', function () {
+    document.getElementById('overlayLose').classList.remove('visible');
+    startBattle();
+  });
+
+  document.getElementById('overlayStart').classList.add('visible');
+})();
+  </script>
+</body>
+</html>

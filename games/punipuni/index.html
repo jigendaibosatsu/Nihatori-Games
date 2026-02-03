@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>ぷにバトル – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #2d1b4e 0%, #1a0a2e 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .puni-wrap {
+      width: 100%;
+      max-width: 400px;
+      padding: 12px;
+    }
+    .puni-title { font-size: 1rem; margin-bottom: 8px; text-align: center; color: #e0b0ff; }
+    .puni-enemy {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 12px;
+      border: 2px solid #6a4a8a;
+    }
+    .puni-enemy .name { font-size: 14px; }
+    .puni-hp-bar {
+      flex: 1;
+      height: 14px;
+      margin: 0 10px;
+      background: #333;
+      border-radius: 7px;
+      overflow: hidden;
+    }
+    .puni-hp-fill { height: 100%; background: linear-gradient(90deg, #f44, #f88); transition: width 0.2s; }
+    .puni-hp-num { font-size: 12px; min-width: 40px; text-align: right; }
+    .puni-board-wrap {
+      background: rgba(0,0,0,0.3);
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+    .puni-board {
+      display: grid;
+      gap: 4px;
+      grid-template-columns: repeat(6, 1fr);
+      width: min(280px, 80vw);
+      margin: 0 auto;
+    }
+    .puni-cell {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .puni-cell.selected { transform: scale(1.15); box-shadow: 0 0 12px #fff; }
+    .puni-cell.c0 { background: radial-gradient(circle at 30% 30%, #ff6b6b, #c92a2a); }
+    .puni-cell.c1 { background: radial-gradient(circle at 30% 30%, #69db7c, #2f9e44); }
+    .puni-cell.c2 { background: radial-gradient(circle at 30% 30%, #74c0fc, #1971c2); }
+    .puni-cell.c3 { background: radial-gradient(circle at 30% 30%, #ffd43b, #f08c00); }
+    .puni-cell.c4 { background: radial-gradient(circle at 30% 30%, #da77f2, #9c36b5); }
+    .puni-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .puni-btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #7950f2 0%, #5c3d99 100%);
+      border: 2px solid #9775fa;
+      border-radius: 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .puni-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .puni-btn:active:not(:disabled) { transform: scale(0.98); }
+    .puni-combo { text-align: center; font-size: 14px; color: #ffd43b; margin-bottom: 8px; min-height: 20px; }
+    .puni-player {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 12px;
+      border: 2px solid #6a4a8a;
+    }
+    .puni-stars { margin-top: 8px; text-align: center; font-size: 18px; color: #ffd43b; }
+    .puni-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 48px 16px 0;
+    }
+    .puni-overlay.visible { display: flex; }
+    .puni-overlay-box {
+      background: linear-gradient(180deg, #3d2a5c 0%, #2d1b4e 100%);
+      border: 4px solid #9775fa;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      max-width: 320px;
+    }
+    .puni-overlay-box h2 { margin-bottom: 12px; font-size: 1.3rem; }
+    .puni-overlay-box .stars { font-size: 2rem; color: #ffd43b; margin: 8px 0; }
+    .puni-overlay-box .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      margin-top: 12px;
+      background: #7950f2;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .puni-back { display: inline-block; margin-top: 16px; color: #b197fc; font-size: 14px; text-decoration: none; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="puni-wrap">
+    <h1 class="puni-title">ぷにバトル</h1>
+
+    <div class="puni-enemy">
+      <span class="name">てき</span>
+      <div class="puni-hp-bar"><div class="puni-hp-fill" id="enemyHpBar" style="width:100%"></div></div>
+      <span class="puni-hp-num" id="enemyHpNum">100 / 100</span>
+    </div>
+
+    <div class="puni-combo" id="comboText"></div>
+    <div class="puni-board-wrap">
+      <div class="puni-board" id="board"></div>
+    </div>
+    <div class="puni-actions">
+      <button type="button" class="puni-btn" id="btnAttack">こうげき</button>
+      <button type="button" class="puni-btn" id="btnCancel">やりなおす</button>
+    </div>
+
+    <div class="puni-player">
+      <span class="name">じぶん</span>
+      <div class="puni-hp-bar"><div class="puni-hp-fill" id="playerHpBar" style="width:100%"></div></div>
+      <span class="puni-hp-num" id="playerHpNum">100 / 100</span>
+    </div>
+    <div class="puni-stars" id="starsText">★ 0</div>
+
+    <a href="/index.html" class="puni-back">← トップへ戻る</a>
+  </div>
+
+  <div class="puni-overlay" id="overlayStart">
+    <div class="puni-overlay-box">
+      <h2>ぷにバトル</h2>
+      <p>おなじいろのぷにを つなげて こうげき！<br>たくさんつなげるほど ダメージが でるよ。</p>
+      <button type="button" class="puni-overlay-box btn" id="btnStart">スタート</button>
+    </div>
+  </div>
+  <div class="puni-overlay" id="overlayWin">
+    <div class="puni-overlay-box">
+      <h2>かち！</h2>
+      <div class="stars" id="winStars">★★★</div>
+      <p id="winMessage"></p>
+      <button type="button" class="puni-overlay-box btn" id="btnRetry">もういちど</button>
+      <a href="/index.html" class="puni-back">トップへ戻る</a>
+    </div>
+  </div>
+  <div class="puni-overlay" id="overlayLose">
+    <div class="puni-overlay-box">
+      <h2>まけちゃった…</h2>
+      <button type="button" class="puni-overlay-box btn" id="btnRetryLose">やり直す</button>
+      <a href="/index.html" class="puni-back">トップへ戻る</a>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var COLS = 6;
+  var ROWS = 6;
+  var COLORS = 5;
+  var PLAYER_HP = 100;
+  var ENEMY_HP = 100;
+  var DAMAGE_PER_PUNI = 8;
+  var ENEMY_ATTACK = 12;
+
+  var state = {
+    grid: [],
+    selected: [],
+    playerHp: PLAYER_HP,
+    enemyHp: ENEMY_HP,
+    stars: 0,
+    turnCount: 0
+  };
+
+  function randColor() {
+    return Math.floor(Math.random() * COLORS);
+  }
+
+  function fillGrid() {
+    for (var y = 0; y < ROWS; y++) {
+      state.grid[y] = [];
+      for (var x = 0; x < COLS; x++) {
+        state.grid[y][x] = randColor();
+      }
+    }
+  }
+
+  function indexToKey(x, y) { return y * COLS + x; }
+  function keyToIndex(k) { return { x: k % COLS, y: Math.floor(k / COLS) }; }
+
+  function isAdjacent(ax, ay, bx, by) {
+    var dx = Math.abs(ax - bx);
+    var dy = Math.abs(ay - by);
+    return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+  }
+
+  function isSelected(x, y) {
+    return state.selected.some(function (k) {
+      var p = keyToIndex(k);
+      return p.x === x && p.y === y;
+    });
+  }
+
+  function canAddToChain(x, y) {
+    if (state.selected.length === 0) return true;
+    var c = state.grid[y][x];
+    var firstKey = state.selected[0];
+    var first = keyToIndex(firstKey);
+    if (state.grid[first.y][first.x] !== c) return false;
+    return state.selected.some(function (k) {
+      var p = keyToIndex(k);
+      return isAdjacent(p.x, p.y, x, y);
+    });
+  }
+
+  function onCellClick(x, y) {
+    if (state.grid[y][x] === -1) return;
+    var k = indexToKey(x, y);
+    var idx = state.selected.indexOf(k);
+    if (idx >= 0) {
+      if (idx === state.selected.length - 1) {
+        state.selected.pop();
+      } else {
+        return;
+      }
+    } else {
+      if (!canAddToChain(x, y)) return;
+      state.selected.push(k);
+    }
+    renderBoard();
+    updateComboText();
+  }
+
+  function updateComboText() {
+    var n = state.selected.length;
+    var el = document.getElementById('comboText');
+    if (n >= 2) el.textContent = n + ' こ つながった！ ダメージ ' + (n * DAMAGE_PER_PUNI);
+    else el.textContent = '';
+  }
+
+  function attack() {
+    if (state.selected.length < 2) return;
+    var damage = state.selected.length * DAMAGE_PER_PUNI;
+    state.enemyHp = Math.max(0, state.enemyHp - damage);
+    state.stars += Math.min(3, Math.floor(state.selected.length / 2));
+    state.turnCount++;
+    state.selected.sort(function (a, b) { return b - a; });
+    state.selected.forEach(function (k) {
+      var p = keyToIndex(k);
+      state.grid[p.y][p.x] = -1;
+    });
+    for (var x = 0; x < COLS; x++) {
+      var write = ROWS - 1;
+      for (var y = ROWS - 1; y >= 0; y--) {
+        if (state.grid[y][x] !== -1) {
+          state.grid[write][x] = state.grid[y][x];
+          if (write !== y) state.grid[y][x] = -1;
+          write--;
+        }
+      }
+      while (write >= 0) {
+        state.grid[write][x] = randColor();
+        write--;
+      }
+    }
+    state.selected = [];
+    renderBoard();
+    updateComboText();
+    renderHp();
+    if (state.enemyHp <= 0) {
+      document.getElementById('winStars').textContent = '★'.repeat(Math.min(3, 1 + Math.floor(state.stars / 2)));
+      document.getElementById('winMessage').textContent = state.turnCount + 'ターンで かち！ ★' + state.stars + ' ほし';
+      document.getElementById('overlayWin').classList.add('visible');
+      return;
+    }
+    setTimeout(function () {
+      state.playerHp = Math.max(0, state.playerHp - ENEMY_ATTACK);
+      renderHp();
+      if (state.playerHp <= 0) {
+        document.getElementById('overlayLose').classList.add('visible');
+      }
+    }, 400);
+  }
+
+  function cancel() {
+    state.selected = [];
+    renderBoard();
+    updateComboText();
+  }
+
+  function renderHp() {
+    var pct = (state.playerHp / PLAYER_HP) * 100;
+    document.getElementById('playerHpNum').textContent = state.playerHp + ' / ' + PLAYER_HP;
+    document.getElementById('playerHpBar').style.width = pct + '%';
+    pct = (state.enemyHp / ENEMY_HP) * 100;
+    document.getElementById('enemyHpNum').textContent = state.enemyHp + ' / ' + ENEMY_HP;
+    document.getElementById('enemyHpBar').style.width = pct + '%';
+    document.getElementById('starsText').textContent = '★ ' + state.stars;
+  }
+
+  function renderBoard() {
+    var board = document.getElementById('board');
+    board.innerHTML = '';
+    for (var y = 0; y < ROWS; y++) {
+      for (var x = 0; x < COLS; x++) {
+        var c = state.grid[y][x];
+        var cell = document.createElement('div');
+        cell.className = 'puni-cell';
+        if (c >= 0) cell.classList.add('c' + c);
+        if (isSelected(x, y)) cell.classList.add('selected');
+        cell.dataset.x = x;
+        cell.dataset.y = y;
+        cell.addEventListener('click', function () {
+          var px = parseInt(this.dataset.x, 10);
+          var py = parseInt(this.dataset.y, 10);
+          onCellClick(px, py);
+        });
+        board.appendChild(cell);
+      }
+    }
+  }
+
+  function startGame() {
+    state.playerHp = PLAYER_HP;
+    state.enemyHp = ENEMY_HP;
+    state.selected = [];
+    state.stars = 0;
+    state.turnCount = 0;
+    fillGrid();
+    renderBoard();
+    renderHp();
+    updateComboText();
+  }
+
+  document.getElementById('btnAttack').addEventListener('click', function () {
+    if (state.selected.length >= 2) attack();
+  });
+  document.getElementById('btnCancel').addEventListener('click', cancel);
+  document.getElementById('btnStart').addEventListener('click', function () {
+    document.getElementById('overlayStart').classList.remove('visible');
+    startGame();
+  });
+  document.getElementById('btnRetry').addEventListener('click', function () {
+    document.getElementById('overlayWin').classList.remove('visible');
+    startGame();
+  });
+  document.getElementById('btnRetryLose').addEventListener('click', function () {
+    document.getElementById('overlayLose').classList.remove('visible');
+    startGame();
+  });
+
+  document.getElementById('overlayStart').classList.add('visible');
+})();
+  </script>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>まちあるき – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: #7cb342;
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .town-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 480px;
+      padding: 8px;
+    }
+    .town-title { font-size: 1rem; margin-bottom: 8px; color: #1b5e20; font-weight: bold; }
+    .town-canvas-wrap {
+      width: 100%;
+      background: #8bc34a;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 4px #558b2f;
+    }
+    #townCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #9ccc65;
+    }
+    .town-keys {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .town-dpad { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+    .town-dpad-row { display: flex; gap: 4px; align-items: center; }
+    .town-dpad-row span { width: 52px; height: 52px; display: inline-block; }
+    .town-btn {
+      width: 52px;
+      height: 52px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-size: 20px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      line-height: 1;
+    }
+    .town-btn:active { transform: scale(0.95); background: #e8f5e9; }
+    .town-btn.enter {
+      width: auto;
+      padding: 0 20px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .town-label {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #1b5e20;
+      font-weight: bold;
+      min-height: 20px;
+    }
+    .town-back { display: inline-block; margin-top: 16px; color: #795548; font-size: 14px; text-decoration: none; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="town-wrap">
+    <h1 class="town-title">まちあるき</h1>
+
+    <div class="town-canvas-wrap">
+      <canvas id="townCanvas" width="384" height="288"></canvas>
+    </div>
+
+    <div class="town-keys" id="townKeys">
+      <div class="town-dpad">
+        <div class="town-dpad-row">
+          <span></span>
+          <button type="button" class="town-btn" id="btnUp" aria-label="上">↑</button>
+          <span></span>
+        </div>
+        <div class="town-dpad-row">
+          <button type="button" class="town-btn" id="btnLeft" aria-label="左">←</button>
+          <button type="button" class="town-btn" id="btnDown" aria-label="下">↓</button>
+          <button type="button" class="town-btn" id="btnRight" aria-label="右">→</button>
+        </div>
+      </div>
+      <button type="button" class="town-btn enter" id="btnEnter" style="display:none">入る</button>
+    </div>
+
+    <div class="town-label" id="placeLabel"></div>
+
+    <a href="/index.html" class="town-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var TILE = 32;
+  var MAP_W = 12;
+  var MAP_H = 9;
+  var CANVAS_W = MAP_W * TILE;
+  var CANVAS_H = MAP_H * TILE;
+
+  var T_GRASS = 0;
+  var T_PATH = 1;
+  var T_SHOP = 2;
+  var T_HOUSE = 3;
+  var T_SHOP_DOOR = 4;
+  var T_HOUSE_DOOR = 5;
+
+  var I_FLOOR = 0;
+  var I_WALL = 1;
+  var I_EXIT = 2;
+  var I_OBJECT = 3;
+
+  var townMap = [
+    [0,0,0,1,1,1,0,0,0,0,0,0],
+    [0,2,2,1,1,1,0,0,0,3,3,0],
+    [0,2,2,4,1,1,1,1,1,3,3,0],
+    [0,0,0,1,1,1,1,1,5,0,0,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1],
+    [0,0,1,1,1,1,1,1,0,0,0,0],
+    [0,0,1,1,1,1,1,1,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0]
+  ];
+
+  var shopInterior = [
+    [1,1,1,1,1,1,1,1],
+    [1,0,0,3,3,0,0,1],
+    [1,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,1],
+    [1,1,2,0,0,0,0,1]
+  ];
+
+  var houseInterior = [
+    [1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,1],
+    [1,0,3,3,3,0,0,1],
+    [1,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,1],
+    [1,1,2,0,0,0,0,1]
+  ];
+
+  var shopEntrance = { x: 3, y: 2 };
+  var houseEntrance = { x: 8, y: 3 };
+
+  var player = { x: 5, y: 5 };
+  var currentMap = townMap;
+  var currentMapW = MAP_W;
+  var currentMapH = MAP_H;
+  var screen = 'field';
+  var atDoor = null;
+  var insideBuilding = null;
+
+  var canvas = document.getElementById('townCanvas');
+  var ctx = canvas.getContext('2d');
+
+  function isTownBlocked(t) {
+    return t === T_SHOP || t === T_HOUSE;
+  }
+
+  function isInteriorBlocked(t) {
+    return t === I_WALL || t === I_OBJECT;
+  }
+
+  function getTileAt(m, w, h, gx, gy) {
+    if (gx < 0 || gx >= w || gy < 0 || gy >= h) return -1;
+    return m[gy][gx];
+  }
+
+  function drawTownMap() {
+    var colors = {
+      0: '#8bc34a',
+      1: '#d7ccc8',
+      2: '#ff8a65',
+      3: '#81d4fa',
+      4: '#d7ccc8',
+      5: '#d7ccc8'
+    };
+    for (var gy = 0; gy < MAP_H; gy++) {
+      for (var gx = 0; gx < MAP_W; gx++) {
+        var t = townMap[gy][gx];
+        ctx.fillStyle = colors[t] || '#888';
+        ctx.fillRect(gx * TILE, gy * TILE, TILE, TILE);
+        if (t === T_PATH || t === T_SHOP_DOOR || t === T_HOUSE_DOOR) {
+          ctx.strokeStyle = '#a1887f';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(gx * TILE, gy * TILE, TILE, TILE);
+        }
+        if (t === T_SHOP) {
+          ctx.fillStyle = '#bf360c';
+          ctx.font = '12px sans-serif';
+          ctx.fillText('ショップ', gx * TILE + 4, gy * TILE + 18);
+        }
+        if (t === T_HOUSE) {
+          ctx.fillStyle = '#0277bd';
+          ctx.font = '12px sans-serif';
+          ctx.fillText('いえ', gx * TILE + 8, gy * TILE + 18);
+        }
+      }
+    }
+  }
+
+  function drawInteriorMap(m, w, h) {
+    var colors = {};
+    colors[I_FLOOR] = '#efebe9';
+    colors[I_WALL] = '#5d4037';
+    colors[I_EXIT] = '#8d6e63';
+    colors[I_OBJECT] = '#a1887f';
+    for (var gy = 0; gy < h; gy++) {
+      for (var gx = 0; gx < w; gx++) {
+        var t = m[gy][gx];
+        ctx.fillStyle = colors[t] || '#888';
+        ctx.fillRect(gx * TILE, gy * TILE, TILE, TILE);
+        ctx.strokeStyle = '#4e342e';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(gx * TILE, gy * TILE, TILE, TILE);
+        if (t === I_EXIT) {
+          ctx.fillStyle = '#3e2723';
+          ctx.font = '11px sans-serif';
+          ctx.fillText('でる', gx * TILE + 8, gy * TILE + 20);
+        }
+        if (t === I_OBJECT && insideBuilding === 'shop') {
+          ctx.fillStyle = '#bf360c';
+          ctx.font = '10px sans-serif';
+          ctx.fillText('カウンター', gx * TILE + 2, gy * TILE + 18);
+        }
+        if (t === I_OBJECT && insideBuilding === 'house') {
+          ctx.fillStyle = '#795548';
+          ctx.font = '10px sans-serif';
+          ctx.fillText('ベッド', gx * TILE + 4, gy * TILE + 18);
+        }
+      }
+    }
+  }
+
+  function drawPlayer() {
+    var px = player.x * TILE + TILE / 2;
+    var py = player.y * TILE + TILE / 2;
+    ctx.fillStyle = '#ffeb3b';
+    ctx.beginPath();
+    ctx.arc(px, py, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#f9a825';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function render() {
+    var w = currentMapW * TILE;
+    var h = currentMapH * TILE;
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    if (screen === 'field') {
+      drawTownMap();
+    } else {
+      drawInteriorMap(currentMap, currentMapW, currentMapH);
+    }
+    drawPlayer();
+  }
+
+  function tryMove(dx, dy) {
+    var nx = player.x + dx;
+    var ny = player.y + dy;
+    if (screen === 'field') {
+      if (nx < 0 || nx >= MAP_W || ny < 0 || ny >= MAP_H) return;
+      var t = townMap[ny][nx];
+      if (isTownBlocked(t)) return;
+      player.x = nx;
+      player.y = ny;
+      var cur = townMap[player.y][player.x];
+      if (cur === T_SHOP_DOOR) atDoor = 'shop';
+      else if (cur === T_HOUSE_DOOR) atDoor = 'house';
+      else atDoor = null;
+      var btnEnter = document.getElementById('btnEnter');
+      if (btnEnter) btnEnter.style.display = atDoor ? 'inline-block' : 'none';
+      var label = document.getElementById('placeLabel');
+      if (label) label.textContent = '';
+    } else {
+      if (nx < 0 || nx >= currentMapW || ny < 0 || ny >= currentMapH) return;
+      var it = getTileAt(currentMap, currentMapW, currentMapH, nx, ny);
+      if (it === I_EXIT) {
+        exitBuilding();
+        return;
+      }
+      if (isInteriorBlocked(it)) return;
+      player.x = nx;
+      player.y = ny;
+    }
+    render();
+  }
+
+  function enterBuilding() {
+    if (atDoor === 'shop') {
+      insideBuilding = 'shop';
+      currentMap = shopInterior;
+      currentMapW = 8;
+      currentMapH = 6;
+      player.x = 4;
+      player.y = 4;
+      atDoor = null;
+      screen = 'shop';
+      canvas.width = currentMapW * TILE;
+      canvas.height = currentMapH * TILE;
+      document.getElementById('btnEnter').style.display = 'none';
+      var label = document.getElementById('placeLabel');
+      if (label) label.textContent = 'ショップのなか';
+    } else if (atDoor === 'house') {
+      insideBuilding = 'house';
+      currentMap = houseInterior;
+      currentMapW = 8;
+      currentMapH = 6;
+      player.x = 4;
+      player.y = 4;
+      atDoor = null;
+      screen = 'house';
+      canvas.width = currentMapW * TILE;
+      canvas.height = currentMapH * TILE;
+      document.getElementById('btnEnter').style.display = 'none';
+      var label = document.getElementById('placeLabel');
+      if (label) label.textContent = 'いえのなか';
+    }
+    render();
+  }
+
+  function exitBuilding() {
+    screen = 'field';
+    currentMap = townMap;
+    currentMapW = MAP_W;
+    currentMapH = MAP_H;
+    canvas.width = CANVAS_W;
+    canvas.height = CANVAS_H;
+    if (insideBuilding === 'shop') {
+      player.x = shopEntrance.x;
+      player.y = shopEntrance.y;
+    } else if (insideBuilding === 'house') {
+      player.x = houseEntrance.x;
+      player.y = houseEntrance.y;
+    }
+    insideBuilding = null;
+    atDoor = player.x === shopEntrance.x && player.y === shopEntrance.y ? 'shop' : (player.x === houseEntrance.x && player.y === houseEntrance.y ? 'house' : null);
+    var btnEnter = document.getElementById('btnEnter');
+    if (btnEnter) btnEnter.style.display = atDoor ? 'inline-block' : 'none';
+    var label = document.getElementById('placeLabel');
+    if (label) label.textContent = '';
+    render();
+  }
+
+  document.getElementById('btnUp').addEventListener('click', function () { tryMove(0, -1); });
+  document.getElementById('btnDown').addEventListener('click', function () { tryMove(0, 1); });
+  document.getElementById('btnLeft').addEventListener('click', function () { tryMove(-1, 0); });
+  document.getElementById('btnRight').addEventListener('click', function () { tryMove(1, 0); });
+  document.getElementById('btnEnter').addEventListener('click', enterBuilding);
+
+  var keys = {};
+  document.addEventListener('keydown', function (e) {
+    if (keys[e.key]) return;
+    keys[e.key] = true;
+    if (e.key === 'ArrowUp') { tryMove(0, -1); e.preventDefault(); }
+    else if (e.key === 'ArrowDown') { tryMove(0, 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { tryMove(-1, 0); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { tryMove(1, 0); e.preventDefault(); }
+    else if (e.key === 'Enter' || e.key === ' ') {
+      if (screen === 'field' && atDoor) enterBuilding();
+      e.preventDefault();
+    }
+  });
+  document.addEventListener('keyup', function (e) { keys[e.key] = false; });
+
+  render();
+})();
+  </script>
+</body>
+</html>

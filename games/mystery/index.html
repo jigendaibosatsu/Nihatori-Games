@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>推理ゲーム – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .mystery-wrap {
+      flex: 1;
+      width: 100%;
+      max-width: 480px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    .mystery-title { font-size: 1rem; margin-bottom: 12px; color: #b0a0c0; font-weight: bold; text-align: center; }
+    .mystery-scene {
+      flex: 1;
+      min-height: 180px;
+      padding: 20px;
+      background: rgba(40, 35, 55, 0.9);
+      border: 2px solid #4a4060;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      line-height: 1.7;
+      font-size: 15px;
+    }
+    .mystery-scene .place { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .mystery-choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .mystery-btn {
+      display: block;
+      width: 100%;
+      padding: 14px 16px;
+      text-align: left;
+      background: rgba(80, 60, 100, 0.6);
+      border: 2px solid #6a5a8a;
+      border-radius: 8px;
+      color: #e8e0f0;
+      font-size: 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .mystery-btn:hover { background: rgba(100, 80, 130, 0.7); border-color: #8a7aaa; }
+    .mystery-btn:active { background: rgba(120, 100, 150, 0.8); }
+    .mystery-end {
+      padding: 24px;
+      text-align: center;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .mystery-end.good { background: rgba(40, 80, 50, 0.8); border: 2px solid #6a9a6a; }
+    .mystery-end.bad { background: rgba(80, 40, 40, 0.8); border: 2px solid #9a6a6a; }
+    .mystery-end h2 { margin-bottom: 12px; font-size: 1.2rem; }
+    .mystery-end.good h2 { color: #8f8; }
+    .mystery-end.bad h2 { color: #f88; }
+    .mystery-end p { margin-bottom: 16px; line-height: 1.6; }
+    .mystery-retry {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #5a4a7a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mystery-retry:hover { background: #6a5a8a; }
+    .mystery-back { display: inline-block; margin-top: 16px; color: #a090b0; font-size: 14px; text-decoration: none; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="mystery-wrap">
+    <h1 class="mystery-title">推理ゲーム</h1>
+
+    <div class="mystery-scene" id="scene">
+      <div class="place" id="placeLabel"></div>
+      <p id="sceneText"></p>
+    </div>
+
+    <div class="mystery-choices" id="choices"></div>
+
+    <div class="mystery-end good" id="endGood" style="display:none">
+      <h2>大正解！</h2>
+      <p id="endGoodText"></p>
+      <button type="button" class="mystery-retry" id="btnRetryGood">もう一度プレイ</button>
+      <a href="/index.html" class="mystery-back">← トップへ戻る</a>
+    </div>
+
+    <div class="mystery-end bad" id="endBad" style="display:none">
+      <h2>ざんねん…</h2>
+      <p id="endBadText"></p>
+      <button type="button" class="mystery-retry" id="btnRetryBad">やり直す</button>
+      <a href="/index.html" class="mystery-back">← トップへ戻る</a>
+    </div>
+
+    <a href="/index.html" class="mystery-back" style="margin-top:16px">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var STORY = {
+    start: {
+      place: 'リビング',
+      text: 'ある日の夕方。あなたはリビングにいる。\n突然、台所から「クッキーがなくなってる！」という声がした。犯人が誰か、しらべてみよう。',
+      choices: [
+        { label: '台所へ行く', next: 'kitchen' },
+        { label: '玄関を確認する', next: 'entrance' },
+        { label: '窓の外を見る', next: 'window' }
+      ]
+    },
+    kitchen: {
+      place: '台所',
+      text: '台所には、お母さんが困った顔で立っている。テーブルの上には空のクッキー缶。冷蔵庫のドアに、何かメモがはりついている。',
+      choices: [
+        { label: 'メモを読む', next: 'memo' },
+        { label: 'クッキー缶を調べる', next: 'can' },
+        { label: 'リビングに戻る', next: 'start' }
+      ]
+    },
+    memo: {
+      place: '台所・メモ',
+      text: 'メモには「あとでたべる」と書いてあった。字は少しきたない。誰の字だろう…。',
+      choices: [
+        { label: '缶を調べる', next: 'can' },
+        { label: '玄関を確認する', next: 'entrance' },
+        { label: 'リビングに戻る', next: 'start' }
+      ]
+    },
+    can: {
+      place: '台所・クッキー缶',
+      text: '缶のふたの内側に、茶色い粉のようなものがついている。手が汚れたまま触ったようだ。',
+      choices: [
+        { label: 'メモを思い出す', next: 'memo' },
+        { label: '窓を確認する', next: 'window' },
+        { label: 'もう一度リビングへ', next: 'start' }
+      ]
+    },
+    entrance: {
+      place: '玄関',
+      text: '玄関の靴箱の上に、小さなリュックがおいてある。ポケットから、クッキーの包み紙の切れはしがはみ出している。',
+      choices: [
+        { label: '台所に戻る', next: 'kitchen' },
+        { label: '窓を確認する', next: 'window' },
+        { label: '推理する', next: 'accuse' }
+      ]
+    },
+    window: {
+      place: '窓のそば',
+      text: '窓は閉まっている。外には誰もいない。今日、弟は「友達の家にあそびにいく」と言って出かけたはずだ。',
+      choices: [
+        { label: '台所へ行く', next: 'kitchen' },
+        { label: '玄関を確認する', next: 'entrance' },
+        { label: '推理する', next: 'accuse' }
+      ]
+    },
+    accuse: {
+      place: '推理のとき',
+      text: 'しらべたことを思い出そう。\n・メモ「あとでたべる」…字はきたない。\n・缶に茶色い粉。手が汚れたまま。\n・玄関のリュックに包み紙の切れはし。\n・弟は「友達の家」に出かけた。\n\n犯人は誰だと思う？',
+      choices: [
+        { label: '弟だと思う', next: 'end_correct' },
+        { label: 'お母さんだと思う', next: 'end_wrong' },
+        { label: '自分（プレイヤー）だと思う', next: 'end_wrong' }
+      ]
+    },
+    end_correct: {
+      place: '',
+      text: '',
+      end: 'good',
+      message: 'その通り！ 弟が「あとでたべる」とメモを残して、クッキーを持って出かけたのが真相だった。名推理だ！'
+    },
+    end_wrong: {
+      place: '',
+      text: '',
+      end: 'bad',
+      message: 'ちがうよ。もう一度、現場をしらべてみよう。メモの字や、玄関のリュック、弟の行動を思い出して…。'
+    }
+  };
+
+  var currentId = 'start';
+  var sceneEl = document.getElementById('scene');
+  var placeEl = document.getElementById('placeLabel');
+  var textEl = document.getElementById('sceneText');
+  var choicesEl = document.getElementById('choices');
+  var endGood = document.getElementById('endGood');
+  var endBad = document.getElementById('endBad');
+  var endGoodText = document.getElementById('endGoodText');
+  var endBadText = document.getElementById('endBadText');
+
+  function goTo(stepId) {
+    currentId = stepId;
+    var step = STORY[stepId];
+    if (!step) return;
+
+    if (step.end) {
+      sceneEl.style.display = 'none';
+      choicesEl.style.display = 'none';
+      if (step.end === 'good') {
+        endGood.style.display = 'block';
+        endBad.style.display = 'none';
+        endGoodText.textContent = step.message;
+      } else {
+        endBad.style.display = 'block';
+        endGood.style.display = 'none';
+        endBadText.textContent = step.message;
+      }
+      return;
+    }
+
+    endGood.style.display = 'none';
+    endBad.style.display = 'none';
+    sceneEl.style.display = 'block';
+    choicesEl.style.display = 'flex';
+
+    placeEl.textContent = step.place ? '【' + step.place + '】' : '';
+    placeEl.style.display = step.place ? 'block' : 'none';
+    textEl.textContent = step.text;
+
+    choicesEl.innerHTML = '';
+    (step.choices || []).forEach(function (c) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mystery-btn';
+      btn.textContent = c.label;
+      btn.addEventListener('click', function () { goTo(c.next); });
+      choicesEl.appendChild(btn);
+    });
+  }
+
+  document.getElementById('btnRetryGood').addEventListener('click', function () {
+    endGood.style.display = 'none';
+    goTo('start');
+  });
+  document.getElementById('btnRetryBad').addEventListener('click', function () {
+    endBad.style.display = 'none';
+    goTo('start');
+  });
+
+  goTo('start');
+})();
+  </script>
+</body>
+</html>
