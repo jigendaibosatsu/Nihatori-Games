@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>選挙で当選！ – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #1e3a5f 0%, #0d2137 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #e8f4fc;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .ele-wrap {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 12px;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .ele-title { font-size: 1.2rem; margin-bottom: 8px; text-align: center; font-weight: bold; color: #fff; }
+    .ele-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 14px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 8px;
+    }
+    .ele-info span { font-weight: bold; }
+    .ele-districts { margin-bottom: 12px; }
+    .ele-district {
+      margin-bottom: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      border-left: 4px solid #4fc3f7;
+    }
+    .ele-district-name { font-size: 13px; font-weight: bold; margin-bottom: 6px; }
+    .ele-bar-wrap {
+      height: 20px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+    }
+    .ele-bar-you { background: linear-gradient(90deg, #4fc3f7, #29b6f6); height: 100%; transition: width 0.3s; }
+    .ele-bar-opp { background: rgba(255,255,255,0.25); height: 100%; }
+    .ele-bar-label { font-size: 11px; margin-top: 4px; color: rgba(255,255,255,0.9); }
+    .ele-actions { margin-bottom: 12px; }
+    .ele-actions-title { font-size: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.85); }
+    .ele-btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #1976d2, #0d47a1);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      text-align: center;
+    }
+    .ele-btn:hover { opacity: 0.95; }
+    .ele-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .ele-btn.rest { background: linear-gradient(180deg, #388e3c, #1b5e20); }
+    .ele-log {
+      flex: 1 1 0;
+      min-height: 80px;
+      max-height: 140px;
+      overflow-y: auto;
+      padding: 10px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-line;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ele-result {
+      display: none;
+      padding: 16px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .ele-result.visible { display: block; }
+    .ele-result-title { font-size: 1.1rem; margin-bottom: 12px; font-weight: bold; }
+    .ele-result.win .ele-result-title { color: #81c784; }
+    .ele-result.lose .ele-result-title { color: #e57373; }
+    .ele-result-votes { font-size: 13px; margin-bottom: 8px; }
+    .ele-back { display: inline-block; margin-top: 12px; color: #4fc3f7; font-size: 14px; text-decoration: none; }
+    .ele-back:hover { text-decoration: underline; }
+    #startScreen { text-align: center; padding: 20px 0; }
+    .ele-start-btn {
+      display: inline-block;
+      padding: 14px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #1976d2, #0d47a1);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 12px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ele-start-btn:hover { opacity: 0.95; }
+    #gameScreen { display: none; flex: 1; min-height: 0; flex-direction: column; }
+    #gameScreen.visible { display: flex; }
+    @media (max-width: 480px) {
+      .ele-wrap { padding: 8px; }
+      .ele-district { padding: 8px 10px; }
+      .ele-btn { padding: 10px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="ele-wrap">
+    <h1 class="ele-title">選挙で当選！</h1>
+
+    <div id="startScreen">
+      <p style="margin-bottom:12px;font-size:14px;">選挙まで10週間。<br>街頭演説やポスターで支持率を上げて、当選を目指そう！</p>
+      <button type="button" class="ele-start-btn" id="btnStart">選挙活動を始める</button>
+    </div>
+
+    <div id="gameScreen">
+      <div class="ele-info">
+        <span id="eleWeek">第1週</span>
+        <span id="eleMoney">資金: 1500円</span>
+      </div>
+
+      <div class="ele-districts" id="eleDistricts"></div>
+
+      <div class="ele-result" id="eleResult">
+        <div class="ele-result-title" id="resultTitle"></div>
+        <div class="ele-result-votes" id="resultVotes"></div>
+        <button type="button" class="ele-btn" id="btnRetry">もう一度挑戦</button>
+      </div>
+
+      <div class="ele-actions" id="eleActions">
+        <div class="ele-actions-title">今週の活動を選んでください</div>
+        <div id="actionButtons"></div>
+      </div>
+
+      <div class="ele-log" id="eleLog"></div>
+    </div>
+
+    <a href="/index.html" class="ele-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var DISTRICT_NAMES = ['北区', '南区', '東区', '西区', '中央区'];
+  var DISTRICT_POP = [100, 120, 80, 90, 110]; // 投票者数の重み
+  var TOTAL_WEEKS = 10;
+  var START_MONEY = 1500;
+  var SPEECH_COST = 300;
+  var SPEECH_MIN = 12;
+  var SPEECH_MAX = 22;
+  var POSTER_COST = 150;
+  var POSTER_MIN = 5;
+  var POSTER_MAX = 12;
+  var REST_GAIN = 200;
+  var OPP_MONEY_PER_WEEK = 280;
+  var OPP_SPEECH_EFFECT = 8;
+
+  var state = {
+    week: 1,
+    money: START_MONEY,
+    support: [20, 20, 20, 20, 20],
+    oppSupport: [40, 40, 40, 40, 40],
+    running: false,
+    electionDone: false
+  };
+
+  function totalPop() {
+    var s = 0;
+    for (var i = 0; i < DISTRICT_POP.length; i++) s += DISTRICT_POP[i];
+    return s;
+  }
+
+  function getYourVotes() {
+    var v = 0;
+    for (var i = 0; i < DISTRICT_POP.length; i++) {
+      v += DISTRICT_POP[i] * (state.support[i] / 100);
+    }
+    return Math.floor(v);
+  }
+
+  function getOppVotes() {
+    var v = 0;
+    for (var i = 0; i < DISTRICT_POP.length; i++) {
+      v += DISTRICT_POP[i] * (state.oppSupport[i] / 100);
+    }
+    return Math.floor(v);
+  }
+
+  function addLog(msg) {
+    var el = document.getElementById('eleLog');
+    if (!el) return;
+    el.textContent = (el.textContent ? el.textContent + '\n' : '') + msg;
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function clampSupport() {
+    for (var i = 0; i < DISTRICT_NAMES.length; i++) {
+      state.support[i] = Math.max(0, Math.min(100, state.support[i]));
+      state.oppSupport[i] = Math.max(0, Math.min(100, state.oppSupport[i]));
+      var total = state.support[i] + state.oppSupport[i];
+      if (total > 100) {
+        var r = 100 / total;
+        state.support[i] = Math.floor(state.support[i] * r);
+        state.oppSupport[i] = 100 - state.support[i];
+      }
+    }
+  }
+
+  function renderDistricts() {
+    var wrap = document.getElementById('eleDistricts');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    for (var i = 0; i < DISTRICT_NAMES.length; i++) {
+      var d = document.createElement('div');
+      d.className = 'ele-district';
+      var you = Math.round(state.support[i]);
+      var opp = Math.round(state.oppSupport[i]);
+      d.innerHTML =
+        '<div class="ele-district-name">' + DISTRICT_NAMES[i] + '（人口' + DISTRICT_POP[i] + '）</div>' +
+        '<div class="ele-bar-wrap">' +
+          '<div class="ele-bar-you" style="width:' + you + '%"></div>' +
+          '<div class="ele-bar-opp" style="width:' + opp + '%"></div>' +
+        '</div>' +
+        '<div class="ele-bar-label">あなた ' + you + '% ／ 対立候補 ' + opp + '%</div>';
+      wrap.appendChild(d);
+    }
+  }
+
+  function renderInfo() {
+    var w = document.getElementById('eleWeek');
+    var m = document.getElementById('eleMoney');
+    if (w) w.textContent = '第' + state.week + '週';
+    if (m) m.textContent = '資金: ' + state.money + '円';
+  }
+
+  function doSpeech(districtIndex) {
+    if (state.money < SPEECH_COST || state.electionDone) return;
+    state.money -= SPEECH_COST;
+    var gain = SPEECH_MIN + Math.floor(Math.random() * (SPEECH_MAX - SPEECH_MIN + 1));
+    state.support[districtIndex] += gain;
+    state.oppSupport[districtIndex] -= gain;
+    clampSupport();
+    addLog('【' + DISTRICT_NAMES[districtIndex] + '】街頭演説！ 支持率 +' + gain + '%');
+    renderDistricts();
+    renderInfo();
+    opponentTurn();
+  }
+
+  function doPoster(districtIndex) {
+    if (state.money < POSTER_COST || state.electionDone) return;
+    state.money -= POSTER_COST;
+    var gain = POSTER_MIN + Math.floor(Math.random() * (POSTER_MAX - POSTER_MIN + 1));
+    state.support[districtIndex] += gain;
+    state.oppSupport[districtIndex] -= gain;
+    clampSupport();
+    addLog('【' + DISTRICT_NAMES[districtIndex] + '】ポスター掲示！ 支持率 +' + gain + '%');
+    renderDistricts();
+    renderInfo();
+    opponentTurn();
+  }
+
+  function doRest() {
+    if (state.electionDone) return;
+    state.money += REST_GAIN;
+    addLog('休息。資金 +' + REST_GAIN + '円');
+    renderInfo();
+    opponentTurn();
+  }
+
+  function opponentTurn() {
+    var best = -1;
+    var bestVal = -1;
+    for (var i = 0; i < DISTRICT_NAMES.length; i++) {
+      if (state.oppSupport[i] > bestVal) {
+        bestVal = state.oppSupport[i];
+        best = i;
+      }
+    }
+    if (best < 0) best = Math.floor(Math.random() * DISTRICT_NAMES.length);
+    var effect = OPP_SPEECH_EFFECT + Math.floor(Math.random() * 5);
+    state.oppSupport[best] += effect;
+    state.support[best] -= effect;
+    clampSupport();
+    addLog('対立候補が【' + DISTRICT_NAMES[best] + '】で演説。あなたの支持率 -' + effect + '%');
+    renderDistricts();
+
+    state.week++;
+    if (state.week > TOTAL_WEEKS) {
+      state.electionDone = true;
+      showResult();
+      return;
+    }
+    renderInfo();
+    renderButtons();
+  }
+
+  function showResult() {
+    var yourV = getYourVotes();
+    var oppV = getOppVotes();
+    var totalV = totalPop() * 5;
+    var win = yourV > oppV;
+    var resultEl = document.getElementById('eleResult');
+    var titleEl = document.getElementById('resultTitle');
+    var votesEl = document.getElementById('resultVotes');
+    var actionsEl = document.getElementById('eleActions');
+    if (resultEl) resultEl.classList.add('visible');
+    if (resultEl) resultEl.classList.toggle('win', win);
+    if (resultEl) resultEl.classList.toggle('lose', !win);
+    if (titleEl) titleEl.textContent = win ? '当選おめでとうございます！' : '惜敗… また次の選挙で！';
+    if (votesEl) votesEl.textContent = 'あなた ' + yourV + '票 ／ 対立候補 ' + oppV + '票（有権者 ' + totalPop() + '人）';
+    if (actionsEl) actionsEl.style.display = 'none';
+    addLog(win ? '★ 当選！ ★' : '選挙終了。次回にむけて再起しよう。');
+  }
+
+  function renderButtons() {
+    var wrap = document.getElementById('actionButtons');
+    if (!wrap || state.electionDone) return;
+    wrap.innerHTML = '';
+    for (var i = 0; i < DISTRICT_NAMES.length; i++) {
+      (function (idx) {
+        var btn1 = document.createElement('button');
+        btn1.className = 'ele-btn';
+        btn1.textContent = DISTRICT_NAMES[idx] + 'で街頭演説 (' + SPEECH_COST + '円)';
+        btn1.disabled = state.money < SPEECH_COST;
+        btn1.addEventListener('click', function () { doSpeech(idx); });
+        wrap.appendChild(btn1);
+        var btn2 = document.createElement('button');
+        btn2.className = 'ele-btn';
+        btn2.textContent = DISTRICT_NAMES[idx] + 'でポスター (' + POSTER_COST + '円)';
+        btn2.disabled = state.money < POSTER_COST;
+        btn2.addEventListener('click', function () { doPoster(idx); });
+        wrap.appendChild(btn2);
+      })(i);
+    }
+    var restBtn = document.createElement('button');
+    restBtn.className = 'ele-btn rest';
+    restBtn.textContent = '休息して資金をためる (+' + REST_GAIN + '円)';
+    restBtn.addEventListener('click', doRest);
+    wrap.appendChild(restBtn);
+  }
+
+  function initGame() {
+    state.week = 1;
+    state.money = START_MONEY;
+    state.support = [20, 20, 20, 20, 20];
+    state.oppSupport = [40, 40, 40, 40, 40];
+    state.running = true;
+    state.electionDone = false;
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('gameScreen').classList.add('visible');
+    document.getElementById('eleResult').classList.remove('visible');
+    document.getElementById('eleActions').style.display = 'block';
+    document.getElementById('eleLog').textContent = '';
+    addLog('選挙活動開始！ 第1週、資金' + START_MONEY + '円。');
+    renderDistricts();
+    renderInfo();
+    renderButtons();
+  }
+
+  document.getElementById('btnStart').addEventListener('click', function () {
+    initGame();
+  });
+
+  document.getElementById('btnRetry').addEventListener('click', function () {
+    initGame();
+  });
+
+  document.getElementById('gameScreen').classList.remove('visible');
+})();
+  </script>
+</body>
+</html>

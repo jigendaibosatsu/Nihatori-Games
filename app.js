@@ -18,6 +18,8 @@
 
   var DUMMY_FEED = {
     items: [
+      { id: 'power-pro', type: 'game', title: 'きゅーと野球', url: './games/power-pro/', image: null, category: 'games', publishedAt: '2026-01-31T15:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 85 },
+      { id: 'election', type: 'game', title: '選挙で当選！', url: './games/election/', image: null, category: 'games', publishedAt: '2026-01-31T14:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 88 },
       { id: 'japan-war', type: 'game', title: '合戦', url: './games/japan-war/', image: null, category: 'games', publishedAt: '2026-01-31T12:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 95 },
       { id: '1', type: 'game', title: 'ババ抜き（準備中）', url: './games/baba-nuki/', image: null, category: 'games', publishedAt: '2026-01-31T10:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 90 },
       { id: '2', type: 'post', title: '開発ロードマップ公開', url: '/roadmap.html', image: null, category: 'devlog', publishedAt: '2026-01-30T14:00:00+09:00', commentCount: 2, isNew: false, recommended: true, trendingScore: 70 },

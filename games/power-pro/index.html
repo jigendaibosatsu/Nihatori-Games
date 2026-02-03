@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>きゅーと野球 – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #2d5016 0%, #1a3009 50%, #0d1804 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #fff;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .bb-wrap {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 12px;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .bb-title { font-size: 1.2rem; margin-bottom: 8px; text-align: center; font-weight: bold; color: #b8e986; text-shadow: 0 0 8px rgba(184,233,134,0.5); }
+    .bb-scoreboard {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto 1fr auto;
+      gap: 4px 8px;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.35);
+      border-radius: 10px;
+      font-size: 13px;
+      border: 2px solid rgba(184,233,134,0.4);
+    }
+    .bb-scoreboard .bb-label { color: #b8e986; font-weight: bold; }
+    .bb-scoreboard .bb-score { font-size: 1.2rem; font-weight: bold; text-align: center; }
+    .bb-runners {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.9);
+    }
+    .bb-runner { padding: 4px 10px; background: rgba(0,0,0,0.3); border-radius: 6px; }
+    .bb-runner.on { background: #c62828; color: #fff; font-weight: bold; }
+    .bb-batting-zone {
+      margin-bottom: 16px;
+      padding: 16px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 12px;
+      border: 3px solid #8d6e63;
+    }
+    .bb-zone-label { font-size: 12px; margin-bottom: 8px; text-align: center; color: #b8e986; }
+    .bb-timing-bar {
+      height: 36px;
+      background: #5d4037;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bb-sweet {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 35%;
+      width: 30%;
+      background: linear-gradient(90deg, #81c784, #4caf50);
+      border-radius: 6px;
+      pointer-events: none;
+    }
+    .bb-ball {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      width: 24px;
+      margin-left: -12px;
+      background: radial-gradient(circle, #fff 0%, #ffeb3b 50%, #f57f17 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(255,235,59,0.8);
+      left: 0%;
+      transition: none;
+      pointer-events: none;
+    }
+    .bb-ball.moving { transition: none; }
+    .bb-swing-btn {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      padding: 14px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #1b5e20;
+      background: linear-gradient(180deg, #b8e986, #7cb342);
+      border: 3px solid #558b2f;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 4px 0 #33691e;
+    }
+    .bb-swing-btn:hover { opacity: 0.95; transform: translateY(1px); box-shadow: 0 3px 0 #33691e; }
+    .bb-swing-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #33691e; }
+    .bb-swing-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .bb-result {
+      margin-top: 10px;
+      padding: 10px;
+      text-align: center;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      display: none;
+    }
+    .bb-result.visible { display: block; }
+    .bb-result.hr { background: linear-gradient(90deg, #ff6f00, #ffab00); color: #fff; }
+    .bb-result.hit { background: #2e7d32; color: #fff; }
+    .bb-result.out { background: #37474f; color: #fff; }
+    .bb-result.strike { background: #bf360c; color: #fff; }
+    .bb-log {
+      flex: 1 1 0;
+      min-height: 70px;
+      max-height: 120px;
+      overflow-y: auto;
+      padding: 10px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-line;
+      -webkit-overflow-scrolling: touch;
+    }
+    .bb-start { text-align: center; padding: 20px 0; }
+    .bb-start-btn {
+      display: inline-block;
+      padding: 14px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #1b5e20;
+      background: linear-gradient(180deg, #b8e986, #7cb342);
+      border: 3px solid #558b2f;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 12px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bb-start-btn:hover { opacity: 0.95; }
+    #bbGameScreen { display: none; flex: 1; min-height: 0; flex-direction: column; }
+    #bbGameScreen.visible { display: flex; }
+    .bb-final {
+      display: none;
+      padding: 16px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      text-align: center;
+      border: 2px solid #b8e986;
+    }
+    .bb-final.visible { display: block; }
+    .bb-final.win .bb-final-title { color: #b8e986; }
+    .bb-final.lose .bb-final-title { color: #ef5350; }
+    .bb-back { display: inline-block; margin-top: 12px; color: #b8e986; font-size: 14px; text-decoration: none; }
+    @media (max-width: 480px) {
+      .bb-wrap { padding: 8px; }
+      .bb-timing-bar { height: 32px; }
+      .bb-swing-btn { padding: 12px; font-size: 16px; }
+    }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="bb-wrap">
+    <h1 class="bb-title">きゅーと野球</h1>
+
+    <div id="bbStartScreen" class="bb-start">
+      <p style="margin-bottom:12px;font-size:14px;">タイミングを合わせて打つ！<br>パワプロ風の野球ゲームだよ。</p>
+      <button type="button" class="bb-start-btn" id="bbBtnStart">試合開始</button>
+    </div>
+
+    <div id="bbGameScreen">
+      <div class="bb-scoreboard">
+        <span class="bb-label">回</span>
+        <span id="bbInning">1</span>
+        <span class="bb-label">表/裏</span>
+        <span id="bbTopBottom">裏</span>
+        <span class="bb-label">アウト</span>
+        <span id="bbOuts">0</span>
+        <span class="bb-label">あなた</span>
+        <span class="bb-score" id="bbScoreYou">0</span>
+        <span class="bb-label">相手</span>
+        <span class="bb-score" id="bbScoreCpu">0</span>
+      </div>
+      <div class="bb-runners">
+        <span class="bb-runner" id="bb1st">1塁</span>
+        <span class="bb-runner" id="bb2nd">2塁</span>
+        <span class="bb-runner" id="bb3rd">3塁</span>
+      </div>
+
+      <div class="bb-final" id="bbFinal">
+        <div class="bb-final-title" id="bbFinalTitle"></div>
+        <div class="bb-final-score" id="bbFinalScore"></div>
+        <button type="button" class="bb-swing-btn" id="bbBtnRetry" style="margin-top:10px">もう一度</button>
+      </div>
+
+      <div class="bb-batting-zone" id="bbBattingZone">
+        <div class="bb-zone-label" id="bbZoneLabel">打席に立った！ タイミングを合わせて打て！</div>
+        <div class="bb-timing-bar" id="bbTimingBar">
+          <div class="bb-sweet"></div>
+          <div class="bb-ball" id="bbBall"></div>
+        </div>
+        <button type="button" class="bb-swing-btn" id="bbSwingBtn">打つ！</button>
+        <div class="bb-result" id="bbResult"></div>
+      </div>
+
+      <div class="bb-log" id="bbLog"></div>
+    </div>
+
+    <a href="/index.html" class="bb-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var TOTAL_INNINGS = 5;
+  var SWEET_LEFT = 35;
+  var SWEET_WIDTH = 30;
+  var BALL_SPEED = 0.8;
+  var BALL_DURATION_MS = 1200;
+
+  var state = {
+    inning: 1,
+    topBottom: 'bottom',
+    outs: 0,
+    scoreYou: 0,
+    scoreCpu: 0,
+    runners: [false, false, false],
+    ballPos: 0,
+    ballMoving: false,
+    ballStartTime: 0,
+    animId: null,
+    gameOver: false
+  };
+
+  function addLog(msg) {
+    var el = document.getElementById('bbLog');
+    if (el) {
+      el.textContent = (el.textContent ? el.textContent + '\n' : '') + msg;
+      el.scrollTop = el.scrollHeight;
+    }
+  }
+
+  function updateScoreboard() {
+    var el;
+    if (el = document.getElementById('bbInning')) el.textContent = state.inning;
+    if (el = document.getElementById('bbTopBottom')) el.textContent = state.topBottom === 'top' ? '表' : '裏';
+    if (el = document.getElementById('bbOuts')) el.textContent = state.outs;
+    if (el = document.getElementById('bbScoreYou')) el.textContent = state.scoreYou;
+    if (el = document.getElementById('bbScoreCpu')) el.textContent = state.scoreCpu;
+    if (el = document.getElementById('bb1st')) el.className = 'bb-runner' + (state.runners[0] ? ' on' : '');
+    if (el = document.getElementById('bb2nd')) el.className = 'bb-runner' + (state.runners[1] ? ' on' : '');
+    if (el = document.getElementById('bb3rd')) el.className = 'bb-runner' + (state.runners[2] ? ' on' : '');
+  }
+
+  function advanceRunnersSimple(bases) {
+    var score = 0;
+    if (bases >= 4) {
+      score = 1 + (state.runners[0] ? 1 : 0) + (state.runners[1] ? 1 : 0) + (state.runners[2] ? 1 : 0);
+      state.runners[0] = state.runners[1] = state.runners[2] = false;
+      state.scoreYou += score;
+      return score;
+    }
+    if (bases === 1) {
+      score = (state.runners[2] ? 1 : 0);
+      state.runners[2] = state.runners[1];
+      state.runners[1] = state.runners[0];
+      state.runners[0] = true;
+    } else if (bases === 2) {
+      score = (state.runners[1] ? 1 : 0) + (state.runners[2] ? 1 : 0);
+      state.runners[2] = state.runners[0];
+      state.runners[1] = true;
+      state.runners[0] = false;
+    } else if (bases === 3) {
+      score = (state.runners[0] ? 1 : 0) + (state.runners[1] ? 1 : 0) + (state.runners[2] ? 1 : 0);
+      state.runners[0] = state.runners[1] = false;
+      state.runners[2] = true;
+    }
+    state.scoreYou += score;
+    return score;
+  }
+
+  function doCpuHalfInning() {
+    state.topBottom = 'top';
+    state.outs = 0;
+    state.runners = [false, false, false];
+    var runs = 0;
+    for (var o = 0; o < 3; ) {
+      if (Math.random() < 0.65) {
+        o++;
+      } else {
+        var bases = Math.random() < 0.5 ? 1 : (Math.random() < 0.5 ? 2 : (Math.random() < 0.5 ? 3 : 4));
+        if (bases === 4) runs += 1 + (state.runners[0] ? 1 : 0) + (state.runners[1] ? 1 : 0) + (state.runners[2] ? 1 : 0);
+        else if (bases === 1) {
+          if (state.runners[2]) { runs++; state.runners[2] = false; }
+          state.runners[2] = state.runners[1];
+          state.runners[1] = state.runners[0];
+          state.runners[0] = true;
+        } else if (bases === 2) {
+          if (state.runners[2]) runs++;
+          if (state.runners[1]) runs++;
+          state.runners[2] = state.runners[0];
+          state.runners[1] = true;
+          state.runners[0] = false;
+        } else {
+          runs += (state.runners[0] ? 1 : 0) + (state.runners[1] ? 1 : 0) + (state.runners[2] ? 1 : 0) + 1;
+          state.runners[0] = state.runners[1] = state.runners[2] = false;
+        }
+      }
+    }
+    state.scoreCpu += runs;
+    state.topBottom = 'bottom';
+    state.outs = 0;
+    state.runners = [false, false, false];
+    addLog('--- ' + state.inning + '回表 相手 ' + runs + '点 ---');
+    updateScoreboard();
+  }
+
+  function startBall() {
+    if (state.ballMoving || state.gameOver) return;
+    state.ballMoving = true;
+    state.ballStartTime = Date.now();
+    state.ballPos = 0;
+    var ballEl = document.getElementById('bbBall');
+    if (ballEl) ballEl.classList.add('moving');
+    document.getElementById('bbZoneLabel').textContent = '球が飛んでくる！ タイミングで打つ！';
+    document.getElementById('bbResult').classList.remove('visible');
+    requestAnimationFrame(animateBall);
+  }
+
+  function animateBall() {
+    if (!state.ballMoving) return;
+    var t = (Date.now() - state.ballStartTime) / BALL_DURATION_MS;
+    if (t >= 1) {
+      state.ballMoving = false;
+      state.ballPos = 100;
+      updateBallPos();
+      document.getElementById('bbBall').classList.remove('moving');
+      state.outs++;
+      addLog('見送り… ストライク！');
+      document.getElementById('bbZoneLabel').textContent = '見送り！ ストライク…';
+      document.getElementById('bbResult').textContent = 'ストライク！';
+      document.getElementById('bbResult').className = 'bb-result visible strike';
+      nextAfterOut();
+      return;
+    }
+    state.ballPos = t * 100;
+    updateBallPos();
+    state.animId = requestAnimationFrame(animateBall);
+  }
+
+  function updateBallPos() {
+    var ballEl = document.getElementById('bbBall');
+    if (ballEl) ballEl.style.left = state.ballPos + '%';
+  }
+
+  function swing() {
+    if (!state.ballMoving || state.gameOver) return;
+    state.ballMoving = false;
+    if (state.animId) cancelAnimationFrame(state.animId);
+    state.animId = null;
+    var pos = state.ballPos;
+    var center = SWEET_LEFT + SWEET_WIDTH / 2;
+    var dist = Math.abs(pos - center);
+    var resultEl = document.getElementById('bbResult');
+    resultEl.classList.add('visible');
+    if (dist <= SWEET_WIDTH / 2) {
+      var r = Math.random();
+      if (r < 0.4) {
+        resultEl.textContent = 'ホームラン！！！';
+        resultEl.className = 'bb-result visible hr';
+        var sc = advanceRunnersSimple(4);
+        addLog('ホームラン！！！ ' + sc + '点入った！');
+      } else if (r < 0.7) {
+        resultEl.textContent = 'ツーベース！';
+        resultEl.className = 'bb-result visible hit';
+        advanceRunnersSimple(2);
+        addLog('ツーベース！');
+      } else {
+        resultEl.textContent = 'ヒット！';
+        resultEl.className = 'bb-result visible hit';
+        advanceRunnersSimple(1);
+        addLog('ヒット！');
+      }
+    } else if (dist <= SWEET_WIDTH) {
+      var r2 = Math.random();
+      if (r2 < 0.6) {
+        resultEl.textContent = 'ヒット！';
+        resultEl.className = 'bb-result visible hit';
+        advanceRunnersSimple(1);
+        addLog('ヒット！');
+      } else if (r2 < 0.85) {
+        resultEl.textContent = 'アウト…';
+        resultEl.className = 'bb-result visible out';
+        state.outs++;
+        addLog('アウト…');
+        nextAfterOut();
+        return;
+      } else {
+        resultEl.textContent = 'ツーベース！';
+        resultEl.className = 'bb-result visible hit';
+        advanceRunnersSimple(2);
+        addLog('ツーベース！');
+      }
+    } else if (dist <= SWEET_WIDTH + 15) {
+      var r3 = Math.random();
+      if (r3 < 0.7) {
+        resultEl.textContent = 'アウト…';
+        resultEl.className = 'bb-result visible out';
+        state.outs++;
+        addLog('アウト…');
+        nextAfterOut();
+        return;
+      } else {
+        resultEl.textContent = 'ヒット！';
+        resultEl.className = 'bb-result visible hit';
+        advanceRunnersSimple(1);
+        addLog('ヒット！');
+      }
+    } else {
+      resultEl.textContent = 'ストライク！';
+      resultEl.className = 'bb-result visible strike';
+      state.outs++;
+      addLog('空振り！ ストライク…');
+      nextAfterOut();
+      return;
+    }
+    updateScoreboard();
+    setTimeout(startBall, 800);
+  }
+
+  function nextAfterOut() {
+    updateScoreboard();
+    if (state.outs >= 3) {
+      state.outs = 0;
+      state.runners = [false, false, false];
+      if (state.topBottom === 'bottom') {
+        state.inning++;
+        if (state.inning > TOTAL_INNINGS) {
+          endGame();
+          return;
+        }
+        addLog('--- ' + state.inning + '回表 相手の攻撃 ---');
+        setTimeout(function () {
+          doCpuHalfInning();
+          document.getElementById('bbZoneLabel').textContent = '打席に立った！';
+          setTimeout(startBall, 600);
+        }, 500);
+      }
+      return;
+    }
+    setTimeout(startBall, 800);
+  }
+
+  function endGame() {
+    state.gameOver = true;
+    var win = state.scoreYou > state.scoreCpu;
+    document.getElementById('bbFinal').classList.add('visible');
+    document.getElementById('bbFinal').classList.toggle('win', win);
+    document.getElementById('bbFinal').classList.toggle('lose', !win);
+    document.getElementById('bbFinalTitle').textContent = win ? '勝利！' : '敗北…';
+    document.getElementById('bbFinalScore').textContent = state.scoreYou + ' 対 ' + state.scoreCpu;
+    document.getElementById('bbBattingZone').style.display = 'none';
+    addLog(win ? '★ 試合に勝った！ ★' : '試合終了。また挑戦しよう！');
+  }
+
+  function initGame() {
+    state.inning = 1;
+    state.topBottom = 'bottom';
+    state.outs = 0;
+    state.scoreYou = 0;
+    state.scoreCpu = 0;
+    state.runners = [false, false, false];
+    state.ballMoving = false;
+    state.gameOver = false;
+    document.getElementById('bbStartScreen').style.display = 'none';
+    document.getElementById('bbGameScreen').classList.add('visible');
+    document.getElementById('bbFinal').classList.remove('visible');
+    document.getElementById('bbBattingZone').style.display = 'block';
+    document.getElementById('bbLog').textContent = '';
+    addLog('試合開始！ あなたの攻撃（裏）から。');
+    updateScoreboard();
+    document.getElementById('bbZoneLabel').textContent = '打席に立った！ タイミングを合わせて打て！';
+    setTimeout(function () {
+      doCpuHalfInning();
+      document.getElementById('bbZoneLabel').textContent = '打席に立った！';
+      setTimeout(startBall, 600);
+    }, 500);
+  }
+
+  document.getElementById('bbBtnStart').addEventListener('click', initGame);
+  document.getElementById('bbBtnRetry').addEventListener('click', initGame);
+  document.getElementById('bbSwingBtn').addEventListener('click', swing);
+  document.getElementById('bbTimingBar').addEventListener('click', function (e) {
+    if (state.ballMoving) swing();
+  });
+
+  document.getElementById('bbGameScreen').classList.remove('visible');
+})();
+  </script>
+</body>
+</html>
