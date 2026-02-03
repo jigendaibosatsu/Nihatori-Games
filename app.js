@@ -18,6 +18,7 @@
 
   var DUMMY_FEED = {
     items: [
+      { id: 'romance', type: 'game', title: 'きゅーと恋愛', url: './games/romance/', image: null, category: 'games', publishedAt: '2026-01-31T16:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 82 },
       { id: 'power-pro', type: 'game', title: 'きゅーと野球', url: './games/power-pro/', image: null, category: 'games', publishedAt: '2026-01-31T15:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 85 },
       { id: 'election', type: 'game', title: '選挙で当選！', url: './games/election/', image: null, category: 'games', publishedAt: '2026-01-31T14:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 88 },
       { id: 'japan-war', type: 'game', title: '合戦', url: './games/japan-war/', image: null, category: 'games', publishedAt: '2026-01-31T12:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 95 },

@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>きゅーと恋愛 – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #fce4ec 0%, #f8bbd9 40%, #e1bee7 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #4a148c;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .rom-wrap {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 12px;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .rom-title { font-size: 1.2rem; margin-bottom: 8px; text-align: center; font-weight: bold; color: #880e4f; text-shadow: 0 0 12px rgba(255,182,193,0.6); }
+    .rom-scene {
+      flex: 1 1 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      border: 2px solid rgba(233,30,99,0.3);
+    }
+    .rom-char-name {
+      font-size: 13px;
+      font-weight: bold;
+      color: #ad1457;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(233,30,99,0.2);
+    }
+    .rom-text {
+      flex: 1 1 0;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .rom-choices {
+      flex-shrink: 0;
+    }
+    .rom-choice {
+      display: block;
+      width: 100%;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-align: left;
+      color: #fff;
+      background: linear-gradient(135deg, #ec407a, #ad1457);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 2px 8px rgba(173,20,87,0.3);
+    }
+    .rom-choice:hover { opacity: 0.95; transform: translateY(-1px); }
+    .rom-choice:active { transform: translateY(0); }
+    .rom-start {
+      text-align: center;
+      padding: 24px 16px;
+    }
+    .rom-start p { margin-bottom: 16px; font-size: 14px; line-height: 1.6; color: #6a1b9a; }
+    .rom-start-btn {
+      display: inline-block;
+      padding: 14px 36px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(135deg, #ec407a, #ad1457);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 4px 12px rgba(173,20,87,0.4);
+    }
+    .rom-start-btn:hover { opacity: 0.95; }
+    .rom-ending {
+      display: none;
+      padding: 20px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      text-align: center;
+      border: 2px solid rgba(233,30,99,0.3);
+    }
+    .rom-ending.visible { display: block; }
+    .rom-ending-title { font-size: 1.3rem; font-weight: bold; color: #ad1457; margin-bottom: 12px; }
+    .rom-ending-char { font-size: 1.1rem; margin-bottom: 8px; color: #6a1b9a; }
+    .rom-ending-text { font-size: 14px; line-height: 1.7; margin-bottom: 16px; color: #4a148c; }
+    .rom-retry-btn {
+      display: inline-block;
+      padding: 10px 24px;
+      font-size: 14px;
+      color: #fff;
+      background: linear-gradient(135deg, #ab47bc, #7b1fa2);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .rom-retry-btn:hover { opacity: 0.95; }
+    #romGameArea { display: none; flex: 1; min-height: 0; flex-direction: column; }
+    #romGameArea.visible { display: flex; }
+    .rom-back { display: inline-block; margin-top: 8px; color: #7b1fa2; font-size: 14px; text-decoration: none; }
+    .rom-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="rom-wrap">
+    <h1 class="rom-title">きゅーと恋愛</h1>
+
+    <div id="romStartScreen" class="rom-start">
+      <p>転校先で出会った3人。<br>あなたの選択で、物語の結末が決まる。</p>
+      <button type="button" class="rom-start-btn" id="romBtnStart">はじめる</button>
+    </div>
+
+    <div id="romGameArea">
+      <div class="rom-scene">
+        <div class="rom-char-name" id="romCharName"></div>
+        <div class="rom-text" id="romText"></div>
+        <div class="rom-choices" id="romChoices"></div>
+      </div>
+
+      <div class="rom-ending" id="romEnding">
+        <div class="rom-ending-title" id="romEndingTitle"></div>
+        <div class="rom-ending-char" id="romEndingChar"></div>
+        <div class="rom-ending-text" id="romEndingText"></div>
+        <button type="button" class="rom-retry-btn" id="romBtnRetry">もう一度プレイ</button>
+      </div>
+    </div>
+
+    <a href="/index.html" class="rom-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var CHAR = { HARUTO: 0, YUKINO: 1, REN: 2 };
+  var CHAR_NAMES = ['陽太', '雪乃', '蓮'];
+  var CHAR_DESC = ['明るい隣のクラスの子', 'クールな委員長', 'おっとり図書委員'];
+
+  var scenes = [
+    {
+      name: '',
+      text: '春。あなたは新しい学校に転校してきた。\n\n初めての教室で、三人のクラスメイトが声をかけてくれた。',
+      choices: [
+        { label: '陽太の「よろしくな！」に笑って答える', affection: [2, 0, 0] },
+        { label: '雪乃の「必要なら案内する」に礼を言う', affection: [0, 2, 0] },
+        { label: '蓮の「本、一緒に探そうか」に頷く', affection: [0, 0, 2] }
+      ]
+    },
+    {
+      name: '陽太',
+      text: '昼休み。グラウンドで陽太が手を振っている。\n\n「お、転校生！ 一緒に昼飯食わない？ 今日は屋上空いてるぜ！」',
+      choices: [
+        { label: '「いいね、行こう！」と元気に答える', affection: [2, 0, 0] },
+        { label: '「ちょっと図書室、行ってくる」と断る', affection: [0, 0, 2] },
+        { label: '「委員長も誘っていい？」と聞く', affection: [0, 2, 0] }
+      ]
+    },
+    {
+      name: '雪乃',
+      text: '放課後。委員長の雪乃が冷たく言う。\n\n「提出物、まだだったわね。今日中に職員室まで持ってきて。」',
+      choices: [
+        { label: '「ごめん、今からやる！」と謝る', affection: [0, 2, 0] },
+        { label: '「一緒に図書室でやらない？」と誘う', affection: [0, 0, 2] },
+        { label: '「陽太に聞いてみる」と逃げる', affection: [2, 0, 0] }
+      ]
+    },
+    {
+      name: '蓮',
+      text: '図書室。蓮が静かに本を閉じた。\n\n「この前の話、続き気になる？ ここならゆっくり話せるよ。」',
+      choices: [
+        { label: '「うん、教えて」と隣に座る', affection: [0, 0, 2] },
+        { label: '「ごめん、今日は委員長に約束があって」', affection: [0, 2, 0] },
+        { label: '「陽太も呼んでこようか」', affection: [2, 0, 0] }
+      ]
+    },
+    {
+      name: '',
+      text: '文化祭の日。三人がそれぞれあなたを探しにきた。\n\n陽太は「模擬店手伝って！」、雪乃は「展示の説明、任せたい」、蓮は「静かな場所、知ってる」と。',
+      choices: [
+        { label: '陽太と模擬店を手伝う', affection: [2, 0, 0] },
+        { label: '雪乃の展示を手伝う', affection: [0, 2, 0] },
+        { label: '蓮と静かな場所へ行く', affection: [0, 0, 2] }
+      ]
+    },
+    {
+      name: '',
+      text: '雨の日。誰かと一本の傘をさすなら、誰がいい？\n\nあなたの心が、少しだけ決めかけている。',
+      choices: [
+        { label: '陽太と走って帰る', affection: [2, 0, 0] },
+        { label: '雪乃と傘を半分こ', affection: [0, 2, 0] },
+        { label: '蓮と図書室で雨やみを待つ', affection: [0, 0, 2] }
+      ]
+    }
+  ];
+
+  var endings = {
+    haruto: {
+      title: '★ 陽太エンド ★',
+      char: '陽太',
+      text: '「お前といると楽しいんだよ。」\n\n陽太が照れくさそうに笑った。あなたも笑い返す。これからも、この笑顔がそばにいる。'
+    },
+    yukino: {
+      title: '★ 雪乃エンド ★',
+      char: '雪乃',
+      text: '「…必要なら、いつでも言いなさい。」\n\n雪乃の口調は相変わらず冷たい。でも、その目は少しだけ柔らかく見えた。'
+    },
+    ren: {
+      title: '★ 蓮エンド ★',
+      char: '蓮',
+      text: '「一緒にいて、落ち着くんだ。」\n\n蓮が静かに微笑む。あなたの手が、そっと握り返されていた。'
+    },
+    friend: {
+      title: 'ともだちエンド',
+      char: '三人みんな',
+      text: '三人とも、大切な友達になった。\n\n今日も教室では、陽太の声、雪乃の注意、蓮の穏やかな笑い声が聞こえる。また明日も、一緒にいよう。'
+    }
+  };
+
+  var state = {
+    sceneIndex: 0,
+    affection: [0, 0, 0],
+    finished: false
+  };
+
+  function showScene(index) {
+    if (index >= scenes.length) {
+      showEnding();
+      return;
+    }
+    var scene = scenes[index];
+    document.getElementById('romCharName').textContent = scene.name || 'ナレーション';
+    document.getElementById('romCharName').style.display = scene.name ? 'block' : 'none';
+    document.getElementById('romText').textContent = scene.text;
+    var choicesEl = document.getElementById('romChoices');
+    choicesEl.innerHTML = '';
+    for (var i = 0; i < scene.choices.length; i++) {
+      (function (choice) {
+        var btn = document.createElement('button');
+        btn.className = 'rom-choice';
+        btn.textContent = choice.label;
+        btn.addEventListener('click', function () {
+          state.affection[0] += choice.affection[0];
+          state.affection[1] += choice.affection[1];
+          state.affection[2] += choice.affection[2];
+          state.sceneIndex++;
+          showScene(state.sceneIndex);
+        });
+        choicesEl.appendChild(btn);
+      })(scene.choices[i]);
+    }
+    document.getElementById('romEnding').classList.remove('visible');
+  }
+
+  function showEnding() {
+    state.finished = true;
+    var maxVal = Math.max(state.affection[0], state.affection[1], state.affection[2]);
+    var which = 'friend';
+    if (maxVal >= 4) {
+      if (state.affection[0] === maxVal && state.affection[0] >= state.affection[1] && state.affection[0] >= state.affection[2]) which = 'haruto';
+      else if (state.affection[1] === maxVal && state.affection[1] >= state.affection[0] && state.affection[1] >= state.affection[2]) which = 'yukino';
+      else if (state.affection[2] === maxVal && state.affection[2] >= state.affection[0] && state.affection[2] >= state.affection[1]) which = 'ren';
+    }
+    var end = endings[which];
+    document.getElementById('romEndingTitle').textContent = end.title;
+    document.getElementById('romEndingChar').textContent = end.char;
+    document.getElementById('romEndingText').textContent = end.text;
+    document.getElementById('romEnding').classList.add('visible');
+    document.querySelector('.rom-scene').style.display = 'none';
+  }
+
+  function initGame() {
+    state.sceneIndex = 0;
+    state.affection = [0, 0, 0];
+    state.finished = false;
+    document.getElementById('romStartScreen').style.display = 'none';
+    document.getElementById('romGameArea').classList.add('visible');
+    document.querySelector('.rom-scene').style.display = 'flex';
+    showScene(0);
+  }
+
+  document.getElementById('romBtnStart').addEventListener('click', initGame);
+  document.getElementById('romBtnRetry').addEventListener('click', function () {
+    document.getElementById('romEnding').classList.remove('visible');
+    document.querySelector('.rom-scene').style.display = 'flex';
+    initGame();
+  });
+})();
+  </script>
+</body>
+</html>

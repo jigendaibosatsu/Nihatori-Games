@@ -7,28 +7,32 @@
   <link rel="stylesheet" href="/styles.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { min-height: 100%; }
+    html { height: 100%; overflow: hidden; }
     body.game-page {
       padding-top: 48px;
       background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%);
       font-family: "MS PGothic", "Yu Gothic", sans-serif;
       color: #1b5e20;
-      min-height: 100vh;
-      min-height: 100dvh;
+      height: 100vh;
+      height: 100dvh;
+      max-height: 100dvh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
     }
     .war-wrap {
       max-width: 520px;
       margin: 0 auto;
-      padding: 8px;
+      padding: 6px;
       width: 100%;
       flex: 1;
       min-height: 0;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
     }
-    .war-title { font-size: 1.1rem; margin-bottom: 8px; text-align: center; font-weight: bold; flex-shrink: 0; }
+    .war-wrap.war-no-scroll { overflow: hidden; }
+    .war-title { font-size: 1rem; margin-bottom: 4px; text-align: center; font-weight: bold; flex-shrink: 0; }
     .war-setup {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -59,50 +63,51 @@
     .war-map-wrap {
       background: #e0e0e0;
       border: 2px solid #2e7d32;
-      border-radius: 8px;
-      margin-bottom: 6px;
+      border-radius: 6px;
+      margin-bottom: 4px;
       text-align: center;
       position: relative;
-      flex: 0 0 auto;
+      flex: 1 1 0;
+      min-height: 0;
       display: flex;
       flex-direction: column;
-      min-height: 180px;
     }
-    .war-map-inner { position: relative; width: 100%; flex: 1; min-height: 180px; }
+    .war-map-inner { position: relative; width: 100%; flex: 1; min-height: 0; }
     .war-canvas { display: block; width: 100%; height: 100%; pointer-events: none; }
     .war-ranking {
       flex-shrink: 0;
-      margin-bottom: 6px;
-      font-size: 12px;
+      margin-bottom: 4px;
+      font-size: 11px;
       color: #1b5e20;
       display: flex;
       flex-wrap: wrap;
-      gap: 6px 10px;
+      gap: 4px 8px;
       align-items: center;
     }
     .war-ranking .war-rank-item { margin: 0; }
     .war-log {
-      flex: 1 1 0;
-      min-height: 72px;
+      flex: 0 0 auto;
+      max-height: 22vh;
+      min-height: 48px;
       overflow-y: auto;
-      padding: 8px;
+      padding: 6px;
       background: rgba(0,0,0,0.08);
       border: 2px solid #81c784;
-      border-radius: 8px;
-      font-size: 11px;
-      line-height: 1.5;
+      border-radius: 6px;
+      font-size: 10px;
+      line-height: 1.4;
       white-space: pre-line;
       -webkit-overflow-scrolling: touch;
     }
-    @media (max-width: 480px), (max-height: 600px) {
-      .war-wrap { padding: 6px; }
-      .war-title { margin-bottom: 4px; font-size: 1rem; }
-      .war-map-wrap { max-height: 32vh; min-height: 140px; }
-      .war-map-inner { min-height: 140px; }
-      .war-ranking { font-size: 11px; gap: 4px 8px; margin-bottom: 4px; }
-      .war-log { min-height: 60px; font-size: 10px; padding: 6px; }
+    .war-back { flex-shrink: 0; display: inline-block; margin-top: 4px; color: #2e7d32; font-size: 12px; text-decoration: none; }
+    @media (max-width: 480px), (max-height: 700px) {
+      .war-wrap { padding: 4px; }
+      .war-title { margin-bottom: 2px; font-size: 0.95rem; }
+      .war-map-wrap { margin-bottom: 2px; }
+      .war-ranking { font-size: 10px; gap: 2px 6px; margin-bottom: 2px; }
+      .war-log { max-height: 18vh; min-height: 40px; font-size: 9px; padding: 4px; }
+      .war-back { margin-top: 2px; font-size: 11px; }
     }
-    .war-back { display: inline-block; margin-top: 12px; color: #2e7d32; font-size: 14px; text-decoration: none; }
   </style>
 </head>
 <body class="game-page">
@@ -151,6 +156,14 @@
   var GRID_COLS = 20;
   var GRID_ROWS = 10;
   var NUM_BASES = GRID_COLS * GRID_ROWS;
+
+  function getGridColsForViewport() {
+    var h = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 600;
+    if (h < 500) return 12;
+    if (h < 650) return 14;
+    if (h < 800) return 16;
+    return 20;
+  }
   var NEUTRAL = -1;
   var REQUIRED_HITS = [];
   for (var i = 0; i < 500; i++) REQUIRED_HITS[i] = 1 + (i % 4);
@@ -176,13 +189,14 @@
     var h = inner.clientHeight || 300;
     if (w < 100) w = 300;
     if (h < 100) h = 300;
+    GRID_COLS = getGridColsForViewport();
     canvas.width = w;
     canvas.height = h;
     CANVAS_W = w;
     CANVAS_H = h;
     pathW = w;
     pathH = h;
-    GRID_ROWS = Math.max(10, Math.round(GRID_COLS * pathH / pathW));
+    GRID_ROWS = Math.max(8, Math.round(GRID_COLS * pathH / pathW));
     NUM_BASES = GRID_COLS * GRID_ROWS;
     for (var i = 0; i < NUM_BASES; i++) REQUIRED_HITS[i] = 1 + (i % 4);
     cellSize = Math.min(pathW / GRID_COLS, pathH / GRID_ROWS);
@@ -1106,10 +1120,12 @@
     }
   }
 
+  var wrapEl = document.querySelector('.war-wrap');
   document.getElementById('btnStart').addEventListener('click', function () {
     if (state.running) {
       document.getElementById('setup').style.display = 'grid';
       document.getElementById('btnStart').textContent = '合戦開始';
+      if (wrapEl) wrapEl.classList.remove('war-no-scroll');
       state.running = false;
       if (state.animId) cancelAnimationFrame(state.animId);
       state.animId = null;
@@ -1117,6 +1133,7 @@
     }
     document.getElementById('setup').style.display = 'none';
     document.getElementById('mapWrap').style.display = 'block';
+    if (wrapEl) wrapEl.classList.add('war-no-scroll');
     var rankEl = document.getElementById('warRanking');
     if (rankEl) rankEl.style.display = 'block';
     var self = this;
