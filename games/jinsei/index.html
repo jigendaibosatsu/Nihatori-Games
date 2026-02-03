@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>人生ゲーム – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #fff8e1 0%, #ffecb3 50%, #ffe0b2 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #5d4037;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .jinsei-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 12px;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .jinsei-title { font-size: 1.2rem; margin-bottom: 8px; text-align: center; font-weight: bold; color: #e65100; }
+    .jinsei-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 10px;
+      border: 2px solid #ffb74d;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .jinsei-info .money { color: #2e7d32; }
+    .jinsei-board {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+      padding: 10px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 10px;
+      border: 2px solid #ffb74d;
+    }
+    .jinsei-cell {
+      width: calc(20% - 4px);
+      min-width: 70px;
+      padding: 8px 4px;
+      font-size: 11px;
+      text-align: center;
+      background: #fff;
+      border-radius: 6px;
+      border: 2px solid #ffcc80;
+      color: #5d4037;
+    }
+    .jinsei-cell.current { border-color: #e65100; background: #ffe0b2; box-shadow: 0 0 8px rgba(230,81,0,0.4); font-weight: bold; }
+    .jinsei-cell.goal { border-color: #2e7d32; background: #c8e6c9; color: #1b5e20; }
+    .jinsei-cell.start { border-color: #1976d2; background: #bbdefb; color: #0d47a1; }
+    .jinsei-spin-area {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .jinsei-dice {
+      display: inline-block;
+      width: 64px;
+      height: 64px;
+      line-height: 64px;
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(145deg, #ff9800, #e65100);
+      border-radius: 12px;
+      margin: 0 8px 12px;
+      box-shadow: 0 4px 12px rgba(230,81,0,0.4);
+    }
+    .jinsei-spin-btn {
+      display: inline-block;
+      padding: 14px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #ff9800, #e65100);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 4px 12px rgba(230,81,0,0.3);
+    }
+    .jinsei-spin-btn:hover { opacity: 0.95; }
+    .jinsei-spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .jinsei-event {
+      flex: 1 1 0;
+      min-height: 60px;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 10px;
+      border: 2px solid #ffb74d;
+      font-size: 14px;
+      line-height: 1.6;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .jinsei-result {
+      display: none;
+      padding: 20px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      text-align: center;
+      border: 3px solid #2e7d32;
+    }
+    .jinsei-result.visible { display: block; }
+    .jinsei-result-title { font-size: 1.3rem; font-weight: bold; color: #1b5e20; margin-bottom: 12px; }
+    .jinsei-result-money { font-size: 1.5rem; color: #e65100; margin-bottom: 16px; }
+    .jinsei-result-msg { font-size: 14px; line-height: 1.6; color: #5d4037; margin-bottom: 16px; }
+    .jinsei-retry-btn {
+      display: inline-block;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #ff9800, #e65100);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .jinsei-retry-btn:hover { opacity: 0.95; }
+    .jinsei-back { display: inline-block; margin-top: 8px; color: #e65100; font-size: 14px; text-decoration: none; }
+    #jinseiGameArea { display: none; flex: 1; min-height: 0; flex-direction: column; }
+    #jinseiGameArea.visible { display: flex; }
+    .jinsei-start { text-align: center; padding: 24px 16px; }
+    .jinsei-start p { margin-bottom: 16px; font-size: 14px; line-height: 1.6; color: #5d4037; }
+    .jinsei-start-btn {
+      display: inline-block;
+      padding: 14px 36px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #ff9800, #e65100);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .jinsei-start-btn:hover { opacity: 0.95; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="jinsei-wrap">
+    <h1 class="jinsei-title">人生ゲーム</h1>
+
+    <div id="jinseiStartScreen" class="jinsei-start">
+      <p>サイコロを振ってマスを進もう！<br>給料・結婚・子供…いろんな人生イベントが待ってるよ。</p>
+      <button type="button" class="jinsei-start-btn" id="jinseiBtnStart">はじめる</button>
+    </div>
+
+    <div id="jinseiGameArea">
+      <div class="jinsei-info">
+        <span>所持金</span>
+        <span class="money" id="jinseiMoney">30,000円</span>
+      </div>
+
+      <div class="jinsei-board" id="jinseiBoard"></div>
+
+      <div class="jinsei-spin-area">
+        <div class="jinsei-dice" id="jinseiDice">?</div>
+        <br>
+        <button type="button" class="jinsei-spin-btn" id="jinseiSpinBtn">サイコロを振る</button>
+      </div>
+
+      <div class="jinsei-event" id="jinseiEvent">サイコロを振ってスタート！</div>
+
+      <div class="jinsei-result" id="jinseiResult">
+        <div class="jinsei-result-title" id="jinseiResultTitle">人生の結果</div>
+        <div class="jinsei-result-money" id="jinseiResultMoney"></div>
+        <div class="jinsei-result-msg" id="jinseiResultMsg"></div>
+        <button type="button" class="jinsei-retry-btn" id="jinseiRetryBtn">もう一度プレイ</button>
+      </div>
+    </div>
+
+    <a href="/index.html" class="jinsei-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var START_MONEY = 30000;
+  var BOARD = [
+    { name: 'スタート', type: 'start' },
+    { name: '給料日', type: 'money', value: 2000 },
+    { name: '習い事', type: 'money', value: -500 },
+    { name: 'ボーナス', type: 'money', value: 3000 },
+    { name: '風邪ひいた', type: 'money', value: -800 },
+    { name: '昇進！', type: 'money', value: 5000 },
+    { name: '結婚', type: 'marriage' },
+    { name: '出費', type: 'money', value: -1000 },
+    { name: '宝くじ', type: 'lottery' },
+    { name: '事故', type: 'money', value: -2000 },
+    { name: '転職成功', type: 'money', value: 4000 },
+    { name: '給料日', type: 'money', value: 2000 },
+    { name: '旅行', type: 'money', value: -1500 },
+    { name: '寄付', type: 'money', value: -500 },
+    { name: '株で利益', type: 'money', value: 3000 },
+    { name: '子供誕生', type: 'child' },
+    { name: '医療費', type: 'money', value: -1200 },
+    { name: '副業収入', type: 'money', value: 2500 },
+    { name: 'ゴール', type: 'goal' }
+  ];
+
+  var state = {
+    position: 0,
+    money: START_MONEY,
+    married: false,
+    hasChild: false,
+    finished: false
+  };
+
+  function addEvent(msg) {
+    var el = document.getElementById('jinseiEvent');
+    if (el) el.textContent = msg + (el.textContent ? '\n\n' + el.textContent : '');
+  }
+
+  function formatMoney(n) {
+    return n.toLocaleString() + '円';
+  }
+
+  function landOn(pos) {
+    if (pos >= BOARD.length) pos = BOARD.length - 1;
+    var cell = BOARD[pos];
+    if (!cell) return;
+    if (cell.type === 'start') {
+      addEvent('スタート地点。出発だ！');
+      return;
+    }
+    if (cell.type === 'goal') {
+      state.finished = true;
+      showResult();
+      return;
+    }
+    if (cell.type === 'money') {
+      state.money += cell.value;
+      addEvent(cell.name + ' … ' + (cell.value >= 0 ? '+' : '') + formatMoney(cell.value));
+      return;
+    }
+    if (cell.type === 'marriage') {
+      if (!state.married) {
+        state.married = true;
+        state.money += 5000;
+        addEvent('結婚！ お祝い金 +5,000円');
+      } else {
+        addEvent('結婚マス（すでに結婚済み）');
+      }
+      return;
+    }
+    if (cell.type === 'child') {
+      if (!state.hasChild) {
+        state.hasChild = true;
+        state.money -= 2000;
+        addEvent('子供誕生！ 出産費用 -2,000円');
+      } else {
+        state.money += 1000;
+        addEvent('子供の成長… お小遣い +1,000円');
+      }
+      return;
+    }
+    if (cell.type === 'lottery') {
+      var win = Math.random() < 0.3;
+      var amount = win ? (1000 + Math.floor(Math.random() * 4000)) : 0;
+      state.money += amount;
+      addEvent(cell.name + ' … ' + (win ? '当選！ +' + formatMoney(amount) : 'はずれ'));
+      return;
+    }
+  }
+
+  function showResult() {
+    document.getElementById('jinseiResultTitle').textContent = 'ゴール！ 人生の結果';
+    document.getElementById('jinseiResultMoney').textContent = '所持金 ' + formatMoney(state.money);
+    var msg = '';
+    if (state.married) msg += '結婚した。';
+    if (state.hasChild) msg += '子供がいた。';
+    if (state.money >= 50000) msg += '金持ち人生！';
+    else if (state.money >= 30000) msg += 'まずまずの人生。';
+    else if (state.money >= 0) msg += 'なんとか暮らせた。';
+    else msg += '借金まみれ…';
+    document.getElementById('jinseiResultMsg').textContent = msg || 'いろいろあった人生。';
+    document.getElementById('jinseiResult').classList.add('visible');
+    document.getElementById('jinseiSpinBtn').disabled = true;
+  }
+
+  function renderBoard() {
+    var wrap = document.getElementById('jinseiBoard');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    for (var i = 0; i < BOARD.length; i++) {
+      var cell = document.createElement('div');
+      cell.className = 'jinsei-cell';
+      if (i === state.position) cell.classList.add('current');
+      if (BOARD[i].type === 'goal') cell.classList.add('goal');
+      if (BOARD[i].type === 'start') cell.classList.add('start');
+      cell.textContent = BOARD[i].name;
+      wrap.appendChild(cell);
+    }
+  }
+
+  function render() {
+    document.getElementById('jinseiMoney').textContent = formatMoney(state.money);
+    renderBoard();
+  }
+
+  function spin() {
+    if (state.finished) return;
+    var dice = 1 + Math.floor(Math.random() * 6);
+    document.getElementById('jinseiDice').textContent = dice;
+    addEvent('サイコロ ' + dice + '！');
+    state.position += dice;
+    if (state.position >= BOARD.length - 1) {
+      state.position = BOARD.length - 1;
+      landOn(state.position);
+    } else {
+      landOn(state.position);
+    }
+    render();
+    if (state.finished) return;
+    document.getElementById('jinseiSpinBtn').disabled = false;
+  }
+
+  function initGame() {
+    state.position = 0;
+    state.money = START_MONEY;
+    state.married = false;
+    state.hasChild = false;
+    state.finished = false;
+    document.getElementById('jinseiStartScreen').style.display = 'none';
+    document.getElementById('jinseiGameArea').classList.add('visible');
+    document.getElementById('jinseiResult').classList.remove('visible');
+    document.getElementById('jinseiSpinBtn').disabled = false;
+    document.getElementById('jinseiDice').textContent = '?';
+    document.getElementById('jinseiEvent').textContent = 'サイコロを振ってスタート！';
+    addEvent('所持金 ' + formatMoney(START_MONEY) + ' でスタート！');
+    render();
+  }
+
+  document.getElementById('jinseiBtnStart').addEventListener('click', initGame);
+  document.getElementById('jinseiSpinBtn').addEventListener('click', function () {
+    this.disabled = true;
+    spin();
+  });
+  document.getElementById('jinseiRetryBtn').addEventListener('click', initGame);
+
+  document.getElementById('jinseiGameArea').classList.remove('visible');
+})();
+  </script>
+</body>
+</html>

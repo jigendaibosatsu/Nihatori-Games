@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>カードコレクション – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #1a0a2e 0%, #2d1b4e 40%, #4a2c6a 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #e8e0f0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .cc-wrap {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 12px;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .cc-title { font-size: 1.2rem; margin-bottom: 8px; text-align: center; font-weight: bold; color: #ffd54f; text-shadow: 0 0 12px rgba(255,213,79,0.5); }
+    .cc-coins {
+      text-align: center;
+      margin-bottom: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #ffd54f;
+    }
+    .cc-coins span { font-size: 14px; color: #b39ddb; margin-left: 4px; }
+    .cc-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .cc-tab {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid #7e57c2;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cc-tab.active { background: #5e35b1; border-color: #b39ddb; }
+    .cc-pack-area {
+      text-align: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 16px;
+      margin-bottom: 12px;
+      border: 3px solid #7e57c2;
+    }
+    .cc-pack-img {
+      width: 120px;
+      height: 160px;
+      margin: 0 auto 16px;
+      background: linear-gradient(145deg, #5e35b1, #311b92);
+      border-radius: 12px;
+      border: 4px solid #ffd54f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #ffd54f;
+      box-shadow: 0 0 20px rgba(255,213,79,0.3);
+    }
+    .cc-open-btn {
+      display: inline-block;
+      padding: 14px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #1a0a2e;
+      background: linear-gradient(180deg, #ffd54f, #ffb300);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 4px 16px rgba(255,179,0,0.5);
+    }
+    .cc-open-btn:hover { opacity: 0.95; transform: scale(1.02); }
+    .cc-open-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .cc-reveal-area { display: none; padding: 16px; margin-bottom: 12px; }
+    .cc-reveal-area.visible { display: block; }
+    .cc-reveal-msg {
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      min-height: 32px;
+      animation: cc-pulse 0.6s ease;
+    }
+    .cc-reveal-msg.rare { color: #42a5f5; text-shadow: 0 0 10px rgba(66,165,245,0.8); }
+    .cc-reveal-msg.super { color: #ab47bc; text-shadow: 0 0 10px rgba(171,71,188,0.8); }
+    .cc-reveal-msg.legend { color: #ffd54f; text-shadow: 0 0 15px rgba(255,213,79,0.9); animation: cc-glow 0.8s ease infinite alternate; }
+    @keyframes cc-pulse { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes cc-glow { from { text-shadow: 0 0 10px rgba(255,213,79,0.6); } to { text-shadow: 0 0 20px rgba(255,213,79,1); } }
+    .cc-card-show {
+      max-width: 200px;
+      margin: 0 auto 16px;
+      padding: 20px;
+      background: linear-gradient(145deg, #3d2a5c, #2d1b4e);
+      border-radius: 12px;
+      border: 3px solid #7e57c2;
+      text-align: center;
+      animation: cc-flip 0.5s ease;
+    }
+    .cc-card-show.rare { border-color: #42a5f5; box-shadow: 0 0 20px rgba(66,165,245,0.4); }
+    .cc-card-show.super { border-color: #ab47bc; box-shadow: 0 0 25px rgba(171,71,188,0.5); }
+    .cc-card-show.legend { border-color: #ffd54f; box-shadow: 0 0 30px rgba(255,213,79,0.6); animation: cc-flip 0.5s ease, cc-shine 2s ease infinite; }
+    @keyframes cc-flip { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+    @keyframes cc-shine { 0%, 100% { box-shadow: 0 0 30px rgba(255,213,79,0.6); } 50% { box-shadow: 0 0 40px rgba(255,213,79,0.9); } }
+    .cc-card-name { font-size: 1.2rem; font-weight: bold; color: #fff; margin-bottom: 4px; }
+    .cc-card-rarity { font-size: 12px; }
+    .cc-card-rarity.common { color: #9e9e9e; }
+    .cc-card-rarity.rare { color: #42a5f5; }
+    .cc-card-rarity.super { color: #ce93d8; }
+    .cc-card-rarity.legend { color: #ffd54f; }
+    .cc-next-btn {
+      display: block;
+      width: 100%;
+      max-width: 200px;
+      margin: 0 auto;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #1a0a2e;
+      background: linear-gradient(180deg, #b39ddb, #7e57c2);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cc-next-btn:hover { opacity: 0.95; }
+    .cc-collection {
+      flex: 1 1 0;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .cc-collection-count { font-size: 14px; margin-bottom: 10px; text-align: center; color: #b39ddb; }
+    .cc-collection-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .cc-col-card {
+      padding: 12px 8px;
+      background: rgba(0,0,0,0.35);
+      border-radius: 10px;
+      border: 2px solid #5e35b1;
+      text-align: center;
+      font-size: 12px;
+    }
+    .cc-col-card.has { border-color: #7e57c2; background: rgba(94,53,177,0.3); }
+    .cc-col-card .name { font-weight: bold; margin-bottom: 2px; color: #fff; }
+    .cc-col-card .name.empty { color: #666; }
+    .cc-col-card .count { font-size: 11px; color: #b39ddb; margin-top: 4px; }
+    .cc-col-card.legend .name { color: #ffd54f; }
+    .cc-back { display: inline-block; margin-top: 12px; color: #b39ddb; font-size: 14px; text-decoration: none; }
+    .cc-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="cc-wrap">
+    <h1 class="cc-title">カードコレクション</h1>
+
+    <div class="cc-coins">
+      <span id="ccCoins">500</span> コイン <span>（1パック = 100コイン）</span>
+    </div>
+
+    <div class="cc-tabs">
+      <button type="button" class="cc-tab active" data-tab="open">パックを開ける</button>
+      <button type="button" class="cc-tab" data-tab="collection">コレクション</button>
+    </div>
+
+    <div id="ccOpenPanel">
+      <div class="cc-pack-area" id="ccPackArea">
+        <div class="cc-pack-img">📦<br>パック</div>
+        <p style="margin-bottom:12px;font-size:14px;color:#b39ddb;">1パックに5枚入り！<br>レアを引くワクワクを味わおう。</p>
+        <button type="button" class="cc-open-btn" id="ccOpenBtn">パックを開ける！</button>
+      </div>
+
+      <div class="cc-reveal-area" id="ccRevealArea">
+        <div class="cc-reveal-msg" id="ccRevealMsg"></div>
+        <div class="cc-card-show" id="ccCardShow">
+          <div class="cc-card-name" id="ccCardName">???</div>
+          <div class="cc-card-rarity common" id="ccCardRarity">???</div>
+        </div>
+        <button type="button" class="cc-next-btn" id="ccNextBtn">次のカード</button>
+      </div>
+    </div>
+
+    <div id="ccCollectionPanel" style="display:none">
+      <div class="cc-collection-count" id="ccCollectionCount">0 種類 / 30 種類</div>
+      <div class="cc-collection" id="ccCollection"></div>
+    </div>
+
+    <a href="/index.html" class="cc-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var PACK_COST = 100;
+  var CARDS_PER_PACK = 5;
+  var START_COINS = 500;
+
+  var CARD_POOL = [
+    { id: 'c1', name: 'スライム', rarity: 'common' },
+    { id: 'c2', name: 'バット', rarity: 'common' },
+    { id: 'c3', name: 'ゴブリン', rarity: 'common' },
+    { id: 'c4', name: 'ウルフ', rarity: 'common' },
+    { id: 'c5', name: 'スケルトン', rarity: 'common' },
+    { id: 'c6', name: 'キノコン', rarity: 'common' },
+    { id: 'c7', name: 'ハニービー', rarity: 'common' },
+    { id: 'c8', name: 'ゴースト', rarity: 'common' },
+    { id: 'c9', name: 'トード', rarity: 'common' },
+    { id: 'c10', name: 'ラット', rarity: 'common' },
+    { id: 'c11', name: 'メタルスライム', rarity: 'rare' },
+    { id: 'c12', name: 'ウィスプ', rarity: 'rare' },
+    { id: 'c13', name: 'サハギン', rarity: 'rare' },
+    { id: 'c14', name: 'マンドラ', rarity: 'rare' },
+    { id: 'c15', name: 'フェニックス', rarity: 'rare' },
+    { id: 'c16', name: 'ウィザード', rarity: 'rare' },
+    { id: 'c17', name: 'ナイト', rarity: 'rare' },
+    { id: 'c18', name: 'ヴァンパイア', rarity: 'rare' },
+    { id: 'c19', name: 'ドラゴン', rarity: 'super' },
+    { id: 'c20', name: 'キングスライム', rarity: 'super' },
+    { id: 'c21', name: 'デーモン', rarity: 'super' },
+    { id: 'c22', name: 'ユニコーン', rarity: 'super' },
+    { id: 'c23', name: 'ヒドラ', rarity: 'super' },
+    { id: 'c24', name: '伝説の勇者', rarity: 'legend' },
+    { id: 'c25', name: '光の精霊', rarity: 'legend' },
+    { id: 'c26', name: '闇の帝王', rarity: 'legend' },
+    { id: 'c27', name: '星龍神', rarity: 'legend' },
+    { id: 'c28', name: '創世神', rarity: 'legend' },
+    { id: 'c29', name: '時を超える者', rarity: 'legend' },
+    { id: 'c30', name: '???', rarity: 'legend' }
+  ];
+
+  var RARITY_WEIGHT = { common: 55, rare: 30, super: 10, legend: 5 };
+  var RARITY_LABEL = { common: 'ノーマル', rare: 'レア', super: 'スーパーレア', legend: '伝説' };
+  var RARITY_MSG = { common: '', rare: 'レア！！', super: 'スーパーレア！！！', legend: '★ 伝説のカード！！ ★' };
+
+  function pickCard() {
+    var r = Math.random() * 100;
+    var target = '';
+    if (r < RARITY_WEIGHT.legend) target = 'legend';
+    else if (r < RARITY_WEIGHT.legend + RARITY_WEIGHT.super) target = 'super';
+    else if (r < RARITY_WEIGHT.legend + RARITY_WEIGHT.super + RARITY_WEIGHT.rare) target = 'rare';
+    else target = 'common';
+    var pool = CARD_POOL.filter(function (c) { return c.rarity === target; });
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  var state = {
+    coins: START_COINS,
+    collection: {},
+    packCards: [],
+    revealIndex: 0
+  };
+
+  function openPack() {
+    if (state.coins < PACK_COST) return;
+    state.coins -= PACK_COST;
+    state.packCards = [];
+    for (var i = 0; i < CARDS_PER_PACK; i++) state.packCards.push(pickCard());
+    state.revealIndex = 0;
+    document.getElementById('ccPackArea').style.display = 'none';
+    document.getElementById('ccRevealArea').classList.add('visible');
+    revealNext();
+  }
+
+  function addToCollection(card) {
+    state.collection[card.id] = (state.collection[card.id] || 0) + 1;
+  }
+
+  function revealNext() {
+    if (state.revealIndex >= state.packCards.length) {
+    document.getElementById('ccRevealArea').classList.remove('visible');
+    document.getElementById('ccPackArea').style.display = 'block';
+    document.getElementById('ccCoins').textContent = state.coins;
+    document.getElementById('ccOpenBtn').disabled = state.coins < PACK_COST;
+    return;
+  }
+    var card = state.packCards[state.revealIndex];
+    addToCollection(card);
+    var msgEl = document.getElementById('ccRevealMsg');
+    msgEl.textContent = RARITY_MSG[card.rarity] || '…';
+    msgEl.className = 'cc-reveal-msg ' + (card.rarity !== 'common' ? card.rarity : '');
+    document.getElementById('ccCardName').textContent = card.name;
+    document.getElementById('ccCardRarity').textContent = RARITY_LABEL[card.rarity];
+    document.getElementById('ccCardRarity').className = 'cc-card-rarity ' + card.rarity;
+    document.getElementById('ccCardShow').className = 'cc-card-show ' + card.rarity;
+    state.revealIndex++;
+    document.getElementById('ccNextBtn').textContent = state.revealIndex >= state.packCards.length ? 'パックを閉じる' : '次のカード';
+    document.getElementById('ccCoins').textContent = state.coins;
+  }
+
+  function finishReveal() {
+    if (state.revealIndex < state.packCards.length) {
+      while (state.revealIndex < state.packCards.length) {
+        addToCollection(state.packCards[state.revealIndex]);
+        state.revealIndex++;
+      }
+    }
+    document.getElementById('ccRevealArea').classList.remove('visible');
+    document.getElementById('ccPackArea').style.display = 'block';
+    document.getElementById('ccCoins').textContent = state.coins;
+    document.getElementById('ccOpenBtn').disabled = state.coins < PACK_COST;
+  }
+
+  function renderCollection() {
+    var total = CARD_POOL.length;
+    var have = 0;
+    CARD_POOL.forEach(function (c) {
+      if ((state.collection[c.id] || 0) > 0) have++;
+    });
+    document.getElementById('ccCollectionCount').textContent = have + ' 種類 / ' + total + ' 種類';
+    var grid = document.getElementById('ccCollection');
+    grid.innerHTML = '';
+    CARD_POOL.forEach(function (c) {
+      var count = state.collection[c.id] || 0;
+      var cell = document.createElement('div');
+      cell.className = 'cc-col-card has ' + (c.rarity === 'legend' ? 'legend' : '');
+      if (count === 0) cell.classList.remove('has');
+      cell.innerHTML =
+        '<div class="name' + (count > 0 ? '' : ' empty') + '">' + (count > 0 ? c.name : '???') + '</div>' +
+        '<div class="cc-card-rarity ' + c.rarity + '">' + RARITY_LABEL[c.rarity] + '</div>' +
+        (count > 0 ? '<div class="count">×' + count + '</div>' : '');
+      grid.appendChild(cell);
+    });
+  }
+
+  document.getElementById('ccOpenBtn').addEventListener('click', function () {
+    if (state.coins < PACK_COST) return;
+    openPack();
+  });
+
+  document.getElementById('ccNextBtn').addEventListener('click', function () {
+    if (state.revealIndex >= state.packCards.length) {
+      finishReveal();
+      return;
+    }
+    revealNext();
+  });
+
+  document.querySelectorAll('.cc-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var t = this.getAttribute('data-tab');
+      document.querySelectorAll('.cc-tab').forEach(function (x) { x.classList.remove('active'); });
+      this.classList.add('active');
+      document.getElementById('ccOpenPanel').style.display = t === 'open' ? 'block' : 'none';
+      document.getElementById('ccCollectionPanel').style.display = t === 'collection' ? 'block' : 'none';
+      if (t === 'collection') renderCollection();
+      if (t === 'open') document.getElementById('ccOpenBtn').disabled = state.coins < PACK_COST;
+    });
+  });
+
+  document.getElementById('ccOpenBtn').disabled = state.coins < PACK_COST;
+  renderCollection();
+})();
+  </script>
+</body>
+</html>

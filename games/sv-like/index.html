@@ -78,7 +78,7 @@
     <h1 class="sv-title">シャチクバース</h1>
 
     <div class="sv-leader" id="enemyLeader">
-      <span class="name">相手</span>
+      <span class="name" id="enemyName">相手</span>
       <span class="hp" id="enemyHp">20 / 20</span>
     </div>
 
@@ -159,12 +159,20 @@
     return d;
   }
 
+  var ENEMY_TYPES = [
+    { name: 'シャチク君', pattern: 'aggressive', desc: 'アグロ' },
+    { name: '委員長', pattern: 'control', desc: 'コントロール' },
+    { name: '先輩', pattern: 'balanced', desc: 'バランス' }
+  ];
+
   var state = {
     playerHp: 20, enemyHp: 20,
     playerMana: 1, playerManaMax: 1, turn: 0,
     enemyMana: 1, enemyManaMax: 1,
     playerHand: [], playerBoard: [], playerDeck: [],
     enemyHand: [], enemyBoard: [], enemyDeck: [],
+    enemyName: '相手',
+    enemyPattern: 'control',
     isPlayerTurn: true,
     selectedCard: null,
     selectedSlot: null,
@@ -207,6 +215,9 @@
   }
 
   function startGame() {
+    var et = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
+    state.enemyName = et.name;
+    state.enemyPattern = et.pattern;
     state.playerHp = 20;
     state.enemyHp = 20;
     state.playerMana = 1;
@@ -225,7 +236,7 @@
     state.attackSource = null;
     draw(state.playerHand, state.playerDeck, 3);
     draw(state.enemyHand, state.enemyDeck, 3);
-    logTurn('ゲーム開始' + (state.isPlayerTurn ? '（あなたが先行）' : '（相手が先行）'));
+    logTurn('相手は【' + state.enemyName + '】' + (state.enemyPattern === 'aggressive' ? '（アグロ）' : state.enemyPattern === 'control' ? '（コントロール）' : '（バランス）') + '\nゲーム開始' + (state.isPlayerTurn ? '（あなたが先行）' : '（相手が先行）'));
     render();
   }
 
@@ -249,6 +260,8 @@
   function render() {
     playerHpEl.textContent = state.playerHp + ' / 20';
     enemyHpEl.textContent = state.enemyHp + ' / 20';
+    var enemyNameEl = document.getElementById('enemyName');
+    if (enemyNameEl) enemyNameEl.textContent = state.enemyName;
     var enemyLeaderEl = document.getElementById('enemyLeader');
     if (enemyLeaderEl) enemyLeaderEl.classList.toggle('sv-attack-target', state.isPlayerTurn && state.attackSource !== null);
     manaDisplay.textContent = 'マナ ' + state.playerMana + '/' + state.playerManaMax;
@@ -334,6 +347,61 @@
     return -1;
   }
 
+  /** 敵の攻撃目標を選ぶ（パターンごとに賢く選択） */
+  function chooseEnemyTarget(attacker) {
+    var pattern = state.enemyPattern;
+    var playerFollowers = [];
+    for (var s = 0; s < BOARD_SIZE; s++) {
+      if (state.playerBoard[s]) playerFollowers.push({ slot: s, atk: state.playerBoard[s].atk, def: state.playerBoard[s].def });
+    }
+    var canKill = [];
+    var threats = [];
+    for (var i = 0; i < playerFollowers.length; i++) {
+      var f = playerFollowers[i];
+      if (attacker.atk >= f.def) canKill.push(f);
+      if (f.atk >= attacker.def) threats.push(f);
+    }
+
+    if (pattern === 'aggressive') {
+      if (playerFollowers.length === 0) return { face: true };
+      if (threats.length > 0 && Math.random() < 0.6) {
+        var t = threats[Math.floor(Math.random() * threats.length)];
+        return { face: false, slot: t.slot };
+      }
+      if (Math.random() < 0.65) return { face: true };
+      var idx = Math.floor(Math.random() * playerFollowers.length);
+      return { face: false, slot: playerFollowers[idx].slot };
+    }
+
+    if (pattern === 'control') {
+      if (playerFollowers.length === 0) return { face: true };
+      if (canKill.length > 0) {
+        canKill.sort(function (a, b) { return a.atk - b.atk; });
+        return { face: false, slot: canKill[canKill.length - 1].slot };
+      }
+      playerFollowers.sort(function (a, b) { return b.atk - a.atk; });
+      return { face: false, slot: playerFollowers[0].slot };
+    }
+
+    if (pattern === 'balanced') {
+      if (playerFollowers.length === 0) return { face: true };
+      if (threats.length > 0 && Math.random() < 0.5) {
+        var t2 = threats[Math.floor(Math.random() * threats.length)];
+        return { face: false, slot: t2.slot };
+      }
+      if (Math.random() < 0.4) return { face: true };
+      if (canKill.length > 0) {
+        canKill.sort(function (a, b) { return a.def - b.def; });
+        return { face: false, slot: canKill[0].slot };
+      }
+      playerFollowers.sort(function (a, b) { return b.atk - a.atk; });
+      return { face: false, slot: playerFollowers[0].slot };
+    }
+
+    if (playerFollowers.length === 0) return { face: true };
+    return { face: false, slot: playerFollowers[0].slot };
+  }
+
   function enemyTurn() {
     state.enemyManaMax = Math.min(10, state.turn >> 1);
     state.enemyMana = state.enemyManaMax;
@@ -344,6 +412,11 @@
     for (var s = 0; s < BOARD_SIZE; s++) tempBoard[s] = state.enemyBoard[s];
     var tempMana = state.enemyMana;
     var summonsToDo = [];
+    var scoreCard = function (c) {
+      if (state.enemyPattern === 'aggressive') return c.atk * 2 + c.def;
+      if (state.enemyPattern === 'control') return c.def * 2 + c.atk;
+      return c.atk + c.def;
+    };
     while (tempMana >= 1) {
       var slot = -1;
       for (var s = 0; s < BOARD_SIZE; s++) { if (!tempBoard[s]) { slot = s; break; } }
@@ -351,7 +424,7 @@
       var best = null;
       for (var i = 0; i < tempHand.length; i++) {
         var c = tempHand[i];
-        if (c.cost <= tempMana && (best === null || c.atk >= best.atk)) best = { card: c, index: i };
+        if (c.cost <= tempMana && (best === null || scoreCard(c) >= scoreCard(best.card))) best = { card: c, index: i };
       }
       if (!best) break;
       var card = tempHand.splice(best.index, 1)[0];
@@ -369,7 +442,7 @@
       var hi = state.enemyHand.indexOf(s.card);
       if (hi >= 0) state.enemyHand.splice(hi, 1);
       state.enemyBoard[s.slot] = { name: s.card.name, atk: s.card.atk, def: s.card.def, canAttack: false };
-      log('相手が' + s.card.name + 'を召喚');
+      log(state.enemyName + 'が' + s.card.name + 'を召喚');
       render();
       setTimeout(function () { runSummonStep(idx + 1); }, ENEMY_ACTION_DELAY);
     }
@@ -383,18 +456,20 @@
         }
         if (i < 0) { finishEnemyTurn(); return; }
         var c = state.enemyBoard[i];
-        var j = state.playerBoard.findIndex(function (x) { return x; });
-        if (j >= 0) {
+        var target = chooseEnemyTarget(c);
+        if (target.face) {
+          state.playerHp -= c.atk;
+          log(state.enemyName + 'の' + c.name + 'がリーダーに' + c.atk + 'ダメージ');
+          c.canAttack = false;
+        } else {
+          var j = target.slot;
           var t = state.playerBoard[j];
+          if (!t) { c.canAttack = false; setTimeout(doOneAttack, ENEMY_ACTION_DELAY); return; }
           t.def -= c.atk;
           c.def -= t.atk;
           if (t.def <= 0) state.playerBoard[j] = null;
           if (c.def <= 0) state.enemyBoard[i] = null;
-          log('相手の' + c.name + 'が' + t.name + 'に攻撃');
-          c.canAttack = false;
-        } else {
-          state.playerHp -= c.atk;
-          log('相手の' + c.name + 'がリーダーに' + c.atk + 'ダメージ');
+          log(state.enemyName + 'の' + c.name + 'が' + t.name + 'に攻撃');
           c.canAttack = false;
         }
         checkWin();

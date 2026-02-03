@@ -18,6 +18,10 @@
 
   var DUMMY_FEED = {
     items: [
+      { id: 'post-2026-01-update-summary', type: 'post', title: '2026年1月 新作・アップデートまとめ', url: '/index.html?tab=games', image: null, category: 'devlog', publishedAt: '2026-01-31T20:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 90 },
+      { id: 'card-collection', type: 'game', title: 'カードコレクション', url: './games/card-collection/', image: null, category: 'games', publishedAt: '2026-01-31T19:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 85 },
+      { id: 'monster-collection', type: 'game', title: 'モンスターコレクション', url: './games/monster-collection/', image: null, category: 'games', publishedAt: '2026-01-31T18:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 78 },
+      { id: 'jinsei', type: 'game', title: '人生ゲーム', url: './games/jinsei/', image: null, category: 'games', publishedAt: '2026-01-31T17:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 80 },
       { id: 'romance', type: 'game', title: 'きゅーと恋愛', url: './games/romance/', image: null, category: 'games', publishedAt: '2026-01-31T16:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 82 },
       { id: 'power-pro', type: 'game', title: 'きゅーと野球', url: './games/power-pro/', image: null, category: 'games', publishedAt: '2026-01-31T15:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 85 },
       { id: 'election', type: 'game', title: '選挙で当選！', url: './games/election/', image: null, category: 'games', publishedAt: '2026-01-31T14:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 88 },
