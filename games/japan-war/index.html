@@ -69,46 +69,88 @@
       position: relative;
       flex: 1 1 0;
       min-height: 0;
-      max-height: 100%;
+      max-height: min(58dvh, 70vh);
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
-    .war-map-inner { position: relative; width: 100%; flex: 1; min-height: 0; overflow: hidden; }
-    .war-canvas { display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; pointer-events: none; }
-    .war-ranking {
+    .war-map-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      flex: 1 1 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .war-canvas { display: block; width: 100%; height: 100%; pointer-events: none; }
+    .war-rank-row {
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px 6px;
       margin-bottom: 4px;
-      font-size: 11px;
+      flex-wrap: nowrap;
+    }
+    .war-ranking {
+      flex: 1 1 0;
+      min-width: 0;
+      font-size: 10px;
       color: #1b5e20;
       display: flex;
-      flex-wrap: wrap;
-      gap: 4px 8px;
+      flex-wrap: nowrap;
+      gap: 2px 4px;
       align-items: center;
+      justify-content: flex-start;
     }
-    .war-ranking .war-rank-item { margin: 0; }
+    .war-ranking .war-rank-item {
+      margin: 0; white-space: nowrap; flex-shrink: 0;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.15);
+      font-weight: bold;
+    }
+    .war-ranking .war-rank-item.war-eliminated {
+      opacity: 0.7;
+      text-decoration: line-through;
+      border-color: rgba(0,0,0,0.25);
+    }
+    .war-end-btn {
+      flex-shrink: 0;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #c62828, #b71c1c);
+      border: 1px solid #e57373;
+      border-radius: 6px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .war-end-btn:hover { opacity: 0.95; }
     .war-log {
       flex: 0 0 auto;
-      max-height: 22vh;
-      min-height: 48px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding: 6px;
+      height: calc(1.4em * 3 + 8px);
+      max-height: calc(1.4em * 3 + 8px);
+      overflow: hidden;
+      padding: 4px 6px;
       background: rgba(0,0,0,0.08);
       border: 2px solid #81c784;
       border-radius: 6px;
       font-size: 10px;
       line-height: 1.4;
       white-space: pre-line;
-      -webkit-overflow-scrolling: touch;
     }
-    .war-back { flex-shrink: 0; display: inline-block; margin-top: 4px; color: #2e7d32; font-size: 12px; text-decoration: none; }
+    .war-back { flex-shrink: 0; display: inline-block; margin-top: 2px; color: #2e7d32; font-size: 11px; text-decoration: none; }
     @media (max-width: 480px), (max-height: 700px) {
       .war-wrap { padding: 4px; }
       .war-title { margin-bottom: 2px; font-size: 0.95rem; }
-      .war-map-wrap { margin-bottom: 2px; }
-      .war-ranking { font-size: 10px; gap: 2px 6px; margin-bottom: 2px; }
-      .war-log { max-height: 18vh; min-height: 40px; font-size: 9px; padding: 4px; }
+      .war-map-wrap { margin-bottom: 2px; max-height: min(52dvh, 65vh); }
+      .war-rank-row { margin-bottom: 2px; gap: 2px 4px; }
+      .war-ranking { font-size: 9px; }
+      .war-end-btn { padding: 4px 8px; font-size: 11px; }
+      .war-log { font-size: 9px; height: calc(1.4em * 3 + 8px); max-height: calc(1.4em * 3 + 8px); }
       .war-back { margin-top: 2px; font-size: 11px; }
     }
   </style>
@@ -129,14 +171,22 @@
           <option value="2.5">2.5倍</option>
         </select>
       </div>
-      <label>陣営1</label>
-      <div class="war-setup-row"><input type="text" id="name0" value="東軍" maxlength="10" placeholder="名前" /><input type="text" id="igii0" value="義" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color0" value="#e53935" title="色" /></div>
-      <label>陣営2</label>
-      <div class="war-setup-row"><input type="text" id="name1" value="西軍" maxlength="10" placeholder="名前" /><input type="text" id="igii1" value="礼" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color1" value="#1e88e5" title="色" /></div>
-      <label>陣営3</label>
-      <div class="war-setup-row"><input type="text" id="name2" value="北軍" maxlength="10" placeholder="名前" /><input type="text" id="igii2" value="仁" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color2" value="#43a047" title="色" /></div>
-      <label>陣営4</label>
-      <div class="war-setup-row"><input type="text" id="name3" value="南軍" maxlength="10" placeholder="名前" /><input type="text" id="igii3" value="智" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color3" value="#fb8c00" title="色" /></div>
+      <label>陣営数</label>
+      <div class="war-setup-row">
+        <select id="numCamps">
+          <option value="2">2陣営</option>
+          <option value="3">3陣営</option>
+          <option value="4" selected>4陣営</option>
+        </select>
+      </div>
+      <label class="war-camp-opt" data-camp="1">陣営1</label>
+      <div class="war-setup-row war-camp-opt" data-camp="1"><input type="text" id="name0" value="東軍" maxlength="10" placeholder="名前" /><input type="text" id="igii0" value="義" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color0" value="#e53935" title="色" /></div>
+      <label class="war-camp-opt" data-camp="2">陣営2</label>
+      <div class="war-setup-row war-camp-opt" data-camp="2"><input type="text" id="name1" value="西軍" maxlength="10" placeholder="名前" /><input type="text" id="igii1" value="礼" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color1" value="#1e88e5" title="色" /></div>
+      <label class="war-camp-opt" data-camp="3">陣営3</label>
+      <div class="war-setup-row war-camp-opt" data-camp="3"><input type="text" id="name2" value="北軍" maxlength="10" placeholder="名前" /><input type="text" id="igii2" value="仁" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color2" value="#43a047" title="色" /></div>
+      <label class="war-camp-opt" data-camp="4">陣営4</label>
+      <div class="war-setup-row war-camp-opt" data-camp="4"><input type="text" id="name3" value="南軍" maxlength="10" placeholder="名前" /><input type="text" id="igii3" value="智" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color3" value="#fb8c00" title="色" /></div>
     </div>
 
     <button type="button" class="war-btn" id="btnStart">合戦開始</button>
@@ -147,7 +197,10 @@
       </div>
     </div>
 
-    <div class="war-ranking" id="warRanking" style="display:none"></div>
+    <div class="war-rank-row" id="warRankRow" style="display:none">
+      <div class="war-ranking" id="warRanking"></div>
+      <button type="button" class="war-end-btn" id="btnEnd">終了</button>
+    </div>
     <div class="war-log" id="warLog">陣営の名前を いれて 合戦開始を おそう！</div>
 
     <a href="/index.html" class="war-back">← トップへ戻る</a>
@@ -160,12 +213,10 @@
   var GRID_ROWS = 10;
   var NUM_BASES = GRID_COLS * GRID_ROWS;
 
-  function getGridColsForViewport() {
-    var h = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 600;
-    if (h < 500) return 12;
-    if (h < 650) return 14;
-    if (h < 800) return 16;
-    return 20;
+  function getGridSizeForViewport(side) {
+    if (!side || side < 80) return 8;
+    var n = Math.floor(side / 18);
+    return Math.max(8, Math.min(20, n));
   }
   var NEUTRAL = -1;
   var REQUIRED_HITS = [];
@@ -188,27 +239,27 @@
     var inner = document.getElementById('warMapInner');
     var canvas = document.getElementById('warCanvas');
     if (!inner || !canvas) return;
-    var w = inner.clientWidth || 300;
-    var h = inner.clientHeight || 300;
-    if (w < 100) w = 300;
-    if (h < 100) h = 300;
-    GRID_COLS = getGridColsForViewport();
+    var w = inner.clientWidth || 280;
+    var h = inner.clientHeight || 280;
+    if (w < 80) w = 280;
+    if (h < 80) h = 280;
     canvas.width = w;
     canvas.height = h;
     CANVAS_W = w;
     CANVAS_H = h;
     pathW = w;
     pathH = h;
-    GRID_ROWS = Math.max(8, Math.round(GRID_COLS * pathH / pathW));
-    NUM_BASES = GRID_COLS * GRID_ROWS;
-    for (var i = 0; i < NUM_BASES; i++) REQUIRED_HITS[i] = 1 + (i % 4);
-    cellSize = Math.min(pathW / GRID_COLS, pathH / GRID_ROWS);
+    GRID_COLS = getGridSizeForViewport(w);
+    cellSize = pathW / GRID_COLS;
+    GRID_ROWS = Math.max(1, Math.floor(pathH / cellSize));
     cellW = cellSize;
     cellH = cellSize;
     gridW = GRID_COLS * cellSize;
     gridH = GRID_ROWS * cellSize;
-    GRID_X0 = (pathW - gridW) / 2;
-    GRID_Y0 = (pathH - gridH) / 2;
+    GRID_X0 = 0;
+    GRID_Y0 = 0;
+    NUM_BASES = GRID_COLS * GRID_ROWS;
+    for (var i = 0; i < NUM_BASES; i++) REQUIRED_HITS[i] = 1 + (i % 4);
     BASE_R = cellSize * 0.4;
   }
 
@@ -309,15 +360,17 @@
 
   var IGII_POOL = ['義', '礼', '仁', '智', '忠', '信', '孝', '和', '勇', '誠'];
   function getIgii() {
+    var n = getNumCamps ? getNumCamps() : 4;
     var el = document.getElementById('igii0');
-    if (!el) return state.igii || ['義', '礼', '仁', '智'];
+    if (!el) return (state.igii || ['義', '礼', '仁', '智']).slice(0, n);
     function one(camp) {
       var id = 'igii' + camp;
       var v = (document.getElementById(id) && document.getElementById(id).value.trim()) || '';
       if (v) return v.slice(0, 1);
       return IGII_POOL[Math.floor(Math.random() * IGII_POOL.length)];
     }
-    return [one(0), one(1), one(2), one(3)];
+    var arr = [one(0), one(1), one(2), one(3)];
+    return arr.slice(0, n);
   }
 
   var WEAPON_TYPES = ['sword', 'shield'];
@@ -380,12 +433,13 @@
   }
 
   function getNames() {
-    return [
+    var arr = [
       document.getElementById('name0').value.trim() || '東軍',
       document.getElementById('name1').value.trim() || '西軍',
       document.getElementById('name2').value.trim() || '北軍',
       document.getElementById('name3').value.trim() || '南軍'
     ];
+    return arr.slice(0, getNumCamps());
   }
 
   function getGameSpeed() {
@@ -393,15 +447,31 @@
     return el ? parseFloat(el.value) || 1 : 1;
   }
 
+  function getNumCamps() {
+    var el = document.getElementById('numCamps');
+    var n = el ? parseInt(el.value, 10) : 4;
+    return n >= 2 && n <= 4 ? n : 4;
+  }
+
+  function updateCampVisibility() {
+    var n = getNumCamps();
+    var nodes = document.querySelectorAll('.war-camp-opt');
+    for (var i = 0; i < nodes.length; i++) {
+      var camp = parseInt(nodes[i].getAttribute('data-camp'), 10);
+      nodes[i].style.display = camp <= n ? '' : 'none';
+    }
+  }
+
   function getColors() {
     var el0 = document.getElementById('color0');
-    if (!el0) return CAMP_COLORS.slice();
-    return [
+    if (!el0) return CAMP_COLORS.slice(0, getNumCamps());
+    var arr = [
       (el0.value || CAMP_COLORS[0]),
       (document.getElementById('color1').value || CAMP_COLORS[1]),
       (document.getElementById('color2').value || CAMP_COLORS[2]),
       (document.getElementById('color3').value || CAMP_COLORS[3])
     ];
+    return arr.slice(0, getNumCamps());
   }
 
   function getCellCenter(k) {
@@ -446,6 +516,7 @@
   }
 
   function initMap() {
+    NUM_CAMPS = getNumCamps();
     state.owner = [];
     state.regionHits = [];
     state.cellSwordTint = [];
@@ -515,7 +586,9 @@
     var n = 0;
     for (var c = 0; c < NUM_CAMPS; c++) {
       var bc = 0;
-      for (var bi = 0; bi < state.balls.length; bi++) if (state.balls[bi].camp === c) bc++;
+      for (var bi = 0; bi < state.balls.length; bi++) {
+        if (state.balls[bi].camp === c && !state.balls[bi].dead) bc++;
+      }
       if (bc > 0) n++;
     }
     return n;
@@ -523,11 +596,21 @@
 
   function syncBallCountAndSpeed() {
     var campsWithBalls = countCampsWithBalls();
+    var numCampsSetting = getNumCamps();
     for (var c = 0; c < NUM_CAMPS; c++) {
       var campBalls = [];
-      for (var b = 0; b < state.balls.length; b++) if (state.balls[b].camp === c) campBalls.push(state.balls[b]);
-      var want = getBallCount(c);
-      if (campsWithBalls === 2 && want > campBalls.length) want = campBalls.length;
+      for (var b = 0; b < state.balls.length; b++) {
+        if (state.balls[b].camp === c && !state.balls[b].dead) campBalls.push(state.balls[b]);
+      }
+      if (campBalls.length === 0) {
+        state.eliminated[c] = true;
+        if (state.eliminationOrder.indexOf(c) === -1) {
+          state.eliminationOrder.push(c);
+          state.eliminationRank[c] = NUM_CAMPS - state.eliminationOrder.length + 1;
+        }
+      }
+      var want = state.eliminated[c] ? 0 : getBallCount(c);
+      if (numCampsSetting !== 2 && campsWithBalls === 2 && want > campBalls.length) want = campBalls.length;
       for (var b = 0; b < campBalls.length; b++) {
         var ball = campBalls[b];
         ball.speed = getSpeedForLevel(ball.level, ball);
@@ -583,8 +666,7 @@
     state.log.unshift(msg);
     if (state.log.length > 50) state.log.pop();
     var el = document.getElementById('warLog');
-    el.textContent = state.log.join('\n');
-    el.scrollTop = 0;
+    el.textContent = state.log.slice(0, 3).join('\n');
   }
 
   function countTerritory(camp) {
@@ -1117,39 +1199,52 @@
       item.className = 'war-rank-item';
       var camp = list[i].camp;
       var dead = state.eliminated[camp];
-      item.textContent = list[i].rank + '位: ' + state.names[camp] + ' ' + list[i].territory + '拠点' + (dead ? ' 滅亡' : '');
-      if (dead) item.style.opacity = '0.6';
+      if (dead) item.classList.add('war-eliminated');
+      var color = (state.colors && state.colors[camp]) || CAMP_COLORS[camp] || '#888';
+      item.style.backgroundColor = color;
+      item.style.color = '#fff';
+      item.style.textShadow = '0 1px 1px rgba(0,0,0,0.4)';
+      item.textContent = list[i].rank + '位 ' + state.names[camp] + ' ' + list[i].territory + (dead ? ' 滅亡' : '');
       el.appendChild(item);
     }
   }
 
   var wrapEl = document.querySelector('.war-wrap');
   document.getElementById('btnStart').addEventListener('click', function () {
-    if (state.running) {
-      document.getElementById('setup').style.display = 'grid';
-      document.getElementById('btnStart').textContent = '合戦開始';
-      if (wrapEl) wrapEl.classList.remove('war-no-scroll');
-      state.running = false;
-      if (state.animId) cancelAnimationFrame(state.animId);
-      state.animId = null;
-      return;
-    }
     document.getElementById('setup').style.display = 'none';
+    document.getElementById('btnStart').style.display = 'none';
     document.getElementById('mapWrap').style.display = 'block';
+    document.getElementById('warRankRow').style.display = 'flex';
     if (wrapEl) wrapEl.classList.add('war-no-scroll');
-    var rankEl = document.getElementById('warRanking');
-    if (rankEl) rankEl.style.display = 'block';
-    var self = this;
     requestAnimationFrame(function () {
       resizeCanvas();
       initMap();
       state.running = true;
-      self.textContent = '終了';
-      self.disabled = false;
       renderStats();
       state.animId = requestAnimationFrame(gameLoop);
     });
   });
+
+  document.getElementById('btnEnd').addEventListener('click', function () {
+    if (!state.running) return;
+    document.getElementById('setup').style.display = 'grid';
+    document.getElementById('btnStart').style.display = 'block';
+    document.getElementById('btnStart').textContent = '合戦開始';
+    document.getElementById('mapWrap').style.display = 'none';
+    document.getElementById('warRankRow').style.display = 'none';
+    if (wrapEl) wrapEl.classList.remove('war-no-scroll');
+    state.running = false;
+    if (state.animId) cancelAnimationFrame(state.animId);
+    state.animId = null;
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateCampVisibility);
+  } else {
+    updateCampVisibility();
+  }
+  var numCampsEl = document.getElementById('numCamps');
+  if (numCampsEl) numCampsEl.addEventListener('change', updateCampVisibility);
 })();
   </script>
 </body>
