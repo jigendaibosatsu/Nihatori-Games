@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>タイピング – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #0d2137 0%, #1a3a52 50%, #0d2137 100%);
+      font-family: "MS PGothic", "Yu Gothic", "Consolas", monospace;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .ty-wrap {
+      width: 100%;
+      max-width: 520px;
+      padding: 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .ty-title { font-size: 1.2rem; margin-bottom: 4px; text-align: center; color: #7dd3fc; font-weight: bold; }
+    .ty-subtitle { font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 16px; }
+    .ty-stats {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    .ty-stats span { color: #e2e8f0; font-weight: bold; }
+    .ty-phrase-wrap {
+      background: rgba(0,0,0,0.35);
+      border: 2px solid #334155;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ty-phrase {
+      font-size: 1.4rem;
+      letter-spacing: 0.05em;
+      line-height: 1.6;
+      word-break: break-all;
+    }
+    .ty-phrase .correct { color: #4ade80; }
+    .ty-phrase .wrong { color: #f87171; background: rgba(248,113,113,0.2); border-radius: 2px; }
+    .ty-phrase .cursor { border-bottom: 3px solid #7dd3fc; animation: blink 0.8s step-end infinite; }
+    @keyframes blink { 50% { border-color: transparent; } }
+    .ty-input-wrap {
+      margin-bottom: 16px;
+    }
+    .ty-input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 1.1rem;
+      font-family: inherit;
+      letter-spacing: 0.05em;
+      color: #fff;
+      background: rgba(0,0,0,0.4);
+      border: 2px solid #475569;
+      border-radius: 10px;
+      outline: none;
+    }
+    .ty-input:focus { border-color: #7dd3fc; box-shadow: 0 0 0 3px rgba(125,211,252,0.2); }
+    .ty-input::placeholder { color: #64748b; }
+    .ty-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #0ea5e9, #0284c7);
+      border: 2px solid #38bdf8;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      margin-bottom: 12px;
+    }
+    .ty-btn:hover { opacity: 0.95; }
+    .ty-btn:active { transform: scale(0.98); }
+    .ty-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .ty-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 48px 16px 0;
+    }
+    .ty-overlay.visible { display: flex; }
+    .ty-overlay-box {
+      background: linear-gradient(180deg, #1e3a5f 0%, #0d2137 100%);
+      border: 3px solid #0ea5e9;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      max-width: 340px;
+    }
+    .ty-overlay-box h2 { margin-bottom: 12px; font-size: 1.3rem; color: #7dd3fc; }
+    .ty-overlay-box .score { font-size: 1.1rem; color: #e2e8f0; line-height: 1.8; margin: 12px 0; }
+    .ty-overlay-box .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      margin-top: 12px;
+      background: #0ea5e9;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .ty-back { display: inline-block; margin-top: 16px; color: #7dd3fc; font-size: 14px; text-decoration: none; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="ty-wrap">
+    <h1 class="ty-title">タイピング</h1>
+    <p class="ty-subtitle">表示された文字をローマ字で入力しよう</p>
+
+    <div class="ty-stats" id="stats">
+      <span>問題 <strong id="currentNum">1</strong> / <strong id="totalNum">10</strong></span>
+      <span>経過 <strong id="elapsed">0</strong> 秒</span>
+      <span>正解率 <strong id="accuracy">100</strong>%</span>
+    </div>
+
+    <div class="ty-phrase-wrap">
+      <div class="ty-phrase" id="phraseDisplay"></div>
+    </div>
+
+    <div class="ty-input-wrap">
+      <input type="text" class="ty-input" id="input" placeholder="ここに入力..." autocomplete="off" autocapitalize="off" spellcheck="false" />
+    </div>
+
+    <button type="button" class="ty-btn" id="btnStart">スタート</button>
+    <a href="/index.html" class="ty-back">← トップへ戻る</a>
+  </div>
+
+  <div class="ty-overlay" id="overlayResult">
+    <div class="ty-overlay-box">
+      <h2>おつかれさま！</h2>
+      <div class="score" id="resultScore"></div>
+      <button type="button" class="ty-overlay-box btn" id="btnRetry">もう一度</button>
+      <a href="/index.html" class="ty-back">トップへ戻る</a>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var PHRASES = [
+    'konnichiwa', 'ohayou', 'arigatou', 'sayounara', 'sumimasen',
+    'itadakimasu', 'gochisousama', 'otsukaresama', 'ganbatte', 'omedetou',
+    'yoroshiku', 'douzo', 'doumo', 'ja ne', 'mata ne',
+    'nihongo', 'genki', 'sukoshi', 'daijoubu', 'wakarimasu',
+    'tabemasu', 'nomimasu', 'ikimasu', 'kimasu', 'kaerimasu',
+    'ashita', 'kyou', 'kinou', 'ima', 'sorekara',
+    'typing', 'game', 'practice', 'speed', 'accuracy'
+  ];
+
+  var PHRASE_COUNT = 10;
+  var state = {
+    phrases: [],
+    index: 0,
+    startTime: 0,
+    timerId: null,
+    totalCorrect: 0,
+    totalTyped: 0
+  };
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function startGame() {
+    state.phrases = shuffle(PHRASES).slice(0, PHRASE_COUNT);
+    state.index = 0;
+    state.startTime = 0;
+    state.totalCorrect = 0;
+    state.totalTyped = 0;
+    if (state.timerId) clearInterval(state.timerId);
+    document.getElementById('btnStart').textContent = 'スタート';
+    document.getElementById('btnStart').disabled = false;
+    document.getElementById('input').value = '';
+    document.getElementById('input').disabled = true;
+    document.getElementById('phraseDisplay').textContent = '';
+    document.getElementById('currentNum').textContent = '0';
+    document.getElementById('totalNum').textContent = PHRASE_COUNT;
+    document.getElementById('elapsed').textContent = '0';
+    document.getElementById('accuracy').textContent = '100';
+  }
+
+  function runTimer() {
+    if (state.timerId) clearInterval(state.timerId);
+    state.timerId = setInterval(function () {
+      var sec = Math.floor((Date.now() - state.startTime) / 1000);
+      document.getElementById('elapsed').textContent = sec;
+    }, 1000);
+  }
+
+  function renderPhrase() {
+    var phrase = state.phrases[state.index];
+    var typed = document.getElementById('input').value;
+    var el = document.getElementById('phraseDisplay');
+    el.innerHTML = '';
+    for (var i = 0; i < phrase.length; i++) {
+      var span = document.createElement('span');
+      if (i < typed.length) {
+        span.textContent = phrase[i];
+        span.className = phrase[i] === typed[i] ? 'correct' : 'wrong';
+      } else {
+        span.textContent = phrase[i];
+        if (i === typed.length) span.className = 'cursor';
+      }
+      el.appendChild(span);
+    }
+    if (typed.length >= phrase.length) {
+      var cursor = el.querySelector('.cursor');
+      if (cursor) cursor.classList.remove('cursor');
+    }
+  }
+
+  function updateStats() {
+    document.getElementById('currentNum').textContent = state.index + 1;
+    var acc = state.totalTyped ? Math.round((state.totalCorrect / state.totalTyped) * 100) : 100;
+    document.getElementById('accuracy').textContent = acc;
+  }
+
+  function nextPhrase() {
+    state.index++;
+    document.getElementById('input').value = '';
+    if (state.index >= state.phrases.length) {
+      if (state.timerId) clearInterval(state.timerId);
+      var sec = Math.floor((Date.now() - state.startTime) / 1000);
+      var acc = state.totalTyped ? Math.round((state.totalCorrect / state.totalTyped) * 100) : 100;
+      document.getElementById('resultScore').innerHTML =
+        state.phrases.length + ' 問を <strong>' + sec + '</strong> 秒でクリア！<br>正解率 <strong>' + acc + '%</strong>';
+      document.getElementById('overlayResult').classList.add('visible');
+      return;
+    }
+    document.getElementById('phraseDisplay').innerHTML = '';
+    var phrase = state.phrases[state.index];
+    for (var i = 0; i < phrase.length; i++) {
+      var span = document.createElement('span');
+      span.textContent = phrase[i];
+      if (i === 0) span.className = 'cursor';
+      document.getElementById('phraseDisplay').appendChild(span);
+    }
+    updateStats();
+  }
+
+  function onInput() {
+    var phrase = state.phrases[state.index];
+    var typed = document.getElementById('input').value;
+
+    var completedLen = 0;
+    for (var i = 0; i < state.index; i++) completedLen += state.phrases[i].length;
+    var correctInCurrent = 0;
+    for (var j = 0; j < typed.length; j++) {
+      if (phrase[j] === typed[j]) correctInCurrent++;
+    }
+    state.totalCorrect = completedLen + correctInCurrent;
+    state.totalTyped = completedLen + typed.length;
+
+    renderPhrase();
+    updateStats();
+
+    if (typed === phrase) {
+      nextPhrase();
+    }
+  }
+
+  function onKeyDown(e) {
+    if (e.key === ' ') e.preventDefault();
+  }
+
+  document.getElementById('btnStart').addEventListener('click', function () {
+    if (state.index > 0 && state.index < state.phrases.length) return;
+    startGame();
+    state.phrases = shuffle(PHRASES).slice(0, PHRASE_COUNT);
+    state.index = 0;
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnStart').textContent = '入力中...';
+    document.getElementById('input').disabled = false;
+    document.getElementById('input').value = '';
+    state.startTime = Date.now();
+    runTimer();
+    var phrase = state.phrases[0];
+    var el = document.getElementById('phraseDisplay');
+    el.innerHTML = '';
+    for (var i = 0; i < phrase.length; i++) {
+      var span = document.createElement('span');
+      span.textContent = phrase[i];
+      if (i === 0) span.className = 'cursor';
+      el.appendChild(span);
+    }
+    document.getElementById('currentNum').textContent = '1';
+    document.getElementById('input').focus();
+  });
+
+  document.getElementById('input').addEventListener('input', function () {
+    if (state.phrases.length === 0) return;
+    var phrase = state.phrases[state.index];
+    var typed = this.value;
+    if (typed.length > phrase.length) this.value = typed.slice(0, phrase.length);
+    onInput();
+  });
+
+  document.getElementById('input').addEventListener('keydown', onKeyDown);
+
+  document.getElementById('btnRetry').addEventListener('click', function () {
+    document.getElementById('overlayResult').classList.remove('visible');
+    startGame();
+  });
+
+  startGame();
+})();
+  </script>
+</body>
+</html>

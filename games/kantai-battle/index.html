@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>艦隊バトル – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #0c1929 0%, #1a2f4a 50%, #0c1929 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .kb-wrap {
+      width: 100%;
+      max-width: 560px;
+      padding: 10px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .kb-title { font-size: 1rem; margin-bottom: 4px; text-align: center; color: #7dd3fc; font-weight: bold; }
+    .kb-subtitle { font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 10px; }
+    .kb-formation {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .kb-formation label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      background: rgba(30,58,95,0.8);
+      border: 2px solid #334155;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .kb-formation input { display: none; }
+    .kb-formation input:checked + label { border-color: #0ea5e9; background: rgba(14,165,233,0.2); color: #7dd3fc; }
+    .kb-btn {
+      display: block;
+      width: 100%;
+      max-width: 200px;
+      margin: 0 auto 12px;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #0ea5e9, #0369a1);
+      border: 2px solid #38bdf8;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .kb-btn:hover { opacity: 0.95; }
+    .kb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .kb-phase {
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fbbf24;
+      margin-bottom: 8px;
+      padding: 4px 0;
+    }
+    .kb-fleets {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex: 1;
+      min-height: 0;
+    }
+    .kb-fleet {
+      background: rgba(15,23,42,0.9);
+      border: 2px solid #334155;
+      border-radius: 8px;
+      padding: 6px;
+      overflow-y: auto;
+    }
+    .kb-fleet-label { font-size: 11px; color: #94a3b8; margin-bottom: 4px; text-align: center; }
+    .kb-fleet.friend .kb-fleet-label { color: #67e8f9; }
+    .kb-fleet.enemy .kb-fleet-label { color: #f87171; }
+    .kb-ship {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      margin-bottom: 4px;
+      background: rgba(30,41,59,0.8);
+      border-radius: 6px;
+      border: 1px solid #475569;
+      font-size: 11px;
+    }
+    .kb-ship.sunk { opacity: 0.4; }
+    .kb-ship.damaged { border-color: #f59e0b; }
+    .kb-ship.heavy { border-color: #ef4444; }
+    .kb-ship-icon {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      background: #475569;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .kb-ship.friend .kb-ship-icon { background: #0c4a6e; color: #7dd3fc; }
+    .kb-ship.enemy .kb-ship-icon { background: #7f1d1d; color: #fca5a5; }
+    .kb-ship-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kb-ship-hp {
+      flex: 0 0 50px;
+      height: 8px;
+      background: #1e293b;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .kb-ship-hp-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); transition: width 0.6s ease-in-out; }
+    .kb-ship.sunk .kb-ship-hp-fill { background: #444; }
+    .kb-ship.damaged .kb-ship-hp-fill { background: linear-gradient(90deg, #eab308, #ca8a04); }
+    .kb-ship.heavy .kb-ship-hp-fill { background: linear-gradient(90deg, #ef4444, #b91c1c); }
+    .kb-ship.kb-attacking { box-shadow: 0 0 0 2px #fbbf24; background: rgba(251,191,36,0.15); }
+    .kb-ship.kb-target { box-shadow: 0 0 0 2px #ef4444; background: rgba(239,68,68,0.15); }
+    .kb-ship.kb-attack-motion { animation: kb-attack-shake 0.28s ease-in-out; }
+    .kb-ship.kb-hit-motion { animation: kb-hit-shake 0.4s ease-in-out; }
+    @keyframes kb-attack-shake {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      80% { transform: translateX(-2px); }
+      100% { transform: translateX(0); }
+    }
+    @keyframes kb-hit-shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(3px); }
+      50% { transform: translateX(-3px); }
+      75% { transform: translateX(2px); }
+      100% { transform: translateX(0); }
+    }
+    .kb-log {
+      height: 80px;
+      overflow-y: auto;
+      padding: 6px 8px;
+      background: rgba(0,0,0,0.5);
+      border: 2px solid #334155;
+      border-radius: 6px;
+      font-size: 10px;
+      line-height: 1.4;
+      color: #94a3b8;
+      white-space: pre-line;
+      flex-shrink: 0;
+    }
+    .kb-actions { display: flex; gap: 8px; margin-top: 8px; flex-shrink: 0; }
+    .kb-actions .kb-btn { flex: 1; max-width: none; margin: 0; }
+    .kb-btn-night { background: linear-gradient(180deg, #6366f1, #4f46e5); border-color: #818cf8; }
+    .kb-setup { margin-bottom: 12px; }
+    .kb-setup-area.hidden { display: none; }
+    .kb-battle-area { display: none; }
+    .kb-battle-area.visible { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .kb-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 48px 16px 0;
+    }
+    .kb-overlay.visible { display: flex; }
+    .kb-overlay-box {
+      background: linear-gradient(180deg, #1e3a5f 0%, #0c1929 100%);
+      border: 3px solid #0ea5e9;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      max-width: 320px;
+    }
+    .kb-overlay-box h2 { margin-bottom: 12px; font-size: 1.3rem; }
+    .kb-overlay-box.victory h2 { color: #4ade80; }
+    .kb-overlay-box.defeat h2 { color: #f87171; }
+    .kb-overlay-box .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      margin-top: 12px;
+      background: #0ea5e9;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .kb-back { display: inline-block; margin-top: 12px; color: #7dd3fc; font-size: 13px; text-decoration: none; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="kb-wrap">
+    <h1 class="kb-title">艦隊バトル</h1>
+    <p class="kb-subtitle">陣形を選んで出撃し、敵艦隊と戦闘しよう</p>
+
+    <div class="kb-setup-area" id="setupArea">
+      <div class="kb-setup">
+        <p class="kb-fleet-label" style="margin-bottom:6px;">陣形を選択</p>
+        <div class="kb-formation">
+          <input type="radio" name="formation" id="f1" value="line" checked />
+          <label for="f1">単縦陣（攻撃重視）</label>
+          <input type="radio" name="formation" id="f2" value="double" />
+          <label for="f2">複縦陣（バランス）</label>
+          <input type="radio" name="formation" id="f3" value="ring" />
+          <label for="f3">輪形陣（防御重視）</label>
+        </div>
+      </div>
+      <button type="button" class="kb-btn" id="btnSortie">出撃</button>
+    </div>
+
+    <div class="kb-battle-area" id="battleArea">
+      <div class="kb-phase" id="phaseLabel">砲撃戦</div>
+      <div class="kb-fleets">
+        <div class="kb-fleet friend">
+          <div class="kb-fleet-label">自艦隊</div>
+          <div id="friendFleet"></div>
+        </div>
+        <div class="kb-fleet enemy">
+          <div class="kb-fleet-label">敵艦隊</div>
+          <div id="enemyFleet"></div>
+        </div>
+      </div>
+      <div class="kb-log" id="battleLog"></div>
+      <div class="kb-actions">
+        <button type="button" class="kb-btn" id="btnNext">次へ</button>
+        <button type="button" class="kb-btn kb-btn-night" id="btnNight" style="display:none;">夜戦に突入</button>
+      </div>
+    </div>
+    <a href="/index.html" class="kb-back" style="margin-top:8px;">← トップへ戻る</a>
+  </div>
+
+  <div class="kb-overlay" id="overlayResult">
+    <div class="kb-overlay-box" id="resultBox">
+      <h2 id="resultTitle">戦闘終了</h2>
+      <p id="resultMessage"></p>
+      <button type="button" class="kb-overlay-box btn" id="btnRetry">もう一度</button>
+      <a href="/index.html" class="kb-back">トップへ戻る</a>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var FORMATION = { line: { name: '単縦陣', damageDealt: 1.1, damageTaken: 1 }, double: { name: '複縦陣', damageDealt: 1, damageTaken: 0.9 }, ring: { name: '輪形陣', damageDealt: 0.9, damageTaken: 0.75 } };
+  var PHASES = ['opening_torpedo', 'shelling', 'closing_torpedo', 'night'];
+
+  var friendTemplates = [
+    { type: 'DD', name: 'はるか', hp: 28, firepower: 18, torpedo: 32, armor: 8, icon: 'DD' },
+    { type: 'DD', name: 'なつ', hp: 26, firepower: 16, torpedo: 30, armor: 7, icon: 'DD' },
+    { type: 'CL', name: 'あかね', hp: 38, firepower: 32, torpedo: 24, armor: 14, icon: 'CL' },
+    { type: 'CA', name: 'くろいわ', hp: 52, firepower: 48, torpedo: 20, armor: 28, icon: 'CA' },
+    { type: 'BB', name: 'ひびき', hp: 72, firepower: 78, torpedo: 0, armor: 42, icon: 'BB' },
+    { type: 'CV', name: 'しらゆき', hp: 58, firepower: 28, torpedo: 0, armor: 32, icon: 'CV' }
+  ];
+
+  var enemyTemplates = [
+    { type: 'DD', name: '敵駆逐Ⅰ', hp: 24, firepower: 14, torpedo: 28, armor: 6, icon: 'DD' },
+    { type: 'DD', name: '敵駆逐Ⅱ', hp: 22, firepower: 12, torpedo: 26, armor: 6, icon: 'DD' },
+    { type: 'CL', name: '敵軽巡', hp: 34, firepower: 28, torpedo: 20, armor: 12, icon: 'CL' },
+    { type: 'CA', name: '敵重巡', hp: 48, firepower: 42, torpedo: 18, armor: 24, icon: 'CA' },
+    { type: 'BB', name: '敵戦艦', hp: 68, firepower: 72, torpedo: 0, armor: 38, icon: 'BB' },
+    { type: 'CV', name: '敵空母', hp: 54, firepower: 24, torpedo: 0, armor: 28, icon: 'CV' }
+  ];
+
+  function cloneShip(t, side) {
+    var s = { type: t.type, name: t.name, hp: t.hp, maxHp: t.hp, firepower: t.firepower, torpedo: t.torpedo, armor: t.armor, icon: t.icon, side: side };
+    return s;
+  }
+
+  var state = {
+    formation: 'line',
+    friend: [],
+    enemy: [],
+    phaseIndex: 0,
+    phaseStep: 0,
+    log: []
+  };
+
+  function addLog(msg) {
+    state.log.push(msg);
+    var el = document.getElementById('battleLog');
+    el.textContent = state.log.slice(-20).join('\n');
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function getFormation() {
+    var r = document.querySelector('input[name="formation"]:checked');
+    return r ? r.value : 'line';
+  }
+
+  function getLiving(list) {
+    return list.filter(function (s) { return s.hp > 0; });
+  }
+
+  function pickTarget(attacker, targets) {
+    if (targets.length === 0) return -1;
+    var idx = Math.floor(Math.random() * targets.length);
+    return targets[idx];
+  }
+
+  function calcDamage(attacker, defender, useTorpedo, formation) {
+    var atk = useTorpedo ? attacker.torpedo : attacker.firepower;
+    if (atk <= 0) return 0;
+    var base = Math.max(1, atk * (0.85 + Math.random() * 0.3) - defender.armor * 0.5);
+    var crit = Math.random() < 0.15 ? 1.5 : 1;
+    var form = formation ? FORMATION[formation].damageDealt : 1;
+    return Math.max(1, Math.floor(base * crit * form));
+  }
+
+  function damageTaken(damage, formation) {
+    var form = formation ? FORMATION[formation].damageTaken : 1;
+    return Math.max(1, Math.floor(damage * form));
+  }
+
+  function shipHpClass(ship) {
+    if (ship.hp <= 0) return 'sunk';
+    var pct = ship.hp / ship.maxHp;
+    if (pct <= 0.25) return 'heavy';
+    if (pct <= 0.5) return 'damaged';
+    return '';
+  }
+
+  function renderFleets() {
+    function renderOne(list, containerId, side) {
+      var el = document.getElementById(containerId);
+      el.innerHTML = '';
+      list.forEach(function (s, idx) {
+        var div = document.createElement('div');
+        div.className = 'kb-ship ' + side + ' ' + shipHpClass(s);
+        div.dataset.side = side;
+        div.dataset.index = idx;
+        div.innerHTML = '<span class="kb-ship-icon">' + s.icon + '</span><span class="kb-ship-name">' + s.name + '</span><div class="kb-ship-hp"><div class="kb-ship-hp-fill" style="width:' + (s.hp > 0 ? (s.hp / s.maxHp * 100) : 0) + '%"></div></div>';
+        el.appendChild(div);
+      });
+    }
+    renderOne(state.friend, 'friendFleet', 'friend');
+    renderOne(state.enemy, 'enemyFleet', 'enemy');
+  }
+
+  function getShipEl(side, index) {
+    var id = side === 'friend' ? 'friendFleet' : 'enemyFleet';
+    var el = document.getElementById(id);
+    if (!el || index < 0 || index >= el.children.length) return null;
+    return el.children[index];
+  }
+
+  var ATTACK_DELAY_MS = 900;
+  var ATTACK_MOVE_MS = 280;
+  var HIT_MOVE_MS = 520;
+  var phaseRunning = false;
+
+  function buildOpeningTorpedoAttacks() {
+    var form = state.formation;
+    var list = [];
+    var friendLiving = getLiving(state.friend);
+    var enemyLiving = getLiving(state.enemy);
+    friendLiving.filter(function (s) { return s.torpedo > 0; }).forEach(function (attacker) {
+      if (enemyLiving.length === 0) return;
+      var target = enemyLiving[Math.floor(Math.random() * enemyLiving.length)];
+      var dmg = damageTaken(calcDamage(attacker, target, true, form), null);
+      list.push({ attacker: attacker, target: target, dmg: dmg, isEnemy: false, type: '雷撃' });
+    });
+    enemyLiving = getLiving(state.enemy);
+    var friendAlive = getLiving(state.friend);
+    enemyLiving.filter(function (s) { return s.torpedo > 0; }).forEach(function (attacker) {
+      if (friendAlive.length === 0) return;
+      var target = friendAlive[Math.floor(Math.random() * friendAlive.length)];
+      var dmg = damageTaken(calcDamage(attacker, target, true, null), form);
+      list.push({ attacker: attacker, target: target, dmg: dmg, isEnemy: true, type: '雷撃' });
+    });
+    return list;
+  }
+
+  function buildShellingAttacks() {
+    var form = state.formation;
+    var list = [];
+    var friendLiving = getLiving(state.friend).slice().sort(function (a, b) { return b.firepower - a.firepower; });
+    var enemyLiving = getLiving(state.enemy).slice().sort(function (a, b) { return b.firepower - a.firepower; });
+    var maxLen = Math.max(friendLiving.length, enemyLiving.length);
+    for (var i = 0; i < maxLen; i++) {
+      if (friendLiving[i] && friendLiving[i].hp > 0 && getLiving(state.enemy).length > 0) {
+        var enemyAlive = getLiving(state.enemy);
+        var target = enemyAlive[Math.floor(Math.random() * enemyAlive.length)];
+        var dmg = damageTaken(calcDamage(friendLiving[i], target, false, form), null);
+        list.push({ attacker: friendLiving[i], target: target, dmg: dmg, isEnemy: false, type: '砲撃' });
+      }
+      if (enemyLiving[i] && enemyLiving[i].hp > 0 && getLiving(state.friend).length > 0) {
+        var friendAlive = getLiving(state.friend);
+        var target = friendAlive[Math.floor(Math.random() * friendAlive.length)];
+        var dmg = damageTaken(calcDamage(enemyLiving[i], target, false, null), form);
+        list.push({ attacker: enemyLiving[i], target: target, dmg: dmg, isEnemy: true, type: '砲撃' });
+      }
+    }
+    return list;
+  }
+
+  function buildNightAttacks() {
+    var form = state.formation;
+    var list = [];
+    var friendLiving = getLiving(state.friend);
+    var enemyLiving = getLiving(state.enemy);
+    friendLiving.forEach(function (attacker) {
+      if (enemyLiving.length === 0) return;
+      var target = enemyLiving[Math.floor(Math.random() * enemyLiving.length)];
+      var useTorpedo = attacker.torpedo > 0 && Math.random() < 0.5;
+      var dmg = damageTaken(calcDamage(attacker, target, useTorpedo, form), null);
+      list.push({ attacker: attacker, target: target, dmg: dmg, isEnemy: false, type: '夜戦' });
+      enemyLiving = getLiving(state.enemy);
+    });
+    enemyLiving = getLiving(state.enemy);
+    enemyLiving.forEach(function (attacker) {
+      var friendAlive = getLiving(state.friend);
+      if (friendAlive.length === 0) return;
+      var target = friendAlive[Math.floor(Math.random() * friendAlive.length)];
+      var useTorpedo = attacker.torpedo > 0 && Math.random() < 0.5;
+      var dmg = damageTaken(calcDamage(attacker, target, useTorpedo, null), form);
+      list.push({ attacker: attacker, target: target, dmg: dmg, isEnemy: true, type: '夜戦' });
+    });
+    return list;
+  }
+
+  function runAttacksOneByOne(attacks, onComplete) {
+    if (attacks.length === 0) {
+      renderFleets();
+      onComplete();
+      return;
+    }
+    var idx = 0;
+    function doNext() {
+      if (idx >= attacks.length) {
+        onComplete();
+        return;
+      }
+      var a = attacks[idx];
+      // すでに轟沈している艦は攻撃しない
+      if (!a.attacker || a.attacker.hp <= 0) {
+        idx++;
+        doNext();
+        return;
+      }
+      var attackerName = a.isEnemy ? '敵 ' + a.attacker.name : a.attacker.name;
+      addLog(attackerName + ' → ' + a.target.name + ' に ' + a.dmg + ' ダメージ（' + a.type + '）');
+
+      // 1. 攻撃側が前に出て揺れる
+      renderFleets();
+      var attackerSide = a.isEnemy ? 'enemy' : 'friend';
+      var targetSide = a.isEnemy ? 'friend' : 'enemy';
+      var attackerIdx = (a.isEnemy ? state.enemy : state.friend).indexOf(a.attacker);
+      var targetIdx = (a.isEnemy ? state.friend : state.enemy).indexOf(a.target);
+      var attackerEl = getShipEl(attackerSide, attackerIdx);
+      if (attackerEl) {
+        attackerEl.classList.add('kb-attacking', 'kb-attack-motion');
+      }
+
+      setTimeout(function () {
+        // 2. ダメージ適用 & 被弾側が揺れながらHPが減る
+        a.target.hp = Math.max(0, a.target.hp - a.dmg);
+        renderFleets();
+        var newTargetEl = getShipEl(targetSide, targetIdx);
+        if (attackerEl) attackerEl.classList.remove('kb-attack-motion');
+        if (newTargetEl) {
+          newTargetEl.classList.add('kb-target', 'kb-hit-motion');
+        }
+
+        setTimeout(function () {
+          if (attackerEl) attackerEl.classList.remove('kb-attacking');
+          if (newTargetEl) {
+            newTargetEl.classList.remove('kb-target', 'kb-hit-motion');
+          }
+          idx++;
+          setTimeout(doNext, Math.max(0, ATTACK_DELAY_MS - ATTACK_MOVE_MS - HIT_MOVE_MS));
+        }, HIT_MOVE_MS);
+      }, ATTACK_MOVE_MS);
+    }
+    doNext();
+  }
+
+  function runPhase(onComplete) {
+    var phase = PHASES[state.phaseIndex];
+    document.getElementById('phaseLabel').textContent = phase === 'opening_torpedo' ? '開幕雷撃' : phase === 'shelling' ? '砲撃戦' : phase === 'closing_torpedo' ? '閉幕雷撃' : '夜戦';
+    var attacks = [];
+    if (phase === 'opening_torpedo' || phase === 'closing_torpedo') attacks = buildOpeningTorpedoAttacks();
+    else if (phase === 'shelling') attacks = buildShellingAttacks();
+    else if (phase === 'night') attacks = buildNightAttacks();
+    phaseRunning = true;
+    document.getElementById('btnNext').disabled = true;
+    document.getElementById('btnNight').disabled = true;
+    runAttacksOneByOne(attacks, function () {
+      phaseRunning = false;
+      document.getElementById('btnNext').disabled = false;
+      document.getElementById('btnNight').disabled = false;
+      onComplete();
+    });
+  }
+
+  function checkBattleEnd() {
+    var friendAlive = getLiving(state.friend).length;
+    var enemyAlive = getLiving(state.enemy).length;
+    if (friendAlive === 0) {
+      document.getElementById('resultBox').className = 'kb-overlay-box defeat';
+      document.getElementById('resultTitle').textContent = '敗北…';
+      document.getElementById('resultMessage').textContent = '全艦隊、沈没しました。';
+      document.getElementById('overlayResult').classList.add('visible');
+      return true;
+    }
+    if (enemyAlive === 0) {
+      document.getElementById('resultBox').className = 'kb-overlay-box victory';
+      document.getElementById('resultTitle').textContent = '勝利！';
+      document.getElementById('resultMessage').textContent = '敵艦隊を撃滅しました。';
+      document.getElementById('overlayResult').classList.add('visible');
+      return true;
+    }
+    return false;
+  }
+
+  function startBattle() {
+    state.formation = getFormation();
+    state.friend = friendTemplates.map(function (t) { return cloneShip(t, 'friend'); });
+    state.enemy = enemyTemplates.map(function (t) { return cloneShip(t, 'enemy'); });
+    state.phaseIndex = 0;
+    state.log = [];
+    addLog(FORMATION[state.formation].name + ' で出撃。敵艦隊を発見！');
+    document.getElementById('phaseLabel').textContent = '開幕雷撃';
+    renderFleets();
+    document.getElementById('btnNight').style.display = 'none';
+    document.getElementById('btnNext').style.display = 'block';
+    document.getElementById('btnNext').textContent = '次へ';
+  }
+
+  function onNext() {
+    if (phaseRunning) return;
+    runPhase(function () {
+      if (checkBattleEnd()) return;
+      state.phaseIndex++;
+      if (state.phaseIndex >= PHASES.length) {
+        state.phaseIndex = PHASES.length - 1;
+        document.getElementById('btnNext').style.display = 'none';
+        document.getElementById('btnNight').style.display = 'block';
+      } else if (state.phaseIndex === PHASES.length - 1) {
+        document.getElementById('btnNext').style.display = 'none';
+        document.getElementById('btnNight').style.display = 'block';
+      }
+    });
+  }
+
+  function onNight() {
+    if (phaseRunning) return;
+    document.getElementById('phaseLabel').textContent = '夜戦';
+    state.phaseIndex = PHASES.length - 1;
+    var attacks = buildNightAttacks();
+    phaseRunning = true;
+    document.getElementById('btnNext').disabled = true;
+    document.getElementById('btnNight').disabled = true;
+    runAttacksOneByOne(attacks, function () {
+      phaseRunning = false;
+      document.getElementById('btnNight').style.display = 'none';
+      document.getElementById('btnNext').style.display = 'block';
+      document.getElementById('btnNext').textContent = '戦闘終了';
+      document.getElementById('btnNext').disabled = false;
+      state.phaseIndex = PHASES.length;
+      checkBattleEnd();
+    });
+  }
+
+  document.getElementById('btnSortie').addEventListener('click', function () {
+    document.getElementById('setupArea').classList.add('hidden');
+    document.getElementById('battleArea').classList.add('visible');
+    startBattle();
+  });
+
+  document.getElementById('btnNext').addEventListener('click', function () {
+    if (this.textContent === '戦闘終了') {
+      checkBattleEnd();
+      return;
+    }
+    onNext();
+  });
+
+  document.getElementById('btnNight').addEventListener('click', function () {
+    onNight();
+  });
+
+  document.getElementById('btnRetry').addEventListener('click', function () {
+    document.getElementById('overlayResult').classList.remove('visible');
+    document.getElementById('battleArea').classList.remove('visible');
+    document.getElementById('setupArea').classList.remove('hidden');
+  });
+})();
+  </script>
+</body>
+</html>

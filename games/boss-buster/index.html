@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>成敗！ムカつくやつ – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #1a0a0a 0%, #2d1515 50%, #1a0a0a 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .bb-wrap {
+      width: 100%;
+      max-width: 420px;
+      padding: 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .bb-title {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      text-align: center;
+      color: #ff6b6b;
+      font-weight: bold;
+    }
+    .bb-subtitle {
+      font-size: 11px;
+      color: #aaa;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .bb-enemy-card {
+      background: linear-gradient(180deg, #3d2020 0%, #2a1515 100%);
+      border: 2px solid #8b4513;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+    }
+    .bb-enemy-name {
+      font-size: 14px;
+      color: #ffcc00;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    .bb-enemy-quote {
+      font-size: 12px;
+      color: #e0a0a0;
+      font-style: italic;
+      min-height: 2.4em;
+      line-height: 1.4;
+    }
+    .bb-hp-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .bb-hp-bar {
+      flex: 1;
+      height: 16px;
+      background: #333;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #555;
+    }
+    .bb-hp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #c62828, #e57373);
+      transition: width 0.25s;
+    }
+    .bb-hp-num { font-size: 12px; min-width: 52px; text-align: right; color: #ffab91; }
+    .bb-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .bb-btn {
+      padding: 14px 16px;
+      font-size: 15px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #c62828 0%, #8b0000 100%);
+      border: 2px solid #ff6b6b;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      text-align: center;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .bb-btn:hover { box-shadow: 0 0 16px rgba(255,107,107,0.4); }
+    .bb-btn:active { transform: scale(0.98); }
+    .bb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .bb-log {
+      flex: 1;
+      min-height: 60px;
+      padding: 8px 10px;
+      background: rgba(0,0,0,0.4);
+      border: 2px solid #5d4037;
+      border-radius: 8px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #ffcc80;
+      white-space: pre-line;
+      overflow-y: auto;
+    }
+    .bb-back {
+      display: inline-block;
+      margin-top: 12px;
+      color: #ff8a80;
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .bb-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 48px 16px 0;
+    }
+    .bb-overlay.visible { display: flex; }
+    .bb-overlay-box {
+      background: linear-gradient(180deg, #3d2020 0%, #1a0a0a 100%);
+      border: 4px solid #c62828;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      max-width: 320px;
+    }
+    .bb-overlay-box h2 { margin-bottom: 12px; font-size: 1.4rem; color: #ff6b6b; }
+    .bb-overlay-box p { margin: 8px 0; font-size: 14px; color: #e0e0e0; line-height: 1.5; }
+    .bb-overlay-box .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      margin-top: 16px;
+      background: linear-gradient(180deg, #c62828, #8b0000);
+      color: #fff;
+      border: 2px solid #ff6b6b;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .bb-setup {
+      margin-bottom: 12px;
+    }
+    .bb-setup label { font-size: 12px; color: #bbb; display: block; margin-bottom: 4px; }
+    .bb-setup select, .bb-setup input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 2px solid #5d4037;
+      border-radius: 8px;
+      background: #2a1515;
+      color: #fff;
+      font-size: 14px;
+    }
+    .bb-start-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #2e7d32, #1b5e20);
+      border: 2px solid #66bb6a;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .bb-start-btn:active { transform: scale(0.98); }
+    .bb-game-area { display: none; }
+    .bb-game-area.visible { display: block; flex: 1; }
+    .bb-setup-area.hidden { display: none; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="bb-wrap">
+    <h1 class="bb-title">成敗！ムカつくやつ</h1>
+    <p class="bb-subtitle">理不尽な上司・社会のストレスに苦しむあなたへ。ここだけは思い切り成敗しよう。</p>
+
+    <div class="bb-setup-area" id="setupArea">
+      <div class="bb-setup">
+        <label for="enemyType">ムカつくやつのタイプ</label>
+        <select id="enemyType">
+          <option value="boss">理不尽な上司</option>
+          <option value="power">パワハラ課長</option>
+          <option value="client">横暴な取引先</option>
+          <option value="neighbor">無神経な隣人</option>
+          <option value="train">電車のマナー違反おじさん</option>
+          <option value="custom">自分で名前を入れる</option>
+        </select>
+      </div>
+      <div class="bb-setup" id="customNameWrap" style="display:none;">
+        <label for="customName">名前</label>
+        <input type="text" id="customName" placeholder="例：あの部長" maxlength="20" />
+      </div>
+      <button type="button" class="bb-start-btn" id="btnToGame">成敗を始める</button>
+    </div>
+
+    <div class="bb-game-area" id="gameArea">
+      <div class="bb-enemy-card">
+        <div class="bb-enemy-name" id="enemyName">理不尽な上司</div>
+        <div class="bb-enemy-quote" id="enemyQuote">「お前の給料分、働いてないんだが？」</div>
+        <div class="bb-hp-wrap">
+          <div class="bb-hp-bar"><div class="bb-hp-fill" id="enemyHpBar" style="width:100%"></div></div>
+          <span class="bb-hp-num" id="enemyHpNum">100 / 100</span>
+        </div>
+      </div>
+
+      <div class="bb-actions">
+        <button type="button" class="bb-btn" data-action="0">言い返す</button>
+        <button type="button" class="bb-btn" data-action="1">正論で論破する</button>
+        <button type="button" class="bb-btn" data-action="2">書類を突き返す</button>
+        <button type="button" class="bb-btn" data-action="3">有給を取ると宣言</button>
+        <button type="button" class="bb-btn" data-action="4">退職届を叩きつける</button>
+        <button type="button" class="bb-btn" data-action="5">労働基準監督署に相談する</button>
+      </div>
+
+      <div class="bb-log" id="battleLog"></div>
+      <a href="/index.html" class="bb-back">← トップへ戻る</a>
+    </div>
+  </div>
+
+  <div class="bb-overlay" id="overlayWin">
+    <div class="bb-overlay-box">
+      <h2>成敗！！</h2>
+      <p id="winMessage">理不尽な上司を みごと 成敗した！<br>今日のストレス、少しは晴れたかな。</p>
+      <button type="button" class="bb-overlay-box btn" id="btnRetry">もう一匹、成敗する</button>
+      <a href="/index.html" class="bb-back" style="display:inline-block;margin-top:12px;">トップへ戻る</a>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var MAX_HP = 100;
+  var enemies = {
+    boss: {
+      name: '理不尽な上司',
+      quotes: [
+        '「お前の給料分、働いてないんだが？」',
+        '「君の企画は使わん。俺の案でいこう。」',
+        '「残業して当たり前だろ。甘いんじゃない？」',
+        '「有給？そんな余裕あるの？」',
+        '「いつでも代わりはいるからな。」'
+      ]
+    },
+    power: {
+      name: 'パワハラ課長',
+      quotes: [
+        '「お前は使えねえな。」',
+        '「給料泥棒か？」',
+        '「俺の顔が見えないのか？」',
+        '「そんなこともできないの？」',
+        '「お前のせいで数字が悪い。」'
+      ]
+    },
+    client: {
+      name: '横暴な取引先',
+      quotes: [
+        '「明日までに仕上げろ。当たり前だろ。」',
+        '「こっちの都合で決まる。文句ある？」',
+        '「契約書？俺の言うことが契約だ。」',
+        '「値引きしろ。さもないと別の会社にする。」',
+        '「君の説明は要らない。結論だけ言え。」'
+      ]
+    },
+    neighbor: {
+      name: '無神経な隣人',
+      quotes: [
+        '「うるさい？普通に生活してるだけだよ。」',
+        '「いつでもいいだろ、騒いだって。」',
+        '「文句あるなら引っ越せよ。」',
+        '「大家に言えば？どうせ何も変わらねーけど。」',
+        '「俺の家だ。好きにしていいだろ。」'
+      ]
+    },
+    train: {
+      name: '電車のマナー違反おじさん',
+      quotes: [
+        '「電話くらいいいだろ。」',
+        '「荷物？席取りしてるわけじゃない。」',
+        '「酔ってないよ。ちょっと飲んだだけ。」',
+        '「うるさいのはお前らの方だ。」',
+        '「昔はな、もっと自由だったんだぞ。」'
+      ]
+    }
+  };
+
+  var actions = [
+    { name: '言い返す', dmg: [8, 18], logs: ['「それは違います。」と言い返した！', '「おかしいのはそちらです。」と一喝！', '言い返したら、相手が黙った！'] },
+    { name: '正論で論破する', dmg: [12, 22], logs: ['正論で論破！相手、言葉に詰まる。', '労働法を引用して論破！', '論理的に反論。相手、形相が変わる。'] },
+    { name: '書類を突き返す', dmg: [10, 20], logs: ['書類を突き返した！「やり直してください。」', '不備だらけの書類を突き返す。', '「確認してください」と突き返した！'] },
+    { name: '有給を取ると宣言', dmg: [14, 24], logs: ['「有給取ります。」宣言。相手、青ざめる。', '有給取得を宣言！権利の行使だ。', '「休みます。」の一言に、相手が固まった。'] },
+    { name: '退職届を叩きつける', dmg: [20, 35], logs: ['退職届を叩きつけた！！相手、崩れ落ちる。', '「やめます。」の一言。相手、絶句。', '退職届。これが最終兵器だ。'] },
+    { name: '労働基準監督署に相談する', dmg: [25, 45], logs: ['「労基に行きます。」相手、震えている。', '監督署の名前を出したら、態度が変わった！', '法の力。相手、完全に萎れた。'] }
+  ];
+
+  var state = {
+    enemyKey: 'boss',
+    enemyName: '理不尽な上司',
+    enemyQuotes: enemies.boss.quotes,
+    hp: MAX_HP,
+    turnCount: 0
+  };
+
+  function getEnemyData() {
+    var type = document.getElementById('enemyType').value;
+    if (type === 'custom') {
+      var custom = (document.getElementById('customName').value || '').trim();
+      return {
+        name: custom || 'ムカつくやつ',
+        quotes: ['「…」', '「何だ？」', '「だから何？」', '「うるさい。」', '「知るか。」']
+      };
+    }
+    return enemies[type] || enemies.boss;
+  }
+
+  function randomQuote() {
+    return state.enemyQuotes[Math.floor(Math.random() * state.enemyQuotes.length)];
+  }
+
+  function randomLog(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function addLog(text) {
+    var el = document.getElementById('battleLog');
+    var line = '【' + state.turnCount + '】' + text;
+    el.textContent = line + (el.textContent ? '\n' + el.textContent : '');
+  }
+
+  function updateHp() {
+    var pct = Math.max(0, (state.hp / MAX_HP) * 100);
+    document.getElementById('enemyHpBar').style.width = pct + '%';
+    document.getElementById('enemyHpNum').textContent = state.hp + ' / ' + MAX_HP;
+  }
+
+  function attack(actionIndex) {
+    if (state.hp <= 0) return;
+    var act = actions[actionIndex];
+    var dmg = act.dmg[0] + Math.floor(Math.random() * (act.dmg[1] - act.dmg[0] + 1));
+    state.hp = Math.max(0, state.hp - dmg);
+    state.turnCount++;
+    addLog(randomLog(act.logs) + ' （' + dmg + ' ダメージ）');
+    updateHp();
+    document.getElementById('enemyQuote').textContent = randomQuote();
+
+    if (state.hp <= 0) {
+      document.getElementById('winMessage').innerHTML =
+        '<strong>' + state.enemyName + '</strong>を みごと 成敗した！<br>今日のストレス、少しは晴れたかな。';
+      document.getElementById('overlayWin').classList.add('visible');
+    }
+  }
+
+  function startGame() {
+    var data = getEnemyData();
+    state.enemyName = data.name;
+    state.enemyQuotes = data.quotes;
+    state.hp = MAX_HP;
+    state.turnCount = 0;
+    document.getElementById('enemyName').textContent = state.enemyName;
+    document.getElementById('enemyQuote').textContent = randomQuote();
+    document.getElementById('battleLog').textContent = '';
+    updateHp();
+    document.getElementById('setupArea').classList.add('hidden');
+    document.getElementById('gameArea').classList.add('visible');
+  }
+
+  function toSetup() {
+    document.getElementById('overlayWin').classList.remove('visible');
+    document.getElementById('gameArea').classList.remove('visible');
+    document.getElementById('setupArea').classList.remove('hidden');
+  }
+
+  document.getElementById('enemyType').addEventListener('change', function () {
+    document.getElementById('customNameWrap').style.display =
+      this.value === 'custom' ? 'block' : 'none';
+  });
+
+  document.getElementById('btnToGame').addEventListener('click', startGame);
+
+  document.querySelectorAll('.bb-btn[data-action]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      attack(parseInt(this.dataset.action, 10));
+    });
+  });
+
+  document.getElementById('btnRetry').addEventListener('click', toSetup);
+})();
+  </script>
+</body>
+</html>

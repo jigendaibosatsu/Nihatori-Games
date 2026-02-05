@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>モンスター配合 – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: radial-gradient(circle at top, #4c6fff 0%, #1e293b 40%, #020617 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #e5e7eb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .mf-wrap {
+      width: 100%;
+      max-width: 460px;
+      padding: 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .mf-title {
+      font-size: 1.2rem;
+      margin-bottom: 6px;
+      text-align: center;
+      font-weight: bold;
+      color: #f9fafb;
+      text-shadow: 0 0 12px rgba(129,140,248,0.8);
+    }
+    .mf-subtitle {
+      font-size: 11px;
+      text-align: center;
+      color: #9ca3af;
+      margin-bottom: 14px;
+    }
+    .mf-panel {
+      background: rgba(15,23,42,0.9);
+      border-radius: 12px;
+      border: 2px solid rgba(129,140,248,0.7);
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .mf-label {
+      font-size: 12px;
+      color: #c7d2fe;
+      margin-bottom: 4px;
+    }
+    .mf-select-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .mf-select-col {
+      flex: 1;
+    }
+    .mf-select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 2px solid #4f46e5;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 13px;
+    }
+    .mf-parent-card-wrap {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .mf-parent-card {
+      flex: 1 1 0;
+      min-width: 0;
+      background: rgba(30,64,175,0.35);
+      border-radius: 10px;
+      padding: 8px;
+      border: 1px solid rgba(191,219,254,0.6);
+      font-size: 11px;
+    }
+    .mf-parent-name {
+      font-weight: bold;
+      color: #e5e7eb;
+      margin-bottom: 2px;
+    }
+    .mf-parent-type {
+      font-size: 10px;
+      color: #a5b4fc;
+      margin-bottom: 4px;
+    }
+    .mf-stat-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+    .mf-stat-label {
+      font-size: 10px;
+      width: 34px;
+      color: #9ca3af;
+    }
+    .mf-stat-bar {
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.9);
+      overflow: hidden;
+    }
+    .mf-stat-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #34d399, #22c55e);
+    }
+    .mf-fuse-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      margin-top: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #0f172a;
+      background: linear-gradient(180deg, #a5b4fc, #818cf8);
+      border-radius: 10px;
+      border: 2px solid #c7d2fe;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mf-fuse-btn:hover { opacity: 0.96; }
+    .mf-fuse-btn:active { transform: scale(0.98); }
+    .mf-child-card {
+      margin-top: 4px;
+      padding: 12px;
+      border-radius: 12px;
+      background: radial-gradient(circle at top, rgba(56,189,248,0.2), rgba(15,23,42,0.95));
+      border: 2px solid rgba(56,189,248,0.7);
+    }
+    .mf-child-name {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #fefce8;
+      margin-bottom: 4px;
+    }
+    .mf-child-type {
+      font-size: 11px;
+      color: #bfdbfe;
+      margin-bottom: 6px;
+    }
+    .mf-child-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: bold;
+      margin-right: 4px;
+      margin-bottom: 4px;
+      background: rgba(99,102,241,0.3);
+      color: #e5e7eb;
+      border: 1px solid rgba(129,140,248,0.8);
+    }
+    .mf-child-desc {
+      font-size: 12px;
+      color: #e5e7eb;
+      margin-top: 6px;
+    }
+    .mf-child-stats {
+      margin-top: 6px;
+    }
+    .mf-log {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #9ca3af;
+      line-height: 1.4;
+    }
+    .mf-back {
+      display: inline-block;
+      margin-top: 12px;
+      color: #c7d2fe;
+      font-size: 13px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="mf-wrap">
+    <h1 class="mf-title">モンスター配合</h1>
+    <p class="mf-subtitle">2体のモンスターを選んで、どんな子が生まれるか見てみよう。</p>
+
+    <div class="mf-panel">
+      <p class="mf-label">親となるモンスターを選ぶ</p>
+      <div class="mf-select-row">
+        <div class="mf-select-col">
+          <label class="mf-label" for="mfParentA">親A</label>
+          <select id="mfParentA" class="mf-select"></select>
+        </div>
+        <div class="mf-select-col">
+          <label class="mf-label" for="mfParentB">親B</label>
+          <select id="mfParentB" class="mf-select"></select>
+        </div>
+      </div>
+
+      <div class="mf-parent-card-wrap">
+        <div class="mf-parent-card" id="mfParentACard">
+          <div class="mf-parent-name" id="mfParentAName">???</div>
+          <div class="mf-parent-type" id="mfParentAType">-</div>
+          <div class="mf-stat-row">
+            <span class="mf-stat-label">ちから</span>
+            <div class="mf-stat-bar"><div class="mf-stat-fill" id="mfParentAAtk" style="width:0%"></div></div>
+          </div>
+          <div class="mf-stat-row">
+            <span class="mf-stat-label">まほう</span>
+            <div class="mf-stat-bar"><div class="mf-stat-fill" id="mfParentAMag" style="width:0%"></div></div>
+          </div>
+          <div class="mf-stat-row">
+            <span class="mf-stat-label">すばやさ</span>
+            <div class="mf-stat-bar"><div class="mf-stat-fill" id="mfParentASpd" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="mf-parent-card" id="mfParentBCard">
+          <div class="mf-parent-name" id="mfParentBName">???</div>
+          <div class="mf-parent-type" id="mfParentBType">-</div>
+          <div class="mf-stat-row">
+            <span class="mf-stat-label">ちから</span>
+            <div class="mf-stat-bar"><div class="mf-stat-fill" id="mfParentBAtk" style="width:0%"></div></div>
+          </div>
+          <div class="mf-stat-row">
+            <span class="mf-stat-label">まほう</span>
+            <div class="mf-stat-bar"><div class="mf-stat-fill" id="mfParentBMag" style="width:0%"></div></div>
+          </div>
+          <div class="mf-stat-row">
+            <span class="mf-stat-label">すばやさ</span>
+            <div class="mf-stat-bar"><div class="mf-stat-fill" id="mfParentBSpd" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="mf-fuse-btn" id="mfFuseBtn">配合する！</button>
+    </div>
+
+    <div class="mf-panel" id="mfChildPanel" style="display:none;">
+      <div class="mf-child-card">
+        <div class="mf-child-name" id="mfChildName">???</div>
+        <div class="mf-child-type" id="mfChildType">-</div>
+        <div id="mfChildTags"></div>
+        <div class="mf-child-stats">
+          <div class="mf-stat-row">
+            <span class="mf-stat-label">ちから</span>
+            <div class="mf-stat-bar"><div class="mf-stat-fill" id="mfChildAtk" style="width:0%"></div></div>
+          </div>
+          <div class="mf-stat-row">
+            <span class="mf-stat-label">まほう</span>
+            <div class="mf-stat-bar"><div class="mf-stat-fill" id="mfChildMag" style="width:0%"></div></div>
+          </div>
+          <div class="mf-stat-row">
+            <span class="mf-stat-label">すばやさ</span>
+            <div class="mf-stat-bar"><div class="mf-stat-fill" id="mfChildSpd" style="width:0%"></div></div>
+          </div>
+        </div>
+        <p class="mf-child-desc" id="mfChildDesc"></p>
+      </div>
+      <div class="mf-log" id="mfLog"></div>
+    </div>
+
+    <a href="/index.html" class="mf-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  'use strict';
+
+  var MONSTERS = [
+    { id: 'slime', name: 'スラぽよ', type: 'スライム', element: 'みず', role: 'バランス', atk: 30, mag: 35, spd: 40 },
+    { id: 'dragon', name: 'ドラグ', type: 'ドラゴン', element: 'ほのお', role: 'パワー', atk: 60, mag: 30, spd: 25 },
+    { id: 'beast', name: 'ガオロン', type: 'けもの', element: 'つち', role: 'アタッカー', atk: 50, mag: 20, spd: 45 },
+    { id: 'plant', name: 'ハナミン', type: 'しょくぶつ', element: 'くさ', role: 'サポート', atk: 25, mag: 45, spd: 30 },
+    { id: 'spirit', name: 'ユラリン', type: 'ゆうれい', element: 'くらやみ', role: 'まほう', atk: 20, mag: 60, spd: 35 },
+    { id: 'bird', name: 'ツバサ', type: 'とり', element: 'かぜ', role: 'スピード', atk: 35, mag: 25, spd: 60 }
+  ];
+
+  function $(id) { return document.getElementById(id); }
+
+  function fillSelects() {
+    var a = $('mfParentA');
+    var b = $('mfParentB');
+    MONSTERS.forEach(function (m, idx) {
+      var optA = document.createElement('option');
+      optA.value = m.id;
+      optA.textContent = m.name + '（' + m.type + '）';
+      var optB = optA.cloneNode(true);
+      a.appendChild(optA);
+      b.appendChild(optB);
+      if (idx === 0) a.value = m.id;
+      if (idx === 1) b.value = m.id;
+    });
+  }
+
+  function findMonster(id) {
+    for (var i = 0; i < MONSTERS.length; i++) {
+      if (MONSTERS[i].id === id) return MONSTERS[i];
+    }
+    return MONSTERS[0];
+  }
+
+  function updateParentCards() {
+    var pa = findMonster($('mfParentA').value);
+    var pb = findMonster($('mfParentB').value);
+    $('mfParentAName').textContent = pa.name;
+    $('mfParentAType').textContent = pa.type + ' / ' + pa.element + ' / ' + pa.role;
+    $('mfParentAAtk').style.width = pa.atk + '%';
+    $('mfParentAMag').style.width = pa.mag + '%';
+    $('mfParentASpd').style.width = pa.spd + '%';
+
+    $('mfParentBName').textContent = pb.name;
+    $('mfParentBType').textContent = pb.type + ' / ' + pb.element + ' / ' + pb.role;
+    $('mfParentBAtk').style.width = pb.atk + '%';
+    $('mfParentBMag').style.width = pb.mag + '%';
+    $('mfParentBSpd').style.width = pb.spd + '%';
+  }
+
+  function clamp(v, min, max) { return v < min ? min : (v > max ? max : v); }
+
+  function randomBetween(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function makeChildName(a, b) {
+    var aPart = a.name.slice(0, 2);
+    var bPart = b.name.slice(-2);
+    if (!aPart) aPart = a.name;
+    if (!bPart) bPart = b.name;
+    var name = aPart + bPart;
+    if (a.id === b.id) name = a.name + ' Jr.';
+    return name;
+  }
+
+  function fuseMonsters(a, b) {
+    var atk = clamp(Math.round((a.atk + b.atk) / 2) + randomBetween(-10, 10), 10, 90);
+    var mag = clamp(Math.round((a.mag + b.mag) / 2) + randomBetween(-10, 10), 10, 90);
+    var spd = clamp(Math.round((a.spd + b.spd) / 2) + randomBetween(-10, 10), 10, 90);
+    var mainType = Math.random() < 0.5 ? a.type : b.type;
+    var subType = Math.random() < 0.5 ? b.type : a.type;
+    var element = Math.random() < 0.5 ? a.element : b.element;
+
+    var rarityScore = (atk + mag + spd) / 3;
+    var rarity;
+    if (rarityScore >= 65) rarity = '超レア';
+    else if (rarityScore >= 45) rarity = 'レア';
+    else rarity = 'ノーマル';
+
+    var name = makeChildName(a, b);
+    var desc;
+    if (rarity === '超レア') {
+      desc = '伝説級の気配をまとったモンスター。大きな力を秘めていそうだ。';
+    } else if (rarity === 'レア') {
+      desc = 'かなりバランスの良い子が生まれた。育てがいがありそう。';
+    } else {
+      desc = 'おだやかな目をした普通の子。のんびり育ててあげよう。';
+    }
+
+    return {
+      name: name,
+      type: mainType + ' × ' + subType,
+      element: element,
+      rarity: rarity,
+      atk: atk,
+      mag: mag,
+      spd: spd,
+      desc: desc
+    };
+  }
+
+  function renderChild(child, pa, pb) {
+    $('mfChildName').textContent = child.name;
+    $('mfChildType').textContent = child.type + ' / ' + child.element + ' / ' + child.rarity;
+    $('mfChildAtk').style.width = child.atk + '%';
+    $('mfChildMag').style.width = child.mag + '%';
+    $('mfChildSpd').style.width = child.spd + '%';
+    $('mfChildDesc').textContent = child.desc;
+
+    var tags = [];
+    tags.push('<span class="mf-child-tag">親A: ' + pa.name + '</span>');
+    tags.push('<span class="mf-child-tag">親B: ' + pb.name + '</span>');
+    if (pa.type !== pb.type) {
+      tags.push('<span class="mf-child-tag">ミックス種</span>');
+    } else {
+      tags.push('<span class="mf-child-tag">純血種</span>');
+    }
+    $('mfChildTags').innerHTML = tags.join('');
+
+    $('mfChildPanel').style.display = 'block';
+    $('mfLog').textContent = pa.name + ' と ' + pb.name + ' を配合した！';
+  }
+
+  function init() {
+    fillSelects();
+    updateParentCards();
+    $('mfParentA').addEventListener('change', updateParentCards);
+    $('mfParentB').addEventListener('change', updateParentCards);
+    $('mfFuseBtn').addEventListener('click', function () {
+      var pa = findMonster($('mfParentA').value);
+      var pb = findMonster($('mfParentB').value);
+      var child = fuseMonsters(pa, pb);
+      renderChild(child, pa, pb);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+  </script>
+</body>
+</html>
+

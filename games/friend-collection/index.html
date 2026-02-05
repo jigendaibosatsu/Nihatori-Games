@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ともだちコレクション – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #87CEEB 0%, #98D98E 35%, #7CB342 70%, #8D6E63 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #2e7d32;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .fc-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 10px;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .fc-title { font-size: 1.1rem; margin-bottom: 8px; text-align: center; font-weight: bold; color: #1b5e20; text-shadow: 0 0 8px rgba(255,255,255,0.6); }
+    .fc-island {
+      flex: 1;
+      min-height: 200px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: 3px solid rgba(46,125,50,0.4);
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 10px;
+      overflow-y: auto;
+    }
+    .fc-friend {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      border: 3px solid rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .fc-friend:active { transform: scale(0.95); }
+    .fc-friend-bubble {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-6px);
+      background: #fff;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      max-width: 140px;
+      white-space: normal;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      border: 2px solid rgba(46,125,50,0.4);
+      display: none;
+      z-index: 5;
+      color: #1b5e20;
+    }
+    .fc-friend-bubble.visible { display: block; }
+    .fc-btns {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+    .fc-btn {
+      flex: 1;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #66bb6a, #43a047);
+      border: 2px solid #81c784;
+      border-radius: 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fc-btn:active { transform: scale(0.98); }
+    .fc-btn.secondary { background: linear-gradient(180deg, #ffb74d, #ff9800); border-color: #ffcc80; }
+    .fc-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 48px 12px 12px;
+    }
+    .fc-modal.visible { display: flex; }
+    .fc-modal-inner {
+      background: linear-gradient(180deg, #fff 0%, #e8f5e9 100%);
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 360px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      border: 3px solid #66bb6a;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .fc-modal-title { font-size: 1rem; font-weight: bold; margin-bottom: 12px; color: #1b5e20; text-align: center; }
+    .fc-form label { display: block; font-size: 12px; color: #2e7d32; margin-bottom: 4px; }
+    .fc-form input, .fc-form select { width: 100%; padding: 8px 10px; margin-bottom: 12px; border: 2px solid #81c784; border-radius: 8px; font-size: 14px; }
+    .fc-form input[type="color"] { height: 40px; padding: 2px; cursor: pointer; }
+    .fc-form .fc-submit {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #43a047, #2e7d32);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .fc-form .fc-submit:active { opacity: 0.9; }
+    .fc-list { list-style: none; }
+    .fc-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 10px;
+      border: 2px solid rgba(129,199,132,0.5);
+    }
+    .fc-list-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      border: 2px solid rgba(0,0,0,0.15);
+    }
+    .fc-list-name { font-weight: bold; color: #1b5e20; }
+    .fc-list-type { font-size: 11px; color: #558b2f; }
+    .fc-empty { text-align: center; padding: 24px; color: #558b2f; font-size: 14px; }
+    .fc-close { display: block; margin: 12px auto 0; padding: 8px 20px; font-size: 14px; color: #2e7d32; background: #c8e6c9; border: none; border-radius: 8px; cursor: pointer; }
+    .fc-back { display: inline-block; margin-top: 8px; color: #2e7d32; font-size: 13px; text-decoration: none; }
+    .fc-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="fc-wrap">
+    <h1 class="fc-title">ともだちコレクション</h1>
+    <p style="text-align:center;font-size:12px;color:#558b2f;margin-bottom:8px;">ともだちをタップすると ようすをみれるよ！</p>
+
+    <div class="fc-island" id="island"></div>
+
+    <div class="fc-btns">
+      <button type="button" class="fc-btn" id="btnNew">あたらしいともだち</button>
+      <button type="button" class="fc-btn secondary" id="btnList">コレクション</button>
+    </div>
+
+    <a href="/index.html" class="fc-back">← トップへ戻る</a>
+  </div>
+
+  <div class="fc-modal" id="modalNew">
+    <div class="fc-modal-inner">
+      <div class="fc-modal-title">あたらしいともだちを つくろう</div>
+      <form class="fc-form" id="formNew">
+        <label>なまえ</label>
+        <input type="text" id="inputName" maxlength="10" placeholder="なまえ" required />
+        <label>タイプ</label>
+        <select id="inputType">
+          <option value="元気">元気</option>
+          <option value="おっとり">おっとり</option>
+          <option value="クール">クール</option>
+          <option value="食いしんぼう">食いしんぼう</option>
+          <option value="本がすき">本がすき</option>
+          <option value="ねこずき">ねこずき</option>
+          <option value="おしゃれ">おしゃれ</option>
+          <option value="ゆめみがち">ゆめみがち</option>
+        </select>
+        <label>いろ</label>
+        <input type="color" id="inputColor" value="#FFB74D" title="いろ" />
+        <button type="submit" class="fc-submit">つくる</button>
+      </form>
+      <button type="button" class="fc-close" id="closeNew">とじる</button>
+    </div>
+  </div>
+
+  <div class="fc-modal" id="modalList">
+    <div class="fc-modal-inner">
+      <div class="fc-modal-title">ともだちコレクション</div>
+      <ul class="fc-list" id="friendList"></ul>
+      <p class="fc-empty" id="emptyList" style="display:none;">まだ ともだちがいないよ。<br>「あたらしいともだち」で つくろう！</p>
+      <button type="button" class="fc-close" id="closeList">とじる</button>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var STORAGE_KEY = 'friendCollection_friends';
+  var TYPES = ['元気', 'おっとり', 'クール', '食いしんぼう', '本がすき', 'ねこずき', 'おしゃれ', 'ゆめみがち'];
+  var EMOTIONS = ['😊', '😄', '😌', '😎', '🍙', '📚', '🐱', '✨', '💭', '🌸'];
+  var MESSAGES = {
+    '元気': ['今日も はりきってる！', 'おさんぽ しよう！', 'なにか たのしいこと ない？'],
+    'おっとり': ['のんびり してる…', 'お茶 のもう', 'きもち いいね'],
+    'クール': ['…ふん', 'まあ いいでしょう', '冷静に いこう'],
+    '食いしんぼう': ['おなか すいた！', 'ごはん たべたい', 'おやつ ある？'],
+    '本がすき': ['この本 おもしろい', 'しずかに よんでる', 'つぎ なに よもう'],
+    'ねこずき': ['にゃー', 'ねこ かわいい', 'きょうも ねこ みた'],
+    'おしゃれ': ['今日の コーデ どう？', 'かわいい みつけた', 'おしゃれ したい'],
+    'ゆめみがち': ['あれ ゆめ？', 'きれいだな…', 'ふわふわ してる']
+  };
+
+  function getFriends() {
+    try {
+      var s = localStorage.getItem(STORAGE_KEY);
+      return s ? JSON.parse(s) : [];
+    } catch (e) { return []; }
+  }
+
+  function saveFriends(arr) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch (e) {}
+  }
+
+  function emotionForType(type) {
+    var i = TYPES.indexOf(type);
+    return i >= 0 ? EMOTIONS[i] : EMOTIONS[0];
+  }
+
+  function randomMessage(type) {
+    var list = MESSAGES[type] || MESSAGES['元気'];
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function renderIsland() {
+    var friends = getFriends();
+    var el = document.getElementById('island');
+    el.innerHTML = '';
+    for (var i = 0; i < friends.length; i++) {
+      var f = friends[i];
+      var div = document.createElement('div');
+      div.className = 'fc-friend';
+      div.style.backgroundColor = f.color || '#FFB74D';
+      div.textContent = emotionForType(f.type);
+      div.dataset.index = i;
+      var bubble = document.createElement('div');
+      bubble.className = 'fc-friend-bubble';
+      bubble.textContent = f.name + '：「' + randomMessage(f.type) + '」';
+      div.appendChild(bubble);
+      div.addEventListener('click', function (ev) {
+        var idx = parseInt(this.dataset.index, 10);
+        var list = getFriends();
+        var friend = list[idx];
+        if (!friend) return;
+        var b = this.querySelector('.fc-friend-bubble');
+        b.textContent = friend.name + '：「' + randomMessage(friend.type) + '」';
+        b.classList.add('visible');
+        setTimeout(function () { b.classList.remove('visible'); }, 2500);
+      });
+      el.appendChild(div);
+    }
+  }
+
+  function openNewModal() {
+    document.getElementById('modalNew').classList.add('visible');
+    document.getElementById('inputName').value = '';
+    document.getElementById('inputName').focus();
+  }
+
+  function closeNewModal() {
+    document.getElementById('modalNew').classList.remove('visible');
+  }
+
+  function openListModal() {
+    var friends = getFriends();
+    var ul = document.getElementById('friendList');
+    var empty = document.getElementById('emptyList');
+    ul.innerHTML = '';
+    if (friends.length === 0) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      for (var i = 0; i < friends.length; i++) {
+        var f = friends[i];
+        var li = document.createElement('li');
+        li.innerHTML = '<span class="fc-list-avatar" style="background:' + (f.color || '#FFB74D') + '">' + emotionForType(f.type) + '</span><div><span class="fc-list-name">' + (f.name || 'ななし') + '</span><br><span class="fc-list-type">' + (f.type || '元気') + '</span></div>';
+        ul.appendChild(li);
+      }
+    }
+    document.getElementById('modalList').classList.add('visible');
+  }
+
+  function closeListModal() {
+    document.getElementById('modalList').classList.remove('visible');
+  }
+
+  document.getElementById('btnNew').addEventListener('click', openNewModal);
+  document.getElementById('btnList').addEventListener('click', openListModal);
+  document.getElementById('closeNew').addEventListener('click', closeNewModal);
+  document.getElementById('closeList').addEventListener('click', closeListModal);
+
+  document.getElementById('formNew').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = document.getElementById('inputName').value.trim() || 'ななし';
+    var type = document.getElementById('inputType').value || '元気';
+    var color = document.getElementById('inputColor').value || '#FFB74D';
+    var friends = getFriends();
+    friends.push({ name: name, type: type, color: color });
+    saveFriends(friends);
+    closeNewModal();
+    renderIsland();
+  });
+
+  document.getElementById('modalNew').addEventListener('click', function (e) {
+    if (e.target === this) closeNewModal();
+  });
+  document.getElementById('modalList').addEventListener('click', function (e) {
+    if (e.target === this) closeListModal();
+  });
+
+  renderIsland();
+})();
+  </script>
+</body>
+</html>

@@ -32,7 +32,8 @@
       flex-direction: column;
     }
     .war-wrap.war-no-scroll { overflow: hidden; }
-    .war-title { font-size: 1rem; margin-bottom: 4px; text-align: center; font-weight: bold; flex-shrink: 0; }
+    .war-title { font-size: 1rem; margin-bottom: 4px; text-align: center; font-weight: bold; flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.war-title-icon { width: 40px; height: 40px; object-fit: contain; vertical-align: middle; }
     .war-setup {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -159,7 +160,7 @@
   <div id="site-header"></div>
 
   <div class="war-wrap">
-    <h1 class="war-title">合戦</h1>
+    <h1 class="war-title"><img src="/assets/kassen-icon.png" alt="" class="war-title-icon" /> 合戦</h1>
 
     <div class="war-setup" id="setup">
       <label>ゲーム速度</label>
@@ -176,17 +177,47 @@
         <select id="numCamps">
           <option value="2">2陣営</option>
           <option value="3">3陣営</option>
-          <option value="4" selected>4陣営</option>
+          <option value="4">4陣営</option>
+          <option value="5">5陣営</option>
+          <option value="6" selected>6陣営</option>
+          <option value="7">7陣営</option>
+          <option value="8">8陣営</option>
+        </select>
+      </div>
+      <label>コマ数</label>
+      <div class="war-setup-row">
+        <select id="gridSize">
+          <option value="0">少なめ</option>
+          <option value="1" selected>標準</option>
+          <option value="2">多め</option>
+          <option value="3">最大</option>
+        </select>
+      </div>
+      <label>表示倍率</label>
+      <div class="war-setup-row">
+        <select id="zoomLevel">
+          <option value="0.75">75%</option>
+          <option value="1" selected>100%</option>
+          <option value="1.25">125%</option>
+          <option value="1.5">150%</option>
         </select>
       </div>
       <label class="war-camp-opt" data-camp="1">陣営1</label>
-      <div class="war-setup-row war-camp-opt" data-camp="1"><input type="text" id="name0" value="東軍" maxlength="10" placeholder="名前" /><input type="text" id="igii0" value="義" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color0" value="#e53935" title="色" /></div>
+      <div class="war-setup-row war-camp-opt" data-camp="1"><input type="text" id="name0" value="織田軍" maxlength="10" placeholder="名前" /><input type="text" id="igii0" value="信" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color0" value="#4CAF50" title="色" /></div>
       <label class="war-camp-opt" data-camp="2">陣営2</label>
-      <div class="war-setup-row war-camp-opt" data-camp="2"><input type="text" id="name1" value="西軍" maxlength="10" placeholder="名前" /><input type="text" id="igii1" value="礼" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color1" value="#1e88e5" title="色" /></div>
+      <div class="war-setup-row war-camp-opt" data-camp="2"><input type="text" id="name1" value="羽柴軍" maxlength="10" placeholder="名前" /><input type="text" id="igii1" value="秀" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color1" value="#FFEB3B" title="色" /></div>
       <label class="war-camp-opt" data-camp="3">陣営3</label>
-      <div class="war-setup-row war-camp-opt" data-camp="3"><input type="text" id="name2" value="北軍" maxlength="10" placeholder="名前" /><input type="text" id="igii2" value="仁" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color2" value="#43a047" title="色" /></div>
+      <div class="war-setup-row war-camp-opt" data-camp="3"><input type="text" id="name2" value="徳川軍" maxlength="10" placeholder="名前" /><input type="text" id="igii2" value="家" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color2" value="#2196F3" title="色" /></div>
       <label class="war-camp-opt" data-camp="4">陣営4</label>
-      <div class="war-setup-row war-camp-opt" data-camp="4"><input type="text" id="name3" value="南軍" maxlength="10" placeholder="名前" /><input type="text" id="igii3" value="智" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color3" value="#fb8c00" title="色" /></div>
+      <div class="war-setup-row war-camp-opt" data-camp="4"><input type="text" id="name3" value="上杉軍" maxlength="10" placeholder="名前" /><input type="text" id="igii3" value="憲" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color3" value="#f44336" title="色" /></div>
+      <label class="war-camp-opt" data-camp="5">陣営5</label>
+      <div class="war-setup-row war-camp-opt" data-camp="5"><input type="text" id="name4" value="武田軍" maxlength="10" placeholder="名前" /><input type="text" id="igii4" value="義" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color4" value="#795548" title="色" /></div>
+      <label class="war-camp-opt" data-camp="6">陣営6</label>
+      <div class="war-setup-row war-camp-opt" data-camp="6"><input type="text" id="name5" value="北条軍" maxlength="10" placeholder="名前" /><input type="text" id="igii5" value="氏" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color5" value="#f5f5f5" title="色" /></div>
+      <label class="war-camp-opt" data-camp="7">陣営7</label>
+      <div class="war-setup-row war-camp-opt" data-camp="7"><input type="text" id="name6" value="伊達軍" maxlength="10" placeholder="名前" /><input type="text" id="igii6" value="政" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color6" value="#9C27B0" title="色" /></div>
+      <label class="war-camp-opt" data-camp="8">陣営8</label>
+      <div class="war-setup-row war-camp-opt" data-camp="8"><input type="text" id="name7" value="毛利軍" maxlength="10" placeholder="名前" /><input type="text" id="igii7" value="元" maxlength="1" placeholder="諱" title="諱" style="width:36px;text-align:center" /><input type="color" id="color7" value="#FF9800" title="色" /></div>
     </div>
 
     <button type="button" class="war-btn" id="btnStart">合戦開始</button>
@@ -222,9 +253,11 @@
   var REQUIRED_HITS = [];
   for (var i = 0; i < 500; i++) REQUIRED_HITS[i] = 1 + (i % 4);
 
-  var CAMP_COLORS = ['#e53935', '#1e88e5', '#43a047', '#fb8c00'];
-  var CAMP_NAMES = ['東軍', '西軍', '北軍', '南軍'];
-  var NUM_CAMPS = 4;
+  var CAMP_COLORS = ['#4CAF50', '#FFEB3B', '#2196F3', '#f44336', '#795548', '#f5f5f5', '#9C27B0', '#FF9800'];
+  var CAMP_NAMES = ['織田軍', '羽柴軍', '徳川軍', '上杉軍', '武田軍', '北条軍', '伊達軍', '毛利軍'];
+  var NUM_CAMPS = 6;
+  var WARLORD_KANJI = [['信','長','織','田'],['秀','吉','羽','柴'],['家','康','徳','川'],['謙','信','上','杉'],['義','信','武','田'],['氏','康','北','条'],['政','宗','伊','達'],['元','就','毛','利']];
+  var ZOOM = 1;
 
   var CANVAS_W = 512, CANVAS_H = 512;
   var pathW = 512, pathH = 512;
@@ -235,6 +268,16 @@
   var BASE_R = 8;
   var BALL_R = 5;
 
+  function getGridColsRowsFromSetting(w, h) {
+    var setting = getGridSizeSetting();
+    var baseCols = getGridSizeForViewport(w);
+    var baseRows = Math.max(1, Math.floor(h / (w / baseCols)));
+    var mult = [0.6, 1, 1.4, 1.8][setting] || 1;
+    var cols = Math.max(6, Math.min(32, Math.round(baseCols * mult)));
+    var rows = Math.max(4, Math.min(24, Math.round(baseRows * mult)));
+    return { cols: cols, rows: rows };
+  }
+
   function resizeCanvas() {
     var inner = document.getElementById('warMapInner');
     var canvas = document.getElementById('warCanvas');
@@ -243,23 +286,26 @@
     var h = inner.clientHeight || 280;
     if (w < 80) w = 280;
     if (h < 80) h = 280;
+    ZOOM = getZoomLevel();
     canvas.width = w;
     canvas.height = h;
     CANVAS_W = w;
     CANVAS_H = h;
     pathW = w;
     pathH = h;
-    GRID_COLS = getGridSizeForViewport(w);
-    cellSize = pathW / GRID_COLS;
-    GRID_ROWS = Math.max(1, Math.floor(pathH / cellSize));
+    var gr = getGridColsRowsFromSetting(w, h);
+    GRID_COLS = gr.cols;
+    GRID_ROWS = gr.rows;
+    cellSize = Math.min(pathW / GRID_COLS, pathH / GRID_ROWS);
     cellW = cellSize;
     cellH = cellSize;
     gridW = GRID_COLS * cellSize;
     gridH = GRID_ROWS * cellSize;
-    GRID_X0 = 0;
-    GRID_Y0 = 0;
+    GRID_X0 = (pathW - gridW) / 2;
+    GRID_Y0 = (pathH - gridH) / 2;
     NUM_BASES = GRID_COLS * GRID_ROWS;
-    for (var i = 0; i < NUM_BASES; i++) REQUIRED_HITS[i] = 1 + (i % 4);
+    while (REQUIRED_HITS.length < NUM_BASES) REQUIRED_HITS.push(1);
+    for (var i = 0; i < NUM_BASES; i++) REQUIRED_HITS[i] = 1 + (i % Math.max(2, getNumCamps()));
     BASE_R = cellSize * 0.4;
   }
 
@@ -336,40 +382,62 @@
     return used;
   }
 
-  function pickSecondKanji(igii) {
-    var pool = [];
-    for (var k = 0; k < KANJI_ONE.length; k++) if (KANJI_ONE[k] !== igii) pool.push(KANJI_ONE[k]);
-    var arr = pool.length > 0 ? pool : KANJI_ONE;
-    return arr[Math.floor(Math.random() * arr.length)];
+  function getAllUsedSecondKanji(excludeBall) {
+    var used = {};
+    for (var i = 0; i < state.balls.length; i++) {
+      var b = state.balls[i];
+      if (b === excludeBall || b.dead || !b.figureName || !b.figureName[1]) continue;
+      used[b.figureName[1]] = true;
+    }
+    return used;
+  }
+
+  function getAllIgiiSet() {
+    var set = {};
+    for (var c = 0; c < NUM_CAMPS; c++) {
+      var ig = (state.igii && state.igii[c]) || '';
+      if (ig) set[ig] = true;
+    }
+    return set;
+  }
+
+  function getSecondKanjiPoolForCamp(camp, excludeBall) {
+    var pool = (WARLORD_KANJI && WARLORD_KANJI[camp]) ? WARLORD_KANJI[camp].slice() : KANJI_ONE.slice();
+    var igii = (state.igii && state.igii[camp]) || '信';
+    var used = getUsedSecondsForIgii(igii, excludeBall);
+    var otherIgii = getAllIgiiSet();
+    var globalUsed = getAllUsedSecondKanji(excludeBall);
+    var out = [];
+    for (var k = 0; k < pool.length; k++) {
+      var ch = pool[k];
+      if (ch === igii) continue;
+      if (otherIgii[ch]) continue;
+      if (used[ch] || globalUsed[ch]) continue;
+      out.push(ch);
+    }
+    return out.length > 0 ? out : pool.filter(function (ch) { return ch !== igii && !otherIgii[ch]; });
   }
 
   function getFigureName(ball) {
     if ((ball.level || 0) < 5) return '';
     if (!ball.figureName) {
-      var igii = (state.igii && state.igii[ball.camp]) || '義';
-      var used = getUsedSecondsForIgii(igii, ball);
-      var pool = [];
-      for (var k = 0; k < KANJI_ONE.length; k++) {
-        if (KANJI_ONE[k] !== igii && !used[KANJI_ONE[k]]) pool.push(KANJI_ONE[k]);
-      }
-      var second = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : pickSecondKanji(igii);
+      var igii = (state.igii && state.igii[ball.camp]) || '信';
+      var pool = getSecondKanjiPoolForCamp(ball.camp, ball);
+      var second = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : (KANJI_ONE[0] === igii ? KANJI_ONE[1] : KANJI_ONE[0]);
       ball.figureName = igii + second;
     }
     return ball.figureName;
   }
 
-  var IGII_POOL = ['義', '礼', '仁', '智', '忠', '信', '孝', '和', '勇', '誠'];
+  var IGII_DEFAULTS = ['信', '秀', '家', '憲', '義', '氏', '政', '元'];
   function getIgii() {
-    var n = getNumCamps ? getNumCamps() : 4;
-    var el = document.getElementById('igii0');
-    if (!el) return (state.igii || ['義', '礼', '仁', '智']).slice(0, n);
-    function one(camp) {
-      var id = 'igii' + camp;
-      var v = (document.getElementById(id) && document.getElementById(id).value.trim()) || '';
-      if (v) return v.slice(0, 1);
-      return IGII_POOL[Math.floor(Math.random() * IGII_POOL.length)];
+    var n = getNumCamps ? getNumCamps() : 6;
+    var arr = [];
+    for (var i = 0; i < 8; i++) {
+      var el = document.getElementById('igii' + i);
+      var v = el ? el.value.trim().slice(0, 1) : '';
+      arr.push(v || IGII_DEFAULTS[i]);
     }
-    var arr = [one(0), one(1), one(2), one(3)];
     return arr.slice(0, n);
   }
 
@@ -433,12 +501,12 @@
   }
 
   function getNames() {
-    var arr = [
-      document.getElementById('name0').value.trim() || '東軍',
-      document.getElementById('name1').value.trim() || '西軍',
-      document.getElementById('name2').value.trim() || '北軍',
-      document.getElementById('name3').value.trim() || '南軍'
-    ];
+    var defs = CAMP_NAMES.slice();
+    var arr = [];
+    for (var i = 0; i < 8; i++) {
+      var el = document.getElementById('name' + i);
+      arr.push(el ? (el.value.trim() || defs[i]) : defs[i]);
+    }
     return arr.slice(0, getNumCamps());
   }
 
@@ -449,8 +517,19 @@
 
   function getNumCamps() {
     var el = document.getElementById('numCamps');
-    var n = el ? parseInt(el.value, 10) : 4;
-    return n >= 2 && n <= 4 ? n : 4;
+    var n = el ? parseInt(el.value, 10) : 6;
+    return n >= 2 && n <= 8 ? n : 6;
+  }
+
+  function getGridSizeSetting() {
+    var el = document.getElementById('gridSize');
+    return el ? parseInt(el.value, 10) : 1;
+  }
+
+  function getZoomLevel() {
+    var el = document.getElementById('zoomLevel');
+    var z = el ? parseFloat(el.value) : 1;
+    return z > 0 ? z : 1;
   }
 
   function updateCampVisibility() {
@@ -463,14 +542,11 @@
   }
 
   function getColors() {
-    var el0 = document.getElementById('color0');
-    if (!el0) return CAMP_COLORS.slice(0, getNumCamps());
-    var arr = [
-      (el0.value || CAMP_COLORS[0]),
-      (document.getElementById('color1').value || CAMP_COLORS[1]),
-      (document.getElementById('color2').value || CAMP_COLORS[2]),
-      (document.getElementById('color3').value || CAMP_COLORS[3])
-    ];
+    var arr = [];
+    for (var i = 0; i < 8; i++) {
+      var el = document.getElementById('color' + i);
+      arr.push(el ? (el.value || CAMP_COLORS[i]) : CAMP_COLORS[i]);
+    }
     return arr.slice(0, getNumCamps());
   }
 
@@ -977,21 +1053,18 @@
             ball.camp = other.camp;
             ball.convertedBySword = true;
             var killerName = getFigureName(other);
-            var convName = ball.figureName || ((state.igii && state.igii[ball.camp]) || '義') + KANJI_ONE[0];
-            var igiiKiller = (state.igii && state.igii[other.camp]) || '義';
-            if (!killerName) {
-              ball.figureName = igiiKiller + (convName[1] || convName[0] || pickSecondKanji(igiiKiller));
-            } else {
-              var first = killerName[1] || killerName[0];
-              var usedConv = getUsedSecondsForIgii(first, ball);
-              var poolConv = [];
-              for (var kc = 0; kc < KANJI_ONE.length; kc++) {
-                if (KANJI_ONE[kc] !== first && !usedConv[KANJI_ONE[kc]]) poolConv.push(KANJI_ONE[kc]);
-              }
-              var second = convName[1] || convName[0];
-              if (second === first || usedConv[second]) second = poolConv.length > 0 ? poolConv[Math.floor(Math.random() * poolConv.length)] : pickSecondKanji(first);
-              ball.figureName = first + second;
+            if (!killerName || killerName === '') {
+              addLog(state.names[prevCamp] + ' のボールが ' + state.names[other.camp] + ' に寝返った！（名前そのまま）');
+              break;
             }
+            var igiiKiller = (state.igii && state.igii[other.camp]) || '信';
+            var second = ball.figureName ? ball.figureName[1] : '';
+            var usedConv = getUsedSecondsForIgii(igiiKiller, ball);
+            if (!second || second === killerName[0] || usedConv[second]) {
+              var poolConv = getSecondKanjiPoolForCamp(other.camp, ball);
+              second = poolConv.length > 0 ? poolConv[Math.floor(Math.random() * poolConv.length)] : (WARLORD_KANJI[other.camp] && WARLORD_KANJI[other.camp][0]) || igiiKiller;
+            }
+            ball.figureName = igiiKiller + second;
             addLog(state.names[prevCamp] + ' のボールが ' + state.names[other.camp] + ' に寝返った！');
           } else {
             other.xp = (other.xp || 0) + xpGain;
@@ -1046,7 +1119,24 @@
     syncBallCountAndSpeed();
   }
 
+  function isColorDark(hex) {
+    if (!hex || hex.length < 4) return false;
+    var h = hex.replace(/^#/, '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var r = parseInt(h.slice(0, 2), 16) / 255;
+    var g = parseInt(h.slice(2, 4), 16) / 255;
+    var b = parseInt(h.slice(4, 6), 16) / 255;
+    var L = 0.299 * r + 0.587 * g + 0.114 * b;
+    return L < 0.45;
+  }
+
   function drawMap(ctx) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    var zoom = ZOOM || 1;
+    var cx = CANVAS_W / 2, cy = CANVAS_H / 2;
+    ctx.translate(cx, cy);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-cx, -cy);
     var colors = state.colors || CAMP_COLORS;
     ctx.fillStyle = '#e0e0e0';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
@@ -1056,9 +1146,10 @@
         if (k >= NUM_BASES) break;
         var owner = (k < state.owner.length) ? state.owner[k] : NEUTRAL;
         var tint = (state.cellSwordTint && k < state.cellSwordTint.length && state.cellSwordTint[k] >= 0) ? state.cellSwordTint[k] : -1;
-        ctx.fillStyle = tint >= 0 ? colors[tint] : (owner === NEUTRAL ? '#ffffff' : colors[owner]);
+        var fill = tint >= 0 ? colors[tint] : (owner === NEUTRAL ? '#ffffff' : colors[owner]);
+        ctx.fillStyle = fill;
         ctx.fillRect(GRID_X0 + col * cellSize, GRID_Y0 + row * cellSize, cellSize, cellSize);
-        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        ctx.strokeStyle = isColorDark(fill) ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.15)';
         ctx.lineWidth = 0.5;
         ctx.strokeRect(GRID_X0 + col * cellSize, GRID_Y0 + row * cellSize, cellSize, cellSize);
       }
@@ -1070,9 +1161,10 @@
       if (wt === 'sword' && (b.swordCount || 0) > 0) {
         for (var si = 0; si < b.swordCount; si++) {
           var tri = getBallSwordTri(b, si);
-          ctx.fillStyle = colors[b.camp];
+          var campCol = colors[b.camp];
+          ctx.fillStyle = campCol;
           ctx.globalAlpha = 0.85;
-          ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+          ctx.strokeStyle = isColorDark(campCol) ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(tri.tipX, tri.tipY);
@@ -1090,9 +1182,10 @@
           var sx = b.x + SWORD_ORBIT_R_BALL * Math.cos(a);
           var sy = b.y + SWORD_ORBIT_R_BALL * Math.sin(a);
           var shieldR = 12;
-          ctx.fillStyle = colors[b.camp];
+          var campCol = colors[b.camp];
+          ctx.fillStyle = campCol;
           ctx.globalAlpha = 0.85;
-          ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+          ctx.strokeStyle = isColorDark(campCol) ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.arc(sx, sy, shieldR, a - Math.PI * 0.5, a + Math.PI * 0.5);
@@ -1104,12 +1197,13 @@
         }
       }
       var br = getBallRadius(b.level);
-      ctx.fillStyle = colors[b.camp];
+      var campColor = colors[b.camp];
+      ctx.fillStyle = campColor;
       ctx.beginPath();
       ctx.arc(b.x, b.y, br, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = isColorDark(campColor) ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = isColorDark(campColor) ? 1.5 : 1;
       ctx.stroke();
       if ((b.level || 0) >= 2) {
         ctx.fillStyle = '#fff';
@@ -1129,8 +1223,8 @@
       if (fig) {
         ctx.font = 'bold 14px sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.98)';
-        ctx.strokeStyle = 'rgba(0,0,0,0.8)';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = isColorDark(campColor) ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)';
+        ctx.lineWidth = isColorDark(campColor) ? 2.5 : 2;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         var lvY = b.y + br + 4;
@@ -1190,7 +1284,7 @@
     }
     for (var c = 0; c < NUM_CAMPS; c++) {
       if (!state.eliminated[c]) continue;
-      list.push({ camp: c, territory: countTerritory(c), rank: state.eliminationRank[c] || 4 });
+      list.push({ camp: c, territory: countTerritory(c), rank: state.eliminationRank[c] || NUM_CAMPS });
     }
     list.sort(function (a, b) { return a.rank - b.rank; });
     el.innerHTML = '';
@@ -1226,16 +1320,15 @@
   });
 
   document.getElementById('btnEnd').addEventListener('click', function () {
-    if (!state.running) return;
+    state.running = false;
+    if (state.animId) { cancelAnimationFrame(state.animId); state.animId = null; }
     document.getElementById('setup').style.display = 'grid';
     document.getElementById('btnStart').style.display = 'block';
     document.getElementById('btnStart').textContent = '合戦開始';
+    document.getElementById('btnStart').disabled = false;
     document.getElementById('mapWrap').style.display = 'none';
     document.getElementById('warRankRow').style.display = 'none';
     if (wrapEl) wrapEl.classList.remove('war-no-scroll');
-    state.running = false;
-    if (state.animId) cancelAnimationFrame(state.animId);
-    state.animId = null;
   });
 
   if (document.readyState === 'loading') {
