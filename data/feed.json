@@ -274,6 +274,45 @@
       "trendingScore": 86
     },
     {
+      "id": "japan-war-b",
+      "type": "game",
+      "title": "合戦B",
+      "url": "./games/japan-war-b/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-05T19:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 87
+    },
+    {
+      "id": "art-escape",
+      "type": "game",
+      "title": "芸大脱出サバイバル",
+      "url": "./games/art-escape/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-05T20:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 84
+    },
+    {
+      "id": "axolotl-shop",
+      "type": "game",
+      "title": "ウーパールーパーショップ",
+      "url": "./games/axolotl-shop/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-05T21:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 83
+    },
+    {
       "id": "monster-collection",
       "type": "game",
       "title": "モンスターコレクション",

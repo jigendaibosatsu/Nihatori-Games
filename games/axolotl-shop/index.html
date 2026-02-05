@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>ウーパールーパーショップ – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: radial-gradient(circle at top, #e0f2fe 0%, #e0f7fa 40%, #ecfdf5 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #064e3b;
+    }
+    .ax-wrap {
+      width: 100%;
+      max-width: 440px;
+      padding: 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ax-title {
+      font-size: 1.1rem;
+      text-align: center;
+      font-weight: bold;
+      color: #0ea5e9;
+    }
+    .ax-sub {
+      font-size: 11px;
+      text-align: center;
+      color: #0f172a;
+      margin-bottom: 4px;
+      line-height: 1.5;
+    }
+    .ax-panel {
+      background: rgba(255,255,255,0.96);
+      border-radius: 12px;
+      border: 2px solid #bae6fd;
+      padding: 8px 10px;
+      box-shadow: 0 8px 18px rgba(56,189,248,0.15);
+    }
+    .ax-status-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .ax-money { font-weight: bold; color: #047857; }
+    .ax-day { color: #475569; }
+    .ax-bar-label { font-size: 11px; color: #475569; }
+    .ax-bar {
+      position: relative;
+      height: 8px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      margin: 2px 0 4px;
+    }
+    .ax-bar-fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      border-radius: inherit;
+      transition: width 0.25s;
+    }
+    .ax-bar-fill.water { background: linear-gradient(90deg, #38bdf8, #0ea5e9); }
+    .ax-bar-fill.clean { background: linear-gradient(90deg, #4ade80, #22c55e); }
+    .ax-bar-fill.reputation { background: linear-gradient(90deg, #fbbf24, #f97316); }
+    .ax-tanks {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .ax-tank {
+      border-radius: 10px;
+      border: 2px solid #bfdbfe;
+      padding: 4px 6px;
+      background: linear-gradient(180deg, #e0f2fe, #f0f9ff);
+      font-size: 11px;
+      position: relative;
+    }
+    .ax-tank-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+    .ax-tank-name { font-weight: bold; color: #0f172a; }
+    .ax-tank-tag {
+      font-size: 10px;
+      padding: 1px 4px;
+      border-radius: 999px;
+      background: #ecfeff;
+      border: 1px solid #7dd3fc;
+      color: #0369a1;
+    }
+    .ax-tank-body {
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+      margin-bottom: 2px;
+    }
+    .ax-tank-lines { line-height: 1.4; }
+    .ax-axolotl {
+      width: 32px;
+      height: 20px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 20% 30%, #fecaca 0%, #fee2e2 45%, #e0f2fe 100%);
+      border: 1px solid #fb7185;
+      position: relative;
+      margin-left: auto;
+    }
+    .ax-axolotl::before,
+    .ax-axolotl::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      width: 6px;
+      height: 14px;
+      border-radius: 999px;
+      background: radial-gradient(circle, #fb7185 0%, #fecaca 60%, transparent 100%);
+    }
+    .ax-axolotl::before { left: -4px; }
+    .ax-axolotl::after { right: -4px; }
+    .ax-axolotl-eye {
+      position: absolute;
+      top: 6px;
+      width: 3px;
+      height: 3px;
+      border-radius: 999px;
+      background: #0f172a;
+    }
+    .ax-axolotl-eye.left { left: 11px; }
+    .ax-axolotl-eye.right { right: 11px; }
+    .ax-tank-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #475569;
+    }
+    .ax-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ax-btn {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      font-size: 13px;
+      font-weight: bold;
+      text-align: left;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ax-btn span.label { flex: 1; }
+    .ax-btn span.note { font-size: 11px; margin-left: 8px; white-space: nowrap; }
+    .ax-btn.feed {
+      background: linear-gradient(180deg, #22c55e, #16a34a);
+      border-color: #4ade80;
+      color: #f0fdf4;
+    }
+    .ax-btn.clean {
+      background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+      border-color: #7dd3fc;
+      color: #ecfeff;
+    }
+    .ax-btn.breed {
+      background: linear-gradient(180deg, #f472b6, #ec4899);
+      border-color: #f9a8d4;
+      color: #fdf2f8;
+    }
+    .ax-btn.sell {
+      background: linear-gradient(180deg, #facc15, #f97316);
+      border-color: #fed7aa;
+      color: #451a03;
+    }
+    .ax-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .ax-log {
+      flex: 1;
+      min-height: 72px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 2px solid #bae6fd;
+      background: rgba(191,219,254,0.25);
+      font-size: 11px;
+      line-height: 1.6;
+      white-space: pre-line;
+      overflow-y: auto;
+      color: #0f172a;
+    }
+    .ax-back {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #0369a1;
+      text-decoration: none;
+    }
+    .ax-overlay {
+      position: fixed;
+      inset: 0;
+      padding: 48px 16px 16px;
+      background: rgba(15,23,42,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+    }
+    .ax-overlay.visible { display: flex; }
+    .ax-overlay-box {
+      background: linear-gradient(180deg, #fdf2f8, #e0f2fe);
+      border-radius: 16px;
+      border: 4px solid #f472b6;
+      padding: 20px;
+      max-width: 340px;
+      text-align: center;
+      box-shadow: 0 18px 35px rgba(0,0,0,0.25);
+    }
+    .ax-overlay-box h2 {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      color: #be123c;
+    }
+    .ax-overlay-box p {
+      font-size: 13px;
+      margin-bottom: 8px;
+      color: #111827;
+      line-height: 1.6;
+    }
+    .ax-overlay-box .btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      border: 2px solid #f472b6;
+      background: linear-gradient(180deg, #fb7185, #ec4899);
+      color: #fdf2f8;
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="ax-wrap">
+    <h1 class="ax-title">ウーパールーパーショップ</h1>
+    <p class="ax-sub">
+      ウーパールーパーを大切に育てて、増やして、お店を続けよう。<br />
+      水質・エサ・繁殖のバランスがポイント。
+    </p>
+
+    <div class="ax-panel">
+      <div class="ax-status-row">
+        <span class="ax-day" id="axDay">1日目</span>
+        <span class="ax-money" id="axMoney">所持金：¥50,000</span>
+      </div>
+      <div class="ax-bar-label">水のきれいさ</div>
+      <div class="ax-bar"><div class="ax-bar-fill clean" id="axCleanBar"></div></div>
+      <div class="ax-bar-label">エサの在庫</div>
+      <div class="ax-bar"><div class="ax-bar-fill water" id="axFoodBar"></div></div>
+      <div class="ax-bar-label">お店の評判</div>
+      <div class="ax-bar"><div class="ax-bar-fill reputation" id="axRepBar"></div></div>
+      <div style="font-size:10px; color:#6b7280; margin-top:2px;">
+        ※評判が高いほど、ウーパールーパーが高く売れます。
+      </div>
+      <div class="ax-tanks" id="axTanks"></div>
+    </div>
+
+    <div class="ax-panel">
+      <div style="font-size:12px; margin-bottom:4px; color:#0f172a;">今日はどうする？（1ターン = 1日）</div>
+      <div class="ax-actions">
+        <button type="button" class="ax-btn feed" id="btnFeed">
+          <span class="label">エサをあげる（¥1,000）</span>
+          <span class="note">エサ在庫↑ / 健康↑</span>
+        </button>
+        <button type="button" class="ax-btn clean" id="btnClean">
+          <span class="label">水をかえる（¥2,000）</span>
+          <span class="note">水質↑↑ / 評判↑</span>
+        </button>
+        <button type="button" class="ax-btn breed" id="btnBreed">
+          <span class="label">繁殖させる</span>
+          <span class="note">親2匹から子ウパ誕生のチャンス</span>
+        </button>
+        <button type="button" class="ax-btn sell" id="btnSell">
+          <span class="label">ショップ営業</span>
+          <span class="note">成長した子を販売してお金に</span>
+        </button>
+        <button type="button" class="ax-btn" id="btnBuy">
+          <span class="label">ウパを仕入れる（¥15,000）</span>
+          <span class="note">新しい個体をお迎え</span>
+        </button>
+        <button type="button" class="ax-btn" id="btnAddTank">
+          <span class="label">水槽を増やす（¥20,000）</span>
+          <span class="note">最大5個まで</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="ax-log" id="axLog">
+      ウーパールーパー専門の小さなペットショップを始めた。<br />
+      初期の親ウパ2匹と水槽3つからスタート。まずは水とエサを整えよう。
+    </div>
+
+    <a href="/index.html" class="ax-back">← トップへ戻る</a>
+  </div>
+
+  <div class="ax-overlay" id="axOverlayEnd">
+    <div class="ax-overlay-box">
+      <h2 id="axEndTitle">エンディング</h2>
+      <p id="axEndMessage"></p>
+      <button type="button" class="btn" id="axBtnRetry">もう一度やる</button>
+      <div style="margin-top:8px;">
+        <a href="/index.html" style="font-size:12px; color:#0369a1; text-decoration:none;">トップへ戻る</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  'use strict';
+
+  var MAX_CLEAN = 100;
+  var MAX_FOOD = 100;
+  var MAX_REP = 100;
+  var MAX_HEALTH = 100;
+  var TARGET_MONEY = 200000; // 20万円でひとまず一人前のショップ
+  var MAX_DAYS = 60;
+  var MAX_TANKS = 5;
+
+  var rarityNames = ['ノーマル', '色薄め', 'レアカラー'];
+  var rarityPriceBase = [8000, 14000, 22000];
+
+  var state = {
+    day: 1,
+    money: 50000,
+    clean: 80,
+    food: 60,
+    reputation: 30,
+    tanks: [],
+    ended: false
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function randInt(min, max) {
+    return min + Math.floor(Math.random() * (max - min + 1));
+  }
+
+  function clamp(v, min, max) {
+    return v < min ? min : (v > max ? max : v);
+  }
+
+  function formatMoney(y) {
+    return '¥' + y.toLocaleString('ja-JP');
+  }
+
+  function createAxolotl(isAdult, rarity) {
+    if (rarity == null) {
+      var roll = Math.random();
+      if (roll < 0.7) rarity = 0;
+      else if (roll < 0.93) rarity = 1;
+      else rarity = 2;
+    }
+    return {
+      age: isAdult ? randInt(6, 12) : 0, // ヶ月
+      health: clamp(70 + randInt(-10, 10), 40, MAX_HEALTH),
+      rarity: rarity,
+      sex: Math.random() < 0.5 ? '♂' : '♀'
+    };
+  }
+
+  function initTanks() {
+    state.tanks = [];
+    // 親ウパ2匹 + 空き1水槽
+    state.tanks.push({
+      id: 1,
+      axolotl: createAxolotl(true),
+      note: '親ウパ',
+      baby: false
+    });
+    state.tanks.push({
+      id: 2,
+      axolotl: createAxolotl(true),
+      note: '親ウパ',
+      baby: false
+    });
+    state.tanks.push({
+      id: 3,
+      axolotl: null,
+      note: '空き水槽',
+      baby: false
+    });
+  }
+
+  function tankName(index, tank) {
+    if (!tank.axolotl) return '水槽' + (index + 1) + '（空）';
+    return '水槽' + (index + 1);
+  }
+
+  function rarityLabel(r) {
+    return rarityNames[r] || rarityNames[0];
+  }
+
+  function calcPrice(ax) {
+    var base = rarityPriceBase[ax.rarity] || 8000;
+    var healthRate = ax.health / 100;
+    var ageBonus = 1 + (ax.age / 24); // 最大 +100% くらい
+    var repBonus = 0.7 + state.reputation / 150; // 評判
+    var price = base * healthRate * ageBonus * repBonus;
+    return Math.round(price / 1000) * 1000;
+  }
+
+  function updateTanksDOM() {
+    var root = $('axTanks');
+    root.innerHTML = '';
+    state.tanks.forEach(function (tank, idx) {
+      var div = document.createElement('div');
+      div.className = 'ax-tank';
+
+      var header = document.createElement('div');
+      header.className = 'ax-tank-header';
+      var nameEl = document.createElement('div');
+      nameEl.className = 'ax-tank-name';
+      nameEl.textContent = tankName(idx, tank);
+      var tag = document.createElement('div');
+      tag.className = 'ax-tank-tag';
+      tag.textContent = tank.axolotl ? (tank.baby ? '子ウパ' : '成体') : '空き';
+      header.appendChild(nameEl);
+      header.appendChild(tag);
+      div.appendChild(header);
+
+      var body = document.createElement('div');
+      body.className = 'ax-tank-body';
+      var lines = document.createElement('div');
+      lines.className = 'ax-tank-lines';
+      if (tank.axolotl) {
+        var ax = tank.axolotl;
+        lines.textContent =
+          '性別：' + ax.sex + '\n' +
+          'レア度：' + rarityLabel(ax.rarity) + '\n' +
+          '年齢：' + ax.age + 'ヶ月\n' +
+          '健康：' + Math.round(ax.health) + '/100';
+      } else {
+        lines.textContent = tank.note;
+      }
+      body.appendChild(lines);
+
+      if (tank.axolotl) {
+        var sprite = document.createElement('div');
+        sprite.className = 'ax-axolotl';
+        var eyeL = document.createElement('div');
+        eyeL.className = 'ax-axolotl-eye left';
+        var eyeR = document.createElement('div');
+        eyeR.className = 'ax-axolotl-eye right';
+        sprite.appendChild(eyeL);
+        sprite.appendChild(eyeR);
+        body.appendChild(sprite);
+      }
+      div.appendChild(body);
+
+      var foot = document.createElement('div');
+      foot.className = 'ax-tank-footer';
+      if (tank.axolotl) {
+        var price = calcPrice(tank.axolotl);
+        foot.textContent = '予想販売価格：' + formatMoney(price);
+      } else {
+        foot.textContent = 'ここに新しいウパを入れられる。';
+      }
+      div.appendChild(foot);
+
+      root.appendChild(div);
+    });
+  }
+
+  function updateUI() {
+    $('axDay').textContent = state.day + '日目';
+    $('axMoney').textContent = '所持金：' + formatMoney(state.money);
+    $('axCleanBar').style.width = clamp(state.clean, 0, MAX_CLEAN) / MAX_CLEAN * 100 + '%';
+    $('axFoodBar').style.width = clamp(state.food, 0, MAX_FOOD) / MAX_FOOD * 100 + '%';
+    $('axRepBar').style.width = clamp(state.reputation, 0, MAX_REP) / MAX_REP * 100 + '%';
+
+    var disabled = state.ended;
+    $('btnFeed').disabled = disabled;
+    $('btnClean').disabled = disabled;
+    $('btnBreed').disabled = disabled;
+    $('btnSell').disabled = disabled;
+
+    updateTanksDOM();
+  }
+
+  function logLine(text) {
+    var log = $('axLog');
+    var prefix = '【' + state.day + '日目】';
+    var line = prefix + ' ' + text;
+    log.textContent = line + (log.textContent ? '\n' + log.textContent : '');
+  }
+
+  function checkEnd() {
+    if (state.ended) return;
+    if (state.money >= TARGET_MONEY && state.reputation >= 60) {
+      state.ended = true;
+      $('axOverlayEnd').classList.add('visible');
+      $('axEndTitle').textContent = '人気店エンド';
+      $('axEndMessage').textContent =
+        '所持金 ' + formatMoney(state.money) + '、評判 ' + Math.round(state.reputation) + '。\n' +
+        '大切に育てたウーパールーパーのおかげで、地域で有名なショップになった。';
+      updateUI();
+      return;
+    }
+    if (state.money <= 0 && state.tanks.filter(function (t){return t.axolotl;}).length === 0) {
+      state.ended = true;
+      $('axOverlayEnd').classList.add('visible');
+      $('axEndTitle').textContent = '閉店エンド';
+      $('axEndMessage').textContent =
+        '資金もウーパールーパーも尽きてしまった。\n' +
+        '次は、水とエサを優先して、ゆっくり増やしていこう。';
+      updateUI();
+      return;
+    }
+    if (state.day > MAX_DAYS) {
+      state.ended = true;
+      $('axOverlayEnd').classList.add('visible');
+      $('axEndTitle').textContent = '区切りのエンド';
+      $('axEndMessage').textContent =
+        MAX_DAYS + '日が経った。\n' +
+        '所持金：' + formatMoney(state.money) +
+        '／評判：' + Math.round(state.reputation) + '\n' +
+        '次はどんなお店にしたい？育て方を変えてみよう。';
+      updateUI();
+    }
+  }
+
+  function endOfDayDrift() {
+    // 1日ごとの環境変化
+    state.clean = clamp(state.clean - (2 + state.tanks.length), 0, MAX_CLEAN);
+    state.food = clamp(state.food - 4, 0, MAX_FOOD);
+    // 水やエサが悪いと健康＆評判が落ちる
+    state.tanks.forEach(function (tank) {
+      if (!tank.axolotl) return;
+      var ax = tank.axolotl;
+      if (state.clean < 40) ax.health -= 6;
+      else if (state.clean < 70) ax.health -= 3;
+
+      if (state.food < 30) ax.health -= 4;
+      ax.health = clamp(ax.health, 0, MAX_HEALTH);
+      // 年齢アップ
+      ax.age += 1;
+      // 一定の月齢を越えたら「成体」扱いにする
+      if (ax.age >= 4 && tank.baby) {
+        tank.baby = false;
+        tank.note = '育ったウパ';
+      }
+      if (ax.health <= 0) {
+        tank.axolotl = null;
+        tank.note = '体調を崩して★になってしまった…';
+        logLine('水やエサの状態が悪く、ウーパールーパーが1匹★になってしまった。');
+        state.reputation = clamp(state.reputation - 10, 0, MAX_REP);
+      }
+    });
+    if (state.clean < 40) {
+      state.reputation = clamp(state.reputation - 4, 0, MAX_REP);
+    }
+  }
+
+  function nextDay() {
+    state.day += 1;
+    endOfDayDrift();
+    checkEnd();
+    updateUI();
+  }
+
+  function actFeed() {
+    if (state.money < 1000) {
+      logLine('お金が足りなくてエサを買えなかった…。');
+      nextDay();
+      return;
+    }
+    state.money -= 1000;
+    state.food = clamp(state.food + 25, 0, MAX_FOOD);
+    state.tanks.forEach(function (tank) {
+      if (!tank.axolotl) return;
+      tank.axolotl.health = clamp(tank.axolotl.health + 8, 0, MAX_HEALTH);
+    });
+    logLine('エサを多めにあげた。みんな満足そう。');
+    nextDay();
+  }
+
+  function actClean() {
+    if (state.money < 2000) {
+      logLine('水をかえる資金が足りなかった…。');
+      nextDay();
+      return;
+    }
+    state.money -= 2000;
+    state.clean = clamp(state.clean + 35, 0, MAX_CLEAN);
+    state.reputation = clamp(state.reputation + 6, 0, MAX_REP);
+    logLine('しっかり水換えをした。水槽が透き通って見える。');
+    nextDay();
+  }
+
+  function actBreed() {
+    var adults = state.tanks.filter(function (t) {
+      return t.axolotl && t.axolotl.age >= 6 && t.axolotl.health >= 50;
+    });
+    var empty = state.tanks.find(function (t) { return !t.axolotl; });
+    if (adults.length < 2 || !empty) {
+      logLine('元気な成体2匹と空き水槽が必要だ。');
+      nextDay();
+      return;
+    }
+    // ランダムに2匹
+    var p1 = adults[randInt(0, adults.length - 1)].axolotl;
+    var p2;
+    do {
+      p2 = adults[randInt(0, adults.length - 1)].axolotl;
+    } while (p1 === p2 && adults.length > 1);
+    // 子ウパのレア度は親の平均＋ちょっと運
+    var baseR = Math.round((p1.rarity + p2.rarity) / 2);
+    var d = Math.random();
+    if (d < 0.15) baseR++;
+    if (d > 0.9) baseR--;
+    baseR = clamp(baseR, 0, 2);
+    var baby = createAxolotl(false, baseR);
+    empty.axolotl = baby;
+    empty.baby = true;
+    empty.note = '繁殖で生まれた子ウパ';
+    state.reputation = clamp(state.reputation + 3, 0, MAX_REP);
+    logLine('繁殖に成功！新しい子ウーパールーパーが生まれた。');
+    nextDay();
+  }
+
+  function actSell() {
+    var sellable = state.tanks.filter(function (t) {
+      return t.axolotl && t.axolotl.age >= 4 && t.axolotl.health >= 50;
+    });
+    if (sellable.length === 0) {
+      logLine('まだ売れる状態の子はいないようだ。もう少し育てよう。');
+      nextDay();
+      return;
+    }
+    var soldCount = 0;
+    var total = 0;
+    sellable.forEach(function (t) {
+      var price = calcPrice(t.axolotl);
+      total += price;
+      soldCount++;
+      t.axolotl = null;
+      t.baby = false;
+      t.note = '販売済み（水槽は空き）';
+    });
+    state.money += total;
+    state.reputation = clamp(state.reputation + 4 + soldCount, 0, MAX_REP);
+    logLine('ウーパールーパーを ' + soldCount + '匹 販売した（' + formatMoney(total) + '）。');
+    nextDay();
+  }
+
+  function actBuy() {
+    var empty = state.tanks.find(function (t) { return !t.axolotl; });
+    if (!empty) {
+      logLine('空き水槽がないので、新しいウパをお迎えできない。');
+      nextDay();
+      return;
+    }
+    if (state.money < 15000) {
+      logLine('仕入れ資金が足りない…。');
+      nextDay();
+      return;
+    }
+    state.money -= 15000;
+    var adult = createAxolotl(true);
+    empty.axolotl = adult;
+    empty.baby = false;
+    empty.note = '仕入れたウパ';
+    logLine('新しいウーパールーパーを1匹お迎えした。');
+    nextDay();
+  }
+
+  function actAddTank() {
+    if (state.tanks.length >= MAX_TANKS) {
+      logLine('これ以上水槽は増やせない。');
+      nextDay();
+      return;
+    }
+    if (state.money < 20000) {
+      logLine('水槽を増やす資金が足りない…。');
+      nextDay();
+      return;
+    }
+    state.money -= 20000;
+    state.tanks.push({
+      id: state.tanks.length + 1,
+      axolotl: null,
+      note: '新しく導入した水槽',
+      baby: false
+    });
+    logLine('新しい水槽を1つ増設した。');
+    nextDay();
+  }
+
+  function resetGame() {
+    state.day = 1;
+    state.money = 50000;
+    state.clean = 80;
+    state.food = 60;
+    state.reputation = 30;
+    state.ended = false;
+    initTanks();
+    $('axLog').textContent =
+      'ウーパールーパー専門の小さなペットショップを始めた。\n' +
+      '初期の親ウパ2匹と水槽3つからスタート。まずは水とエサを整えよう。';
+    $('axOverlayEnd').classList.remove('visible');
+    updateUI();
+  }
+
+  $('btnFeed').addEventListener('click', function () {
+    if (!state.ended) actFeed();
+  });
+  $('btnClean').addEventListener('click', function () {
+    if (!state.ended) actClean();
+  });
+  $('btnBreed').addEventListener('click', function () {
+    if (!state.ended) actBreed();
+  });
+  $('btnSell').addEventListener('click', function () {
+    if (!state.ended) actSell();
+  });
+  $('btnBuy').addEventListener('click', function () {
+    if (!state.ended) actBuy();
+  });
+  $('btnAddTank').addEventListener('click', function () {
+    if (!state.ended) actAddTank();
+  });
+  $('axBtnRetry').addEventListener('click', function () {
+    resetGame();
+  });
+
+  resetGame();
+})();
+  </script>
+</body>
+</html>
+

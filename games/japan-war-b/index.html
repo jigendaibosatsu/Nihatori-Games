@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>合戦B – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #1b5e20;
+      height: 100vh;
+      height: 100dvh;
+      max-height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .warb-wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 6px;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .warb-title {
+      font-size: 1rem;
+      margin-bottom: 4px;
+      text-align: center;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .warb-title-icon {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+    .warb-setup {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #2e7d32;
+    }
+    .warb-setup-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+    }
+    .warb-setup select {
+      width: 100%;
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #66bb6a;
+      font-size: 13px;
+    }
+    .warb-btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #43a047, #2e7d32);
+      border: 2px solid #66bb6a;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .warb-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .warb-field-wrap {
+      background: #e0e0e0;
+      border: 2px solid #2e7d32;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      text-align: center;
+      position: relative;
+      flex: 1 1 0;
+      min-height: 0;
+      max-height: min(58dvh, 70vh);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .warb-field-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .warb-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .warb-log {
+      flex-shrink: 0;
+      padding: 4px 6px;
+      font-size: 10px;
+      background: rgba(0,0,0,0.06);
+      border-radius: 6px;
+      border: 2px solid #81c784;
+      margin-top: 4px;
+      line-height: 1.4;
+      white-space: pre-line;
+    }
+    .warb-back {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: #2e7d32;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="warb-wrap">
+    <h1 class="warb-title"><img src="/assets/kassen-icon.png" alt="" class="warb-title-icon" /> 合戦B（城バトル）</h1>
+
+    <div class="warb-setup" id="setup">
+      <label>陣営数</label>
+      <div class="warb-setup-row">
+        <select id="numCamps">
+          <option value="2">2陣営</option>
+          <option value="3" selected>3陣営</option>
+          <option value="4">4陣営</option>
+        </select>
+      </div>
+      <label>ゲーム速度</label>
+      <div class="warb-setup-row">
+        <select id="speed">
+          <option value="0.6">ゆっくり</option>
+          <option value="1" selected>ふつう</option>
+          <option value="1.5">はやい</option>
+        </select>
+      </div>
+    </div>
+
+    <button type="button" class="warb-btn" id="btnStart">合戦開始（城からしかボールが増えない）</button>
+
+    <div class="warb-field-wrap" id="fieldWrap" style="display:none">
+      <div class="warb-field-inner">
+        <canvas id="fieldCanvas" class="warb-canvas" width="480" height="320"></canvas>
+      </div>
+    </div>
+
+    <div class="warb-log" id="log">合戦B：各陣営に1つずつ「城」があり、そこからだけボールが湧きます。城を壊せば、その城は自分の色になり、自分のボールを生み出すようになります。</div>
+
+    <a href="/index.html" class="warb-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  'use strict';
+
+  var GRID_COLS = 22;
+  var GRID_ROWS = 12;
+  var CASTLE_MAX_HP = 20;
+  var CASTLE_SPAWN_INTERVAL = 1500; // ms
+  var BALL_SPEED = 70; // px/sec
+  var BALL_RADIUS = 5;
+
+  var CAMP_COLORS = ['#4CAF50', '#2196F3', '#f44336', '#FFC107'];
+
+  var state = {
+    running: false,
+    speed: 1,
+    numCamps: 3,
+    cells: [],          // [row][col] => owner or -1
+    castles: [],        // per camp: {row,col,hp,spawnTimer}
+    balls: [],
+    lastTime: 0
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function initGrid() {
+    state.cells = [];
+    for (var r = 0; r < GRID_ROWS; r++) {
+      var row = [];
+      for (var c = 0; c < GRID_COLS; c++) row.push(-1);
+      state.cells.push(row);
+    }
+  }
+
+  // 初期ボールの出現マス = その陣営の「城」マス
+  function initCastlesAndBalls() {
+    state.castles = [];
+    state.balls = [];
+    var occupied = {};
+    function key(r, c) { return r + ':' + c; }
+
+    for (var i = 0; i < state.numCamps; i++) {
+      var row, col;
+      // なるべくバラけるようにランダム配置（他の城と被らない）
+      do {
+        row = 2 + Math.floor(Math.random() * (GRID_ROWS - 4));
+        col = 2 + Math.floor(Math.random() * (GRID_COLS - 4));
+      } while (occupied[key(row, col)]);
+      occupied[key(row, col)] = true;
+
+      state.castles[i] = {
+        camp: i,
+        row: row,
+        col: col,
+        hp: CASTLE_MAX_HP,
+        spawnTimer: 0
+      };
+      // そのマスを自陣色で塗る（城マス）
+      state.cells[row][col] = i;
+      // 同時に初期ボールもそこから出す
+      spawnBallFromCastle(i);
+    }
+  }
+
+  function cellToPixel(row, col, cellW, cellH) {
+    return {
+      x: (col + 0.5) * cellW,
+      y: (row + 0.5) * cellH
+    };
+  }
+
+  function spawnBallFromCastle(camp) {
+    var cs = state.castles[camp];
+    if (!cs || cs.hp <= 0) return;
+    var canvas = $('fieldCanvas');
+    var cw = canvas.width, ch = canvas.height;
+    var cellW = cw / GRID_COLS;
+    var cellH = ch / GRID_ROWS;
+    var center = cellToPixel(cs.row, cs.col, cellW, cellH);
+    var angle = Math.random() * Math.PI * 2;
+    var speed = BALL_SPEED * state.speed;
+    // 城のちょっと外側から飛び出すように配置（いきなり城に当たって消えないように）
+    var castleR = Math.min(cellW, cellH) * 0.45;
+    var offset = castleR + BALL_RADIUS + 1;
+    var startX = center.x + Math.cos(angle) * offset;
+    var startY = center.y + Math.sin(angle) * offset;
+    state.balls.push({
+      camp: camp,
+      x: startX,
+      y: startY,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed
+    });
+  }
+
+  function resetGame() {
+    state.running = false;
+    state.speed = parseFloat($('speed').value) || 1;
+    state.numCamps = parseInt($('numCamps').value, 10) || 3;
+    initGrid();
+    initCastlesAndBalls();
+    state.lastTime = performance.now();
+    draw();
+  }
+
+  function update(dt) {
+    // 城からボール湧き
+    for (var i = 0; i < state.castles.length; i++) {
+      var cs = state.castles[i];
+      if (!cs || cs.hp <= 0) continue;
+      cs.spawnTimer += dt;
+      if (cs.spawnTimer >= CASTLE_SPAWN_INTERVAL) {
+        cs.spawnTimer = 0;
+        spawnBallFromCastle(i);
+      }
+    }
+
+    var canvas = $('fieldCanvas');
+    var cw = canvas.width, ch = canvas.height;
+    var cellW = cw / GRID_COLS;
+    var cellH = ch / GRID_ROWS;
+
+    var newBalls = [];
+    for (var bi = 0; bi < state.balls.length; bi++) {
+      var b = state.balls[bi];
+      b.x += b.vx * dt / 1000;
+      b.y += b.vy * dt / 1000;
+
+      // 壁反射
+      if (b.x < BALL_RADIUS) { b.x = BALL_RADIUS; b.vx *= -1; }
+      if (b.x > cw - BALL_RADIUS) { b.x = cw - BALL_RADIUS; b.vx *= -1; }
+      if (b.y < BALL_RADIUS) { b.y = BALL_RADIUS; b.vy *= -1; }
+      if (b.y > ch - BALL_RADIUS) { b.y = ch - BALL_RADIUS; b.vy *= -1; }
+
+      // マス塗り
+      var col = Math.floor(b.x / cellW);
+      var row = Math.floor(b.y / cellH);
+      if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
+        state.cells[row][col] = b.camp;
+      }
+
+      // 城への衝突
+      var hitCastle = false;
+      for (var ci = 0; ci < state.castles.length; ci++) {
+        var cs = state.castles[ci];
+        if (!cs || cs.hp <= 0) continue;
+        var cp = cellToPixel(cs.row, cs.col, cellW, cellH);
+        var dx = b.x - cp.x;
+        var dy = b.y - cp.y;
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        var castleR = Math.min(cellW, cellH) * 0.45;
+        if (dist <= castleR + BALL_RADIUS) {
+          // 味方なら回復
+          if (b.camp === cs.camp) {
+            if (cs.hp < CASTLE_MAX_HP) cs.hp += 1;
+          } else {
+            // 敵ならダメージ
+            cs.hp -= 1;
+            if (cs.hp <= 0) {
+              // 城主交代
+              cs.camp = b.camp;
+              cs.hp = CASTLE_MAX_HP;
+            }
+          }
+          hitCastle = true;
+          break;
+        }
+      }
+      if (!hitCastle) newBalls.push(b);
+    }
+    state.balls = newBalls;
+  }
+
+  function draw() {
+    var canvas = $('fieldCanvas');
+    var ctx = canvas.getContext('2d');
+    var cw = canvas.width, ch = canvas.height;
+    var cellW = cw / GRID_COLS;
+    var cellH = ch / GRID_ROWS;
+
+    ctx.clearRect(0, 0, cw, ch);
+
+    // マス + 城マスの強調表示
+    for (var r = 0; r < GRID_ROWS; r++) {
+      for (var c = 0; c < GRID_COLS; c++) {
+        var owner = state.cells[r][c];
+        if (owner >= 0) {
+          ctx.fillStyle = CAMP_COLORS[owner];
+          ctx.globalAlpha = 0.85;
+        } else {
+          ctx.fillStyle = '#ffffff';
+          ctx.globalAlpha = 1;
+        }
+        ctx.fillRect(c * cellW, r * cellH, cellW, cellH);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(c * cellW, r * cellH, cellW, cellH);
+      }
+    }
+
+    // 城マスの「太枠」「少し濃い色」「城＋HPバー」
+    for (var i = 0; i < state.castles.length; i++) {
+      var cs = state.castles[i];
+      if (!cs) continue;
+      var color = CAMP_COLORS[cs.camp];
+      var cellX = cs.col * cellW;
+      var cellY = cs.row * cellH;
+
+      // 少し濃い色で塗り直し
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 1;
+      ctx.fillRect(cellX, cellY, cellW, cellH);
+
+      // 太枠
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cellX + 0.5, cellY + 0.5, cellW - 1, cellH - 1);
+
+      // 「城」文字
+      ctx.fillStyle = '#fff';
+      ctx.font = Math.floor(Math.min(cellW, cellH) * 0.6) + 'px "MS PGothic"';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('城', cellX + cellW / 2, cellY + cellH / 2 - 3);
+
+      // HPバー
+      var barMargin = 3;
+      var barX = cellX + barMargin;
+      var barY = cellY + cellH - 6;
+      var barW = cellW - barMargin * 2;
+      var barH = 4;
+      var hpRatio = Math.max(0, Math.min(1, cs.hp / CASTLE_MAX_HP));
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(barX, barY, barW, barH);
+      ctx.fillStyle = '#4ade80';
+      ctx.fillRect(barX, barY, barW * hpRatio, barH);
+    }
+
+    // ボール
+    for (var bi = 0; bi < state.balls.length; bi++) {
+      var b = state.balls[bi];
+      ctx.fillStyle = CAMP_COLORS[b.camp];
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, BALL_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  function loop(now) {
+    if (!state.running) return;
+    if (!state.lastTime) state.lastTime = now;
+    var dt = now - state.lastTime;
+    if (dt > 100) dt = 100;
+    state.lastTime = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function startGame() {
+    $('setup').style.display = 'none';
+    $('btnStart').style.display = 'none';
+    $('fieldWrap').style.display = 'flex';
+    resetGame();
+    state.running = true;
+    state.lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  document.getElementById('btnStart').addEventListener('click', function () {
+    startGame();
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', resetGame);
+  } else {
+    resetGame();
+  }
+})();
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>芸大脱出サバイバル – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      background: radial-gradient(circle at top, #e8f5ff 0%, #f0f4f8 40%, #e0f2f1 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #064e3b;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .ae-wrap {
+      width: 100%;
+      max-width: 420px;
+      padding: 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .ae-title {
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+      text-align: center;
+      font-weight: bold;
+      color: #0f766e;
+    }
+    .ae-subtitle {
+      font-size: 11px;
+      text-align: center;
+      color: #4b5563;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    .ae-panel {
+      background: rgba(255,255,255,0.95);
+      border-radius: 12px;
+      border: 2px solid #a7f3d0;
+      padding: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 8px 18px rgba(15,118,110,0.12);
+    }
+    .ae-status-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    .ae-bar {
+      position: relative;
+      height: 8px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .ae-bar-fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      border-radius: inherit;
+      transition: width 0.25s;
+    }
+    .ae-bar-fill.power { background: linear-gradient(90deg, #22c55e, #4ade80); }
+    .ae-bar-fill.burnout { background: linear-gradient(90deg, #fb7185, #ef4444); }
+    .ae-bar-fill.motivation { background: linear-gradient(90deg, #38bdf8, #0ea5e9); }
+    .ae-money {
+      font-size: 13px;
+      font-weight: bold;
+      color: #065f46;
+    }
+    .ae-month {
+      font-size: 12px;
+      color: #4b5563;
+    }
+    .ae-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .ae-btn {
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: bold;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      text-align: left;
+      line-height: 1.4;
+      background: #e5e7eb;
+      color: #111827;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ae-btn span.label { flex: 1; }
+    .ae-btn span.note { font-size: 11px; color: #374151; margin-left: 8px; white-space: nowrap; }
+    .ae-btn.work {
+      background: linear-gradient(180deg, #22c55e, #16a34a);
+      border-color: #4ade80;
+      color: #f0fdf4;
+    }
+    .ae-btn.create {
+      background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+      border-color: #7dd3fc;
+      color: #f0f9ff;
+    }
+    .ae-btn.rest {
+      background: linear-gradient(180deg, #e5e7eb, #d1d5db);
+      border-color: #9ca3af;
+    }
+    .ae-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .ae-log {
+      flex: 1;
+      min-height: 72px;
+      padding: 8px 10px;
+      background: rgba(15,118,110,0.06);
+      border-radius: 8px;
+      border: 2px solid #a7f3d0;
+      font-size: 11px;
+      line-height: 1.6;
+      color: #064e3b;
+      white-space: pre-line;
+      overflow-y: auto;
+    }
+    .ae-back {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #0f766e;
+      text-decoration: none;
+    }
+    .ae-overlay {
+      position: fixed;
+      inset: 0;
+      padding: 48px 16px 16px;
+      background: rgba(15,23,42,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+    }
+    .ae-overlay.visible { display: flex; }
+    .ae-overlay-box {
+      background: linear-gradient(180deg, #ecfeff, #e0f2fe);
+      border-radius: 16px;
+      border: 4px solid #22c55e;
+      padding: 20px;
+      max-width: 340px;
+      text-align: center;
+      box-shadow: 0 18px 35px rgba(0,0,0,0.25);
+    }
+    .ae-overlay-box h2 {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      color: #166534;
+    }
+    .ae-overlay-box p {
+      font-size: 13px;
+      margin-bottom: 8px;
+      color: #111827;
+      line-height: 1.6;
+    }
+    .ae-overlay-box .btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 2px solid #22c55e;
+      background: linear-gradient(180deg, #22c55e, #16a34a);
+      color: #ecfdf5;
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="ae-wrap">
+    <h1 class="ae-title">芸大脱出サバイバル</h1>
+    <p class="ae-subtitle">
+      バイトと制作をくり返して、生活資金をためて芸大生活を卒業しよう。<br />
+      自分の「努力」で単価を上げて、お金を稼いで脱出だ。
+    </p>
+
+    <div class="ae-panel">
+      <div class="ae-status-row">
+        <span class="ae-month" id="aeMonth">1年目 4月</span>
+        <span class="ae-money" id="aeMoney">所持金：¥0</span>
+      </div>
+      <div style="font-size:11px; color:#374151; margin-bottom:4px;">
+        目標：貯金 <strong>¥1,000,000</strong> 以上（生活費＋引っ越し資金）
+      </div>
+      <div style="font-size:11px; color:#374151;">実力（作品の力）</div>
+      <div class="ae-bar"><div class="ae-bar-fill power" id="aePowerBar"></div></div>
+      <div style="font-size:11px; color:#374151; margin-top:4px;">燃え尽き度</div>
+      <div class="ae-bar"><div class="ae-bar-fill burnout" id="aeBurnoutBar"></div></div>
+      <div style="font-size:11px; color:#374151; margin-top:4px;">やる気</div>
+      <div class="ae-bar"><div class="ae-bar-fill motivation" id="aeMotivationBar"></div></div>
+    </div>
+
+    <div class="ae-panel">
+      <div style="font-size:12px; margin-bottom:6px; color:#111827;">今日どうする？（1ターン = 1週間）</div>
+      <div class="ae-actions">
+        <button type="button" class="ae-btn work" id="btnWork">
+          <span class="label">バイトする</span>
+          <span class="note">お金↑ / 燃え尽き↑ / やる気↓</span>
+        </button>
+        <button type="button" class="ae-btn create" id="btnCreate">
+          <span class="label">制作にこもる</span>
+          <span class="note">実力↑↑ / やる気↑</span>
+        </button>
+        <button type="button" class="ae-btn" id="btnChallenge">
+          <span class="label">コンペ・仕事に出す</span>
+          <span class="note">実力をお金に変えるチャンス</span>
+        </button>
+        <button type="button" class="ae-btn rest" id="btnRest">
+          <span class="label">休む・人と会う</span>
+          <span class="note">燃え尽き↓ / やる気↑↑</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="ae-log" id="aeLog">
+      芸大生活スタート。<br />
+      生活費を自分で稼ぎながら、制作を続けて芸大を「卒業」しよう。<br />
+      1年目4月、最初の1週間。何をする？
+    </div>
+
+    <a href="/index.html" class="ae-back">← トップへ戻る</a>
+  </div>
+
+  <div class="ae-overlay" id="aeOverlayEnd">
+    <div class="ae-overlay-box" id="aeEndBox">
+      <h2 id="aeEndTitle">エンディング</h2>
+      <p id="aeEndMessage"></p>
+      <button type="button" class="btn" id="aeBtnRetry">もう一度やる</button>
+      <div style="margin-top:8px;">
+        <a href="/index.html" style="font-size:12px; color:#075985; text-decoration:none;">トップへ戻る</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  'use strict';
+
+  var TARGET_MONEY = 1000000; // 100万円
+  var MAX_POWER = 100;
+  var MAX_BURNOUT = 100;
+  var MAX_MOTIVATION = 100;
+  var TOTAL_WEEKS = 52; // 1年ちょっと
+
+  var state = {
+    week: 1,
+    money: 0,
+    power: 10,
+    burnout: 10,
+    motivation: 60,
+    ended: false
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function formatMoney(yen) {
+    return '¥' + yen.toLocaleString('ja-JP');
+  }
+
+  function getYearMonth(week) {
+    // 4週間で1ヶ月換算、4月スタート
+    var startMonth = 4;
+    var monthOffset = Math.floor((week - 1) / 4);
+    var month = startMonth + monthOffset;
+    var year = 1;
+    while (month > 12) {
+      month -= 12;
+      year++;
+    }
+    return { year: year, month: month };
+  }
+
+  function monthLabel() {
+    var ym = getYearMonth(state.week);
+    return ym.year + '年目 ' + ym.month + '月';
+  }
+
+  function clamp(v, min, max) {
+    return v < min ? min : (v > max ? max : v);
+  }
+
+  function updateUI() {
+    $('aeMonth').textContent = monthLabel();
+    $('aeMoney').textContent = '所持金：' + formatMoney(state.money);
+    $('aePowerBar').style.width = clamp(state.power, 0, MAX_POWER) / MAX_POWER * 100 + '%';
+    $('aeBurnoutBar').style.width = clamp(state.burnout, 0, MAX_BURNOUT) / MAX_BURNOUT * 100 + '%';
+    $('aeMotivationBar').style.width = clamp(state.motivation, 0, MAX_MOTIVATION) / MAX_MOTIVATION * 100 + '%';
+
+    var disabled = state.ended;
+    $('btnWork').disabled = disabled;
+    $('btnCreate').disabled = disabled;
+    $('btnChallenge').disabled = disabled;
+    $('btnRest').disabled = disabled;
+  }
+
+  function logLine(text) {
+    var log = $('aeLog');
+    var prefix = '【' + monthLabel() + '・第' + ((state.week - 1) % 4 + 1) + '週】';
+    var newLine = prefix + ' ' + text;
+    log.textContent = newLine + (log.textContent ? '\n' + log.textContent : '');
+  }
+
+  function checkEnd(reason) {
+    if (state.ended) return;
+
+    if (state.money >= TARGET_MONEY) {
+      state.ended = true;
+      $('aeOverlayEnd').classList.add('visible');
+      $('aeEndTitle').textContent = '芸大脱出！';
+      var ym = getYearMonth(state.week);
+      $('aeEndMessage').textContent =
+        monthLabel() + 'までに ' + formatMoney(state.money) +
+        ' をためた。\n自分の力で生活資金を作り、芸大生活を卒業できた。' +
+        '\n次のステージでも、自分のペースで続けていこう。';
+      updateUI();
+      return;
+    }
+
+    if (state.burnout >= MAX_BURNOUT) {
+      state.ended = true;
+      $('aeOverlayEnd').classList.add('visible');
+      $('aeEndTitle').textContent = '燃え尽きエンド';
+      $('aeEndMessage').textContent =
+        'がんばりすぎて、心も体も限界になってしまった。\n少し立ち止まって、休むことも「努力」のうち。';
+      updateUI();
+      return;
+    }
+
+    if (state.week > TOTAL_WEEKS) {
+      state.ended = true;
+      $('aeOverlayEnd').classList.add('visible');
+      $('aeEndTitle').textContent = '時間切れエンド';
+      $('aeEndMessage').textContent =
+        '時間だけが過ぎてしまった。\n' +
+        '貯金：' + formatMoney(state.money) + '\n実力：' + Math.round(state.power) +
+        '\n何が一番苦しかった？ どんなペースなら続けられそう？';
+      updateUI();
+    }
+  }
+
+  function nextWeek() {
+    state.week++;
+    // 週の始まりに、少しだけ自動回復
+    state.motivation = clamp(state.motivation + 2, 0, MAX_MOTIVATION);
+    state.burnout = clamp(state.burnout - 1, 0, MAX_BURNOUT);
+    checkEnd();
+    updateUI();
+  }
+
+  function actWork() {
+    // 実力があるほど単価アップ
+    var base = 20000 + Math.floor(Math.random() * 15000); // 2〜3.5万
+    var powerBonusRate = 0.4 + state.power / 150; // 実力で倍率アップ
+    var motivationRate = 0.7 + state.motivation / 200; // やる気で少しブースト
+    var earned = Math.round(base * powerBonusRate * motivationRate / 1000) * 1000;
+    if (earned < 10000) earned = 10000;
+    state.money += earned;
+
+    state.power = clamp(state.power + 1.5, 0, MAX_POWER); // 働きながら少しだけ経験値
+    state.burnout = clamp(state.burnout + 10, 0, MAX_BURNOUT);
+    state.motivation = clamp(state.motivation - 6, 0, MAX_MOTIVATION);
+
+    logLine('バイトで ' + formatMoney(earned) + ' 稼いだ。');
+    checkEnd();
+    nextWeek();
+  }
+
+  function actCreate() {
+    var gain = 6 + Math.floor(Math.random() * 6); // 6〜11
+    state.power = clamp(state.power + gain, 0, MAX_POWER);
+    state.burnout = clamp(state.burnout + 4, 0, MAX_BURNOUT);
+    state.motivation = clamp(state.motivation + 8, 0, MAX_MOTIVATION);
+
+    logLine('一日中、制作にこもった。実力がぐっと伸びた（+' + gain + '）。');
+    checkEnd();
+    nextWeek();
+  }
+
+  function actChallenge() {
+    if (state.power < 20) {
+      logLine('まだ基礎を固めたい。実力が少し足りない気がして提出を見送った。');
+      nextWeek();
+      return;
+    }
+    // 実力とやる気で当選率・金額が変わる
+    var baseChance = 0.12;
+    var powerBonus = state.power / 200; // 0〜0.5
+    var motivationBonus = state.motivation / 300; // 0〜0.33
+    var chance = baseChance + powerBonus + motivationBonus;
+    if (chance > 0.75) chance = 0.75;
+
+    var roll = Math.random();
+    if (roll < chance) {
+      // 当選
+      var minPrize = 80000;
+      var maxPrize = 260000;
+      var scale = state.power / MAX_POWER; // 実力高いほど上ブレ
+      var prize = minPrize + Math.floor(Math.random() * (maxPrize - minPrize) * (0.5 + scale));
+      prize = Math.round(prize / 1000) * 1000;
+      state.money += prize;
+      state.motivation = clamp(state.motivation + 12, 0, MAX_MOTIVATION);
+      state.burnout = clamp(state.burnout + 6, 0, MAX_BURNOUT);
+      logLine('コンペや仕事の応募が通った！ ' + formatMoney(prize) + ' の報酬を得た。');
+    } else {
+      // 落選
+      state.motivation = clamp(state.motivation - 10, 0, MAX_MOTIVATION);
+      state.burnout = clamp(state.burnout + 5, 0, MAX_BURNOUT);
+      logLine('コンペ・仕事は不採用だった。でもデータと経験は残った。');
+    }
+    checkEnd();
+    nextWeek();
+  }
+
+  function actRest() {
+    var recover = 12 + Math.floor(Math.random() * 8); // 12〜19
+    var mot = 10 + Math.floor(Math.random() * 6); // 10〜15
+    state.burnout = clamp(state.burnout - recover, 0, MAX_BURNOUT);
+    state.motivation = clamp(state.motivation + mot, 0, MAX_MOTIVATION);
+
+    logLine('友人と話したり、好きな作品を見てリフレッシュした。燃え尽き度が下がった。');
+    checkEnd();
+    nextWeek();
+  }
+
+  function resetGame() {
+    state.week = 1;
+    state.money = 0;
+    state.power = 10;
+    state.burnout = 10;
+    state.motivation = 60;
+    state.ended = false;
+    $('aeOverlayEnd').classList.remove('visible');
+    $('aeLog').textContent =
+      '芸大生活スタート。\n' +
+      '生活費を自分で稼ぎながら、制作を続けて芸大を「卒業」しよう。\n' +
+      '1年目4月、最初の1週間。何をする？';
+    updateUI();
+  }
+
+  $('btnWork').addEventListener('click', function () {
+    if (!state.ended) actWork();
+  });
+  $('btnCreate').addEventListener('click', function () {
+    if (!state.ended) actCreate();
+  });
+  $('btnChallenge').addEventListener('click', function () {
+    if (!state.ended) actChallenge();
+  });
+  $('btnRest').addEventListener('click', function () {
+    if (!state.ended) actRest();
+  });
+  $('aeBtnRetry').addEventListener('click', function () {
+    resetGame();
+  });
+
+  resetGame();
+})();
+  </script>
+</body>
+</html>
+
