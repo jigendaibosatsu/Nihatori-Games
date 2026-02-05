@@ -19,18 +19,12 @@
   var DUMMY_FEED = {
     items: [
       { id: 'post-2026-01-update-summary', type: 'post', title: '2026年1月 新作・アップデートまとめ', url: '/index.html?tab=games', image: null, category: 'devlog', publishedAt: '2026-01-31T20:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 90 },
-      { id: 'card-collection', type: 'game', title: 'カードコレクション', url: './games/card-collection/', image: null, category: 'games', publishedAt: '2026-01-31T19:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 85 },
-      { id: 'monster-collection', type: 'game', title: 'モンスターコレクション', url: './games/monster-collection/', image: null, category: 'games', publishedAt: '2026-01-31T18:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 78 },
-      { id: 'jinsei', type: 'game', title: '人生ゲーム', url: './games/jinsei/', image: null, category: 'games', publishedAt: '2026-01-31T17:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 80 },
-      { id: 'romance', type: 'game', title: 'きゅーと恋愛', url: './games/romance/', image: null, category: 'games', publishedAt: '2026-01-31T16:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 82 },
-      { id: 'power-pro', type: 'game', title: 'きゅーと野球', url: './games/power-pro/', image: null, category: 'games', publishedAt: '2026-01-31T15:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 85 },
-      { id: 'election', type: 'game', title: '選挙で当選！', url: './games/election/', image: null, category: 'games', publishedAt: '2026-01-31T14:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 88 },
+      { id: 'tetris-like', type: 'game', title: 'ブロック落とし', url: './games/tetris-like/', image: null, category: 'games', publishedAt: '2026-01-31T23:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 90 },
       { id: 'japan-war', type: 'game', title: '合戦', url: './games/japan-war/', image: null, category: 'games', publishedAt: '2026-01-31T12:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 95 },
-      { id: '1', type: 'game', title: 'ババ抜き（準備中）', url: './games/baba-nuki/', image: null, category: 'games', publishedAt: '2026-01-31T10:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 90 },
-      { id: '2', type: 'post', title: '開発ロードマップ公開', url: '/roadmap.html', image: null, category: 'devlog', publishedAt: '2026-01-30T14:00:00+09:00', commentCount: 2, isNew: false, recommended: true, trendingScore: 70 },
-      { id: '3', type: 'post', title: 'サイトオープンのお知らせ', url: null, image: null, category: 'devlog', publishedAt: '2026-01-29T09:00:00+09:00', commentCount: 0, isNew: false, recommended: false, trendingScore: 50 },
-      { id: '4', type: 'game', title: '次のゲーム企画中', url: null, image: null, category: 'games', publishedAt: '2026-01-28T12:00:00+09:00', commentCount: 0, isNew: false, recommended: false, trendingScore: 40 },
-      { id: '5', type: 'post', title: '趣味：音楽制作', url: null, image: null, category: 'hobby', publishedAt: '2026-01-20T10:00:00+09:00', commentCount: 1, isNew: false, recommended: false, trendingScore: 30 },
+      { id: 'baba-nuki', type: 'game', title: 'ババ抜き', url: './games/baba-nuki/', image: null, category: 'games', publishedAt: '2026-01-31T10:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 90 },
+      { id: 'post-roadmap', type: 'post', title: '開発ロードマップ公開', url: '/roadmap.html', image: null, category: 'devlog', publishedAt: '2026-01-30T14:00:00+09:00', commentCount: 2, isNew: false, recommended: true, trendingScore: 70 },
+      { id: 'post-site-open', type: 'post', title: 'サイトオープンのお知らせ', url: './blog/2026-01-29-site-open.html', image: null, category: 'devlog', publishedAt: '2026-01-29T09:00:00+09:00', commentCount: 0, isNew: false, recommended: true, trendingScore: 60 },
+      { id: 'post-music', type: 'post', title: '趣味：音楽制作', url: './blog/2026-01-20-music.html', image: null, category: 'hobby', publishedAt: '2026-01-20T10:00:00+09:00', commentCount: 1, isNew: false, recommended: false, trendingScore: 30 },
     ],
   };
 

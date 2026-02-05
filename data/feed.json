@@ -1,6 +1,32 @@
 {
   "items": [
     {
+      "id": "post-2026-02-01-devlog",
+      "type": "post",
+      "title": "開発メモ：トップをYahoo!ニュース風に",
+      "url": "./blog/2026-02-01-devlog.html",
+      "image": null,
+      "category": "devlog",
+      "publishedAt": "2026-02-01T12:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 75
+    },
+    {
+      "id": "post-2026-01-31-update-template",
+      "type": "post",
+      "title": "Nihatori Games 更新テンプレ（最短版）",
+      "url": "./blog/2026-01-31-update-template.html",
+      "image": null,
+      "category": "devlog",
+      "publishedAt": "2026-01-31T21:00:00+09:00",
+      "commentCount": 0,
+      "isNew": false,
+      "recommended": false,
+      "trendingScore": 55
+    },
+    {
       "id": "post-2026-01-update-summary",
       "type": "post",
       "title": "2026年1月 新作・アップデートまとめ",
@@ -64,6 +90,97 @@
       "isNew": false,
       "recommended": false,
       "trendingScore": 50
+    },
+    {
+      "id": "post-roadmap",
+      "type": "post",
+      "title": "開発ロードマップ公開",
+      "url": "/roadmap.html",
+      "image": null,
+      "category": "devlog",
+      "publishedAt": "2026-01-30T14:00:00+09:00",
+      "commentCount": 2,
+      "isNew": false,
+      "recommended": true,
+      "trendingScore": 70
+    },
+    {
+      "id": "post-site-open",
+      "type": "post",
+      "title": "サイトオープンのお知らせ",
+      "url": "./blog/2026-01-29-site-open.html",
+      "image": null,
+      "category": "devlog",
+      "publishedAt": "2026-01-29T09:00:00+09:00",
+      "commentCount": 0,
+      "isNew": false,
+      "recommended": true,
+      "trendingScore": 60
+    },
+    {
+      "id": "post-next-game",
+      "type": "post",
+      "title": "次のゲーム企画中",
+      "url": "./blog/2026-01-28-next-game.html",
+      "image": null,
+      "category": "devlog",
+      "publishedAt": "2026-01-28T12:00:00+09:00",
+      "commentCount": 0,
+      "isNew": false,
+      "recommended": false,
+      "trendingScore": 40
+    },
+    {
+      "id": "post-music",
+      "type": "post",
+      "title": "趣味：音楽制作",
+      "url": "./blog/2026-01-20-music.html",
+      "image": null,
+      "category": "hobby",
+      "publishedAt": "2026-01-20T10:00:00+09:00",
+      "commentCount": 1,
+      "isNew": false,
+      "recommended": false,
+      "trendingScore": 30
+    },
+    {
+      "id": "tetris-like",
+      "type": "game",
+      "title": "ブロック落とし",
+      "url": "./games/tetris-like/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-01-31T23:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 90
+    },
+    {
+      "id": "table-tennis",
+      "type": "game",
+      "title": "卓球",
+      "url": "./games/table-tennis/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-01-31T22:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 85
+    },
+    {
+      "id": "kart-race",
+      "type": "game",
+      "title": "カートレース",
+      "url": "./games/kart-race/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-01-31T21:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 88
     },
     {
       "id": "card-collection",
@@ -157,9 +274,9 @@
       "trendingScore": 95
     },
     {
-      "id": "1",
+      "id": "baba-nuki",
       "type": "game",
-      "title": "ババ抜き（準備中）",
+      "title": "ババ抜き",
       "url": "./games/baba-nuki/",
       "image": null,
       "category": "games",
@@ -218,7 +335,7 @@
       "publishedAt": "2026-01-29T18:00:00+09:00",
       "commentCount": 0,
       "isNew": false,
-      "recommended": false,
+      "recommended": true,
       "trendingScore": 55
     },
     {
@@ -231,7 +348,7 @@
       "publishedAt": "2026-01-29T14:00:00+09:00",
       "commentCount": 0,
       "isNew": false,
-      "recommended": false,
+      "recommended": true,
       "trendingScore": 52
     },
     {
@@ -244,7 +361,7 @@
       "publishedAt": "2026-01-28T18:00:00+09:00",
       "commentCount": 0,
       "isNew": false,
-      "recommended": false,
+      "recommended": true,
       "trendingScore": 48
     },
     {
@@ -257,7 +374,7 @@
       "publishedAt": "2026-01-28T14:00:00+09:00",
       "commentCount": 0,
       "isNew": false,
-      "recommended": false,
+      "recommended": true,
       "trendingScore": 45
     },
     {
@@ -270,7 +387,7 @@
       "publishedAt": "2026-01-27T18:00:00+09:00",
       "commentCount": 0,
       "isNew": false,
-      "recommended": false,
+      "recommended": true,
       "trendingScore": 42
     },
     {
@@ -283,7 +400,7 @@
       "publishedAt": "2026-01-27T14:00:00+09:00",
       "commentCount": 0,
       "isNew": false,
-      "recommended": false,
+      "recommended": true,
       "trendingScore": 38
     },
     {
@@ -296,60 +413,8 @@
       "publishedAt": "2026-01-26T12:00:00+09:00",
       "commentCount": 0,
       "isNew": false,
-      "recommended": false,
-      "trendingScore": 35
-    },
-    {
-      "id": "2",
-      "type": "post",
-      "title": "開発ロードマップ公開",
-      "url": "/roadmap.html",
-      "image": null,
-      "category": "devlog",
-      "publishedAt": "2026-01-30T14:00:00+09:00",
-      "commentCount": 2,
-      "isNew": false,
       "recommended": true,
-      "trendingScore": 70
-    },
-    {
-      "id": "3",
-      "type": "post",
-      "title": "サイトオープンのお知らせ",
-      "url": null,
-      "image": null,
-      "category": "devlog",
-      "publishedAt": "2026-01-29T09:00:00+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": false,
-      "trendingScore": 50
-    },
-    {
-      "id": "4",
-      "type": "game",
-      "title": "次のゲーム企画中",
-      "url": null,
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-01-28T12:00:00+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": false,
-      "trendingScore": 40
-    },
-    {
-      "id": "5",
-      "type": "post",
-      "title": "趣味：音楽制作",
-      "url": null,
-      "image": null,
-      "category": "hobby",
-      "publishedAt": "2026-01-20T10:00:00+09:00",
-      "commentCount": 1,
-      "isNew": false,
-      "recommended": false,
-      "trendingScore": 30
+      "trendingScore": 35
     }
   ]
 }

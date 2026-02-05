@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>卓球 – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; touch-action: none; -webkit-tap-highlight-color: transparent; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #1a237e 0%, #283593 50%, #1a237e 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #fff;
+    }
+    .tt-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 520px;
+      padding: 8px;
+      min-height: 0;
+    }
+    .tt-title { font-size: 1rem; font-weight: bold; margin-bottom: 4px; flex-shrink: 0; }
+    .tt-score {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 4px;
+      font-size: 18px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .tt-score span { min-width: 60px; text-align: center; }
+    .tt-canvas-wrap {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      max-height: min(60dvh, 70vh);
+      background: #0d47a1;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      border: 3px solid #fff;
+    }
+    #ttCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .tt-controls {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .tt-btn {
+      width: 72px;
+      height: 56px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #fff 0%, #e0e0e0 100%);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      font-size: 24px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      font-weight: bold;
+      color: #1565c0;
+    }
+    .tt-btn:active { transform: scale(0.95); }
+    .tt-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 48px 16px 0;
+    }
+    .tt-overlay.visible { display: flex; }
+    .tt-overlay-box {
+      background: linear-gradient(180deg, #fff 0%, #e8eaf6 100%);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      max-width: 320px;
+      border: 3px solid #3949ab;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+      color: #1a237e;
+    }
+    .tt-overlay-box h2 { margin-bottom: 12px; font-size: 1.35rem; }
+    .tt-overlay-box p { margin-bottom: 16px; color: #333; font-size: 14px; }
+    .tt-overlay-box .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      background: linear-gradient(180deg, #3949ab, #283593);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tt-back { display: inline-block; margin-top: 12px; color: #3949ab; font-size: 14px; text-decoration: none; }
+    .tt-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="tt-wrap">
+    <h1 class="tt-title">卓球</h1>
+    <div class="tt-score">
+      <span id="scoreCpu">0</span>
+      <span>－</span>
+      <span id="scorePlayer">0</span>
+    </div>
+    <div class="tt-canvas-wrap">
+      <canvas id="ttCanvas" width="400" height="480"></canvas>
+    </div>
+    <div class="tt-controls">
+      <button type="button" class="tt-btn" id="btnLeft" aria-label="左">←</button>
+      <button type="button" class="tt-btn" id="btnRight" aria-label="右">→</button>
+    </div>
+  </div>
+
+  <div class="tt-overlay" id="overlay">
+    <div class="tt-overlay-box">
+      <h2>スタート</h2>
+      <p>左右ボタンでラケットを動かします。先に11点取った方が勝ち！</p>
+      <button type="button" class="btn" id="btnStart">スタート</button>
+      <a href="/index.html" class="tt-back">← トップへ戻る</a>
+    </div>
+  </div>
+
+  <div class="tt-overlay" id="overlayFinish">
+    <div class="tt-overlay-box">
+      <h2 id="finishTitle">ゲームセット</h2>
+      <p id="finishMsg"></p>
+      <button type="button" class="btn" id="btnRetry">もう一度</button>
+      <a href="/index.html" class="tt-back">← トップへ戻る</a>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  var canvas = document.getElementById('ttCanvas');
+  var ctx = canvas.getContext('2d');
+  var W = 400, H = 480;
+
+  var PADDLE_W = 80, PADDLE_H = 12;
+  var BALL_R = 8;
+  var PADDLE_MARGIN = 20;
+  var WIN_SCORE = 11;
+  var BALL_SPEED = 6;
+  var PADDLE_SPEED = 10;
+
+  var playerX = (W - PADDLE_W) / 2;
+  var cpuX = (W - PADDLE_W) / 2;
+  var ballX = W / 2, ballY = H / 2;
+  var ballVx = 0, ballVy = 0;
+  var scorePlayer = 0, scoreCpu = 0;
+  var serving = true;
+  var serveToPlayer = false;
+  var state = { running: false };
+
+  function resetBall(toPlayer) {
+    ballX = W / 2;
+    ballY = toPlayer ? H - PADDLE_MARGIN - PADDLE_H - BALL_R - 10 : PADDLE_MARGIN + PADDLE_H + BALL_R + 10;
+    var angle = (Math.random() - 0.5) * 1.2;
+    ballVx = Math.sin(angle) * BALL_SPEED;
+    ballVy = toPlayer ? BALL_SPEED : -BALL_SPEED;
+    serving = false;
+  }
+
+  function startServe() {
+    serving = true;
+    ballX = W / 2;
+    ballY = H / 2;
+    ballVx = 0;
+    ballVy = 0;
+  }
+
+  function update() {
+    if (!state.running) return;
+    if (serving) return;
+
+    ballX += ballVx;
+    ballY += ballVy;
+
+    if (ballX - BALL_R < 0) { ballX = BALL_R; ballVx = -ballVx; }
+    if (ballX + BALL_R > W) { ballX = W - BALL_R; ballVx = -ballVx; }
+
+    var py = H - PADDLE_MARGIN - PADDLE_H;
+    if (ballVy > 0 && ballY + BALL_R >= py && ballY - BALL_R <= py + PADDLE_H &&
+        ballX >= playerX && ballX <= playerX + PADDLE_W) {
+      ballY = py - BALL_R;
+      var hit = (ballX - (playerX + PADDLE_W / 2)) / (PADDLE_W / 2);
+      ballVx = hit * BALL_SPEED * 0.9;
+      ballVy = -Math.sqrt(BALL_SPEED * BALL_SPEED - ballVx * ballVx);
+    }
+
+    var cy = PADDLE_MARGIN;
+    if (ballVy < 0 && ballY - BALL_R <= cy + PADDLE_H && ballY + BALL_R >= cy &&
+        ballX >= cpuX && ballX <= cpuX + PADDLE_W) {
+      ballY = cy + PADDLE_H + BALL_R;
+      var hitCpu = (ballX - (cpuX + PADDLE_W / 2)) / (PADDLE_W / 2);
+      ballVx = hitCpu * BALL_SPEED * 0.9;
+      ballVy = Math.sqrt(BALL_SPEED * BALL_SPEED - ballVx * ballVx);
+    }
+
+    if (ballY - BALL_R > H) {
+      scoreCpu++;
+      document.getElementById('scoreCpu').textContent = scoreCpu;
+      if (scoreCpu >= WIN_SCORE) {
+        state.running = false;
+        document.getElementById('finishTitle').textContent = 'ゲームセット';
+        document.getElementById('finishMsg').textContent = 'CPUの勝ち！ ' + scoreCpu + ' － ' + scorePlayer;
+        document.getElementById('overlayFinish').classList.add('visible');
+        return;
+      }
+      serveToPlayer = true;
+      startServe();
+    }
+    if (ballY + BALL_R < 0) {
+      scorePlayer++;
+      document.getElementById('scorePlayer').textContent = scorePlayer;
+      if (scorePlayer >= WIN_SCORE) {
+        state.running = false;
+        document.getElementById('finishTitle').textContent = 'ゲームセット';
+        document.getElementById('finishMsg').textContent = 'あなたの勝ち！ ' + scorePlayer + ' － ' + scoreCpu;
+        document.getElementById('overlayFinish').classList.add('visible');
+        return;
+      }
+      serveToPlayer = false;
+      startServe();
+    }
+
+    var targetX = ballX - PADDLE_W / 2;
+    targetX = Math.max(0, Math.min(W - PADDLE_W, targetX));
+    cpuX += (targetX - cpuX) * 0.12;
+    cpuX = Math.max(0, Math.min(W - PADDLE_W, cpuX));
+
+    if (keys.left) playerX -= PADDLE_SPEED;
+    if (keys.right) playerX += PADDLE_SPEED;
+    playerX = Math.max(0, Math.min(W - PADDLE_W, playerX));
+  }
+
+  var keys = { left: false, right: false };
+
+  function draw() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#0d47a1';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, H / 2);
+    ctx.lineTo(W, H / 2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(cpuX, PADDLE_MARGIN, PADDLE_W, PADDLE_H);
+    ctx.strokeStyle = '#1565c0';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(cpuX, PADDLE_MARGIN, PADDLE_W, PADDLE_H);
+
+    ctx.fillStyle = '#ffeb3b';
+    ctx.fillRect(playerX, H - PADDLE_MARGIN - PADDLE_H, PADDLE_W, PADDLE_H);
+    ctx.strokeStyle = '#f57f17';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(playerX, H - PADDLE_MARGIN - PADDLE_H, PADDLE_W, PADDLE_H);
+
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(ballX, ballY, BALL_R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    if (serving) {
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('タップでスタート', W / 2, H / 2 - 30);
+    }
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft') { keys.left = true; e.preventDefault(); }
+    if (e.key === 'ArrowRight') { keys.right = true; e.preventDefault(); }
+  });
+  document.addEventListener('keyup', function (e) {
+    if (e.key === 'ArrowLeft') keys.left = false;
+    if (e.key === 'ArrowRight') keys.right = false;
+  });
+
+  document.getElementById('btnLeft').addEventListener('mousedown', function () { keys.left = true; });
+  document.getElementById('btnLeft').addEventListener('mouseup', function () { keys.left = false; });
+  document.getElementById('btnLeft').addEventListener('mouseleave', function () { keys.left = false; });
+  document.getElementById('btnLeft').addEventListener('touchstart', function (e) { e.preventDefault(); keys.left = true; }, { passive: false });
+  document.getElementById('btnLeft').addEventListener('touchend', function (e) { e.preventDefault(); keys.left = false; }, { passive: false });
+  document.getElementById('btnRight').addEventListener('mousedown', function () { keys.right = true; });
+  document.getElementById('btnRight').addEventListener('mouseup', function () { keys.right = false; });
+  document.getElementById('btnRight').addEventListener('mouseleave', function () { keys.right = false; });
+  document.getElementById('btnRight').addEventListener('touchstart', function (e) { e.preventDefault(); keys.right = true; }, { passive: false });
+  document.getElementById('btnRight').addEventListener('touchend', function (e) { e.preventDefault(); keys.right = false; }, { passive: false });
+
+  canvas.addEventListener('click', function () {
+    if (serving && state.running) {
+      resetBall(serveToPlayer);
+    }
+  });
+  canvas.addEventListener('touchend', function (e) {
+    if (serving && state.running) {
+      e.preventDefault();
+      resetBall(serveToPlayer);
+    }
+  }, { passive: false });
+
+  document.getElementById('btnStart').addEventListener('click', function () {
+    document.getElementById('overlay').classList.remove('visible');
+    scorePlayer = 0;
+    scoreCpu = 0;
+    document.getElementById('scorePlayer').textContent = '0';
+    document.getElementById('scoreCpu').textContent = '0';
+    serveToPlayer = Math.random() < 0.5;
+    startServe();
+    state.running = true;
+  });
+
+  document.getElementById('btnRetry').addEventListener('click', function () {
+    document.getElementById('overlayFinish').classList.remove('visible');
+    scorePlayer = 0;
+    scoreCpu = 0;
+    document.getElementById('scorePlayer').textContent = '0';
+    document.getElementById('scoreCpu').textContent = '0';
+    serveToPlayer = Math.random() < 0.5;
+    startServe();
+    state.running = true;
+    loop();
+  });
+
+  document.getElementById('overlay').classList.add('visible');
+  loop();
+})();
+  </script>
+</body>
+</html>
