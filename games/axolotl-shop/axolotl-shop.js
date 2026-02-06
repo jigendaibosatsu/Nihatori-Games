@@ -111,16 +111,21 @@
   // 画像を動的に生成（Canvas APIを使用）
   var imageCache = {};
   function generateAxolotlImage(ax) {
-    // スーパーブラックとイエローの場合は色味の変更がないため、タイプのみでキャッシュキーを作成
-    var cacheKey = (ax.type === 'superblack' || ax.type === 'yellow')
-      ? ax.type 
-      : ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
+    // スーパーブラック、イエロー、キメラの場合は色味の変更がないため、タイプのみでキャッシュキーを作成
+    var cacheKey;
+    if (ax.type === 'superblack' || ax.type === 'yellow') {
+      cacheKey = ax.type;
+    } else if (ax.type === 'chimera' && ax.chimeraTypes && ax.chimeraTypes.length >= 2) {
+      cacheKey = 'chimera_' + ax.chimeraTypes[0] + '_' + ax.chimeraTypes[1];
+    } else {
+      cacheKey = ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
+    }
     if (imageCache[cacheKey]) {
       return imageCache[cacheKey];
     }
     
-    // キメラの場合は特別な処理
-    if (ax.type === 'chimera' && ax.chimeraTypes) {
+    // キメラの場合は特別な処理（左右半分ずつ合成）
+    if (ax.type === 'chimera' && ax.chimeraTypes && ax.chimeraTypes.length >= 2) {
       var canvas = document.createElement('canvas');
       canvas.width = 40;
       canvas.height = 40;
@@ -132,8 +137,20 @@
       var loaded = 0;
       var drawChimera = function() {
         if (loaded < 2) return;
-        ctx.drawImage(img1, 0, 0, 20, 40, 0, 0, 20, 40);
-        ctx.drawImage(img2, 0, 0, 20, 40, 20, 0, 20, 40);
+        // 画像の実際のサイズを取得
+        var img1Width = img1.naturalWidth || img1.width || 40;
+        var img1Height = img1.naturalHeight || img1.height || 40;
+        var img2Width = img2.naturalWidth || img2.width || 40;
+        var img2Height = img2.naturalHeight || img2.height || 40;
+        
+        // 左半分：左側の画像の左半分をキャンバスの左半分に描画
+        var halfWidth1 = Math.floor(img1Width / 2);
+        ctx.drawImage(img1, 0, 0, halfWidth1, img1Height, 0, 0, 20, 40);
+        
+        // 右半分：右側の画像の右半分をキャンバスの右半分に描画
+        var halfWidth2 = Math.floor(img2Width / 2);
+        ctx.drawImage(img2, halfWidth2, 0, halfWidth2, img2Height, 20, 0, 20, 40);
+        
         imageCache[cacheKey] = canvas.toDataURL();
         // UIを更新（画像が生成されたことを通知）
         if (typeof updateUI === 'function') {
@@ -142,6 +159,8 @@
       };
       img1.onload = function() { loaded++; drawChimera(); };
       img2.onload = function() { loaded++; drawChimera(); };
+      img1.onerror = function() { loaded++; drawChimera(); }; // エラー時もカウント
+      img2.onerror = function() { loaded++; drawChimera(); };
       img1.src = typeImagePath(ax.chimeraTypes[0]);
       img2.src = typeImagePath(ax.chimeraTypes[1]);
       
@@ -950,24 +969,24 @@
 
   // サイズに応じたアイコンサイズを計算（px単位）
   function getIconSizeFromSize(size) {
-    if (size == null) return 64; // デフォルトサイズ（倍に）
-    // サイズに応じてアイコンサイズを計算（全て倍に）
-    // 2-3cm: 32px（最小）
-    // 3-5cm: 40px
-    // 5-8cm: 48px
-    // 8-12cm: 56px
-    // 12-16cm: 64px
-    // 16-18cm: 72px
-    // 18-21cm: 80px
-    // 20-22cm: 88px（最大）
-    if (size <= 3) return 32;
-    if (size <= 5) return 40;
-    if (size <= 8) return 48;
-    if (size <= 12) return 56;
-    if (size <= 16) return 64;
-    if (size <= 18) return 72;
-    if (size <= 21) return 80;
-    return 88;
+    if (size == null) return 96; // デフォルトサイズ（さらに大きく）
+    // サイズに応じてアイコンサイズを計算（さらに大きく）
+    // 2-3cm: 48px（最小）
+    // 3-5cm: 60px
+    // 5-8cm: 72px
+    // 8-12cm: 84px
+    // 12-16cm: 96px
+    // 16-18cm: 108px
+    // 18-21cm: 120px
+    // 20-22cm: 132px（最大）
+    if (size <= 3) return 48;
+    if (size <= 5) return 60;
+    if (size <= 8) return 72;
+    if (size <= 12) return 84;
+    if (size <= 16) return 96;
+    if (size <= 18) return 108;
+    if (size <= 21) return 120;
+    return 132;
   }
 
   // 親のサイズから子のサイズを計算（親の影響を受ける）
@@ -1930,25 +1949,34 @@
             else animClass = ' alive';
           }
           sprite.className = 'ax-axolotl-img ax-shade-' + (ax.shade || 'normal') + animClass;
-          var cacheKey = (ax.type === 'superblack' || ax.type === 'yellow')
-            ? ax.type 
-            : ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
+          var cacheKey;
+          if (ax.type === 'superblack' || ax.type === 'yellow') {
+            cacheKey = ax.type;
+          } else if (ax.type === 'chimera' && ax.chimeraTypes && ax.chimeraTypes.length >= 2) {
+            cacheKey = 'chimera_' + ax.chimeraTypes[0] + '_' + ax.chimeraTypes[1];
+          } else {
+            cacheKey = ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
+          }
           var imgSrc = imageCache[cacheKey] || generateAxolotlImage(ax);
           sprite.src = imgSrc;
           sprite.alt = typeLabel(ax.type);
           sprite.dataset.axolotlId = String(ax.id);
           // キメラの場合は画像が生成されるまで待つ
-          if (ax.type === 'chimera' && ax.chimeraTypes && !imageCache[cacheKey]) {
-            var checkChimera = setInterval(function() {
-              if (imageCache[cacheKey]) {
-                sprite.src = imageCache[cacheKey];
-                clearInterval(checkChimera);
-              }
-            }, 100);
-            setTimeout(function() { clearInterval(checkChimera); }, 2000);
+          if (ax.type === 'chimera' && ax.chimeraTypes && ax.chimeraTypes.length >= 2) {
+            if (!imageCache[cacheKey]) {
+              var checkChimera = setInterval(function() {
+                if (imageCache[cacheKey]) {
+                  sprite.src = imageCache[cacheKey];
+                  clearInterval(checkChimera);
+                }
+              }, 100);
+              setTimeout(function() { clearInterval(checkChimera); }, 3000);
+            } else {
+              sprite.src = imageCache[cacheKey];
+            }
           }
-          // イエローとスーパーブラックは色味変更を適用しない
-          if (ax.type !== 'yellow' && ax.type !== 'superblack') {
+          // キメラ、イエロー、スーパーブラックは色味変更を適用しない
+          if (ax.type !== 'yellow' && ax.type !== 'superblack' && ax.type !== 'chimera') {
             sprite.style.filter = 'brightness(' + (ax.brightness || 1) + ') saturate(' + (ax.saturation || 1) + ')';
           }
           // サイズに応じたアイコンサイズを設定
@@ -2020,17 +2048,21 @@
         sprite.alt = typeLabel(ax.type);
         sprite.dataset.axolotlId = String(ax.id);
         // キメラの場合は画像が生成されるまで待つ
-        if (ax.type === 'chimera' && ax.chimeraTypes && !imageCache[cacheKey]) {
-          var checkChimera = setInterval(function() {
-            if (imageCache[cacheKey]) {
-              sprite.src = imageCache[cacheKey];
-              clearInterval(checkChimera);
-            }
-          }, 100);
-          setTimeout(function() { clearInterval(checkChimera); }, 2000);
+        if (ax.type === 'chimera' && ax.chimeraTypes && ax.chimeraTypes.length >= 2) {
+          if (!imageCache[cacheKey]) {
+            var checkChimera = setInterval(function() {
+              if (imageCache[cacheKey]) {
+                sprite.src = imageCache[cacheKey];
+                clearInterval(checkChimera);
+              }
+            }, 100);
+            setTimeout(function() { clearInterval(checkChimera); }, 3000);
+          } else {
+            sprite.src = imageCache[cacheKey];
+          }
         }
-        // イエローとスーパーブラックは色味変更を適用しない
-        if (ax.type !== 'yellow' && ax.type !== 'superblack') {
+        // キメラ、イエロー、スーパーブラックは色味変更を適用しない
+        if (ax.type !== 'yellow' && ax.type !== 'superblack' && ax.type !== 'chimera') {
           sprite.style.filter = 'brightness(' + (ax.brightness || 1) + ') saturate(' + (ax.saturation || 1) + ')';
         }
         // サイズに応じたアイコンサイズを設定
@@ -4386,7 +4418,7 @@
       
       var img = document.createElement('img');
       if (type === 'chimera') {
-        // キメラの場合はゴールドとマーブルのキメラ画像を生成
+        // キメラの場合はゴールドとマーブルのキメラ画像を生成（左右半分ずつ）
         var canvas = document.createElement('canvas');
         canvas.width = 40;
         canvas.height = 40;
@@ -4396,12 +4428,26 @@
         var loaded = 0;
         var drawChimera = function() {
           if (loaded < 2) return;
-          ctx.drawImage(img1, 0, 0, 20, 40, 0, 0, 20, 40);
-          ctx.drawImage(img2, 0, 0, 20, 40, 20, 0, 20, 40);
+          // 画像の実際のサイズを取得
+          var img1Width = img1.naturalWidth || img1.width || 40;
+          var img1Height = img1.naturalHeight || img1.height || 40;
+          var img2Width = img2.naturalWidth || img2.width || 40;
+          var img2Height = img2.naturalHeight || img2.height || 40;
+          
+          // 左半分：ゴールドの左半分をキャンバスの左半分に描画
+          var halfWidth1 = Math.floor(img1Width / 2);
+          ctx.drawImage(img1, 0, 0, halfWidth1, img1Height, 0, 0, 20, 40);
+          
+          // 右半分：マーブルの右半分をキャンバスの右半分に描画
+          var halfWidth2 = Math.floor(img2Width / 2);
+          ctx.drawImage(img2, halfWidth2, 0, halfWidth2, img2Height, 20, 0, 20, 40);
+          
           img.src = canvas.toDataURL();
         };
         img1.onload = function() { loaded++; drawChimera(); };
         img2.onload = function() { loaded++; drawChimera(); };
+        img1.onerror = function() { loaded++; drawChimera(); };
+        img2.onerror = function() { loaded++; drawChimera(); };
         img1.src = typeImagePath('gold');
         img2.src = typeImagePath('marble');
       } else {
