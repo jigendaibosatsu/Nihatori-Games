@@ -198,23 +198,14 @@
         
         // 左半分：左側の画像の左半分をキャンバスの左半分に描画
         try {
-          // 左側の画像を20x40に描画
-          var tempCanvas1 = document.createElement('canvas');
-          tempCanvas1.width = 20;
-          tempCanvas1.height = 40;
-          var tempCtx1 = tempCanvas1.getContext('2d');
-          tempCtx1.imageSmoothingEnabled = false;
-          tempCtx1.drawImage(img1, 0, 0, 20, 40);
-          newCtx.drawImage(tempCanvas1, 0, 0);
+          // 左側の画像の左半分（0からimg1Width/2まで）を20x40に描画
+          var halfWidth1 = Math.floor(img1Width / 2);
+          newCtx.drawImage(img1, 0, 0, halfWidth1, img1Height, 0, 0, 20, 40);
           
           // 右半分：右側の画像の右半分をキャンバスの右半分に描画
-          var tempCanvas2 = document.createElement('canvas');
-          tempCanvas2.width = 20;
-          tempCanvas2.height = 40;
-          var tempCtx2 = tempCanvas2.getContext('2d');
-          tempCtx2.imageSmoothingEnabled = false;
-          tempCtx2.drawImage(img2, img2Width - 20, 0, 20, 40, 0, 0, 20, 40);
-          newCtx.drawImage(tempCanvas2, 20, 0);
+          var halfWidth2 = Math.floor(img2Width / 2);
+          var startX2 = img2Width - halfWidth2;
+          newCtx.drawImage(img2, startX2, 0, halfWidth2, img2Height, 20, 0, 20, 40);
         } catch (e) {
           // エラー時は処理を中断
           chimeraDrawn = false; // フラグをリセット
