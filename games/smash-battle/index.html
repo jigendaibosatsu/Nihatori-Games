@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>スマッシュバトル – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      background: radial-gradient(circle at top, #e0f2fe 0%, #e5e7eb 55%, #0f172a 100%);
+      color: #e5e7eb;
+    }
+    .sb-wrap {
+      width: 100%;
+      max-width: 520px;
+      padding: 8px 8px 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .sb-title {
+      font-size: 1.1rem;
+      text-align: center;
+      font-weight: bold;
+      color: #f97316;
+    }
+    .sb-sub {
+      font-size: 11px;
+      text-align: center;
+      color: #e5e7eb;
+      opacity: 0.9;
+      margin-bottom: 4px;
+      line-height: 1.5;
+    }
+    .sb-arena {
+      position: relative;
+      border-radius: 12px;
+      border: 2px solid #0f172a;
+      background: radial-gradient(circle at top, #1e293b 0%, #020617 70%);
+      overflow: hidden;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sb-canvas {
+      width: 100%;
+      height: 100%;
+      max-height: 320px;
+      display: block;
+      background: transparent;
+    }
+    .sb-hud {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .sb-hud-box {
+      flex: 1;
+      padding: 4px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .sb-hud-p1 {
+      background: linear-gradient(180deg, rgba(59,130,246,0.2), rgba(15,23,42,0.9));
+      border: 1px solid rgba(59,130,246,0.8);
+    }
+    .sb-hud-p2 {
+      background: linear-gradient(180deg, rgba(248,113,113,0.2), rgba(15,23,42,0.9));
+      border: 1px solid rgba(248,113,113,0.8);
+    }
+    .sb-name { font-weight: bold; font-size: 12px; }
+    .sb-percent { font-size: 14px; font-weight: bold; }
+    .sb-stocks {
+      font-size: 11px;
+      margin-top: 2px;
+    }
+    .sb-controls {
+      font-size: 10px;
+      color: #e5e7eb;
+      opacity: 0.9;
+      margin-top: 2px;
+      line-height: 1.5;
+    }
+    .sb-msg {
+      font-size: 11px;
+      margin-top: 2px;
+      color: #facc15;
+    }
+    .sb-back {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #bfdbfe;
+      text-decoration: none;
+    }
+    .sb-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, rgba(15,23,42,0.1), rgba(0,0,0,0.82));
+      z-index: 5;
+    }
+    .sb-overlay.visible { display: flex; }
+    .sb-overlay-box {
+      padding: 18px 20px;
+      background: radial-gradient(circle at top, #111827 0%, #020617 100%);
+      border-radius: 16px;
+      border: 2px solid #f97316;
+      text-align: center;
+      color: #e5e7eb;
+      max-width: 260px;
+    }
+    .sb-overlay-box h2 {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+      color: #fbbf24;
+    }
+    .sb-overlay-box p {
+      font-size: 12px;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .sb-overlay-box button {
+      margin-top: 6px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 2px solid #f97316;
+      background: linear-gradient(180deg, #f97316, #c2410c);
+      color: #fff7ed;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="sb-wrap">
+    <h1 class="sb-title">スマッシュバトル</h1>
+    <p class="sb-sub">
+      2人対戦の横スクロール乱闘ゲーム。<br />
+      ダメージ%が高いほど、ふっとびが大きくなる。
+    </p>
+
+    <div class="sb-arena">
+      <canvas id="sbCanvas" class="sb-canvas" width="480" height="280"></canvas>
+      <div class="sb-overlay" id="sbOverlay">
+        <div class="sb-overlay-box">
+          <h2 id="sbResultTitle">バトル結果</h2>
+          <p id="sbResultText"></p>
+          <button type="button" id="sbBtnRestart">もう一度バトル</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-hud">
+      <div class="sb-hud-box sb-hud-p1">
+        <div class="sb-name">P1 青ファイター</div>
+        <div class="sb-percent" id="sbP1Percent">0%</div>
+        <div class="sb-stocks" id="sbP1Stocks">残りストック：3</div>
+        <div class="sb-controls">
+          移動：A / D　ジャンプ：W　攻撃：J
+        </div>
+      </div>
+      <div class="sb-hud-box sb-hud-p2">
+        <div class="sb-name">P2 赤ファイター</div>
+        <div class="sb-percent" id="sbP2Percent">0%</div>
+        <div class="sb-stocks" id="sbP2Stocks">残りストック：3</div>
+        <div class="sb-controls">
+          移動：← / →　ジャンプ：↑　攻撃：/
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-msg" id="sbMsg">3ストック先取。どちらかが場外にふっとんだら1ストック失います。</div>
+
+    <a href="/index.html" class="sb-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('sbCanvas');
+  var ctx = canvas.getContext('2d');
+
+  var WIDTH = canvas.width;
+  var HEIGHT = canvas.height;
+  var FLOOR_Y = HEIGHT - 24;
+
+  var GRAVITY = 0.5;
+  var MOVE_SPEED = 2.4;
+  var JUMP_SPEED = -8.5;
+  var FRICTION = 0.75;
+  var ATTACK_DURATION = 12;
+  var HIT_FREEZE = 6;
+
+  var keys = {};
+
+  var players = [];
+  var projectState = {
+    running: true,
+    freezeFrames: 0
+  };
+
+  function createPlayer(x, color, controls) {
+    return {
+      x: x,
+      y: FLOOR_Y - 32,
+      vx: 0,
+      vy: 0,
+      w: 22,
+      h: 32,
+      color: color,
+      facing: 1,
+      onGround: false,
+      damage: 0,
+      stocks: 3,
+      attacking: false,
+      attackFrame: 0,
+      lastHitId: null,
+      controls: controls
+    };
+  }
+
+  function resetBattle() {
+    players = [
+      createPlayer(WIDTH * 0.3, '#60a5fa', { left: 'KeyA', right: 'KeyD', jump: 'KeyW', attack: 'KeyJ' }),
+      createPlayer(WIDTH * 0.7, '#f87171', { left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', attack: 'Slash' })
+    ];
+    projectState.running = true;
+    projectState.freezeFrames = 0;
+    updateHud();
+    document.getElementById('sbOverlay').classList.remove('visible');
+    document.getElementById('sbMsg').textContent = '3ストック先取。どちらかが場外にふっとんだら1ストック失います。';
+  }
+
+  function updateHud() {
+    document.getElementById('sbP1Percent').textContent = Math.round(players[0].damage) + '%';
+    document.getElementById('sbP2Percent').textContent = Math.round(players[1].damage) + '%';
+    document.getElementById('sbP1Stocks').textContent = '残りストック：' + players[0].stocks;
+    document.getElementById('sbP2Stocks').textContent = '残りストック：' + players[1].stocks;
+  }
+
+  function handleInput(p) {
+    if (!projectState.running) return;
+    var c = p.controls;
+    var moving = false;
+    if (keys[c.left]) {
+      p.vx -= MOVE_SPEED;
+      p.facing = -1;
+      moving = true;
+    }
+    if (keys[c.right]) {
+      p.vx += MOVE_SPEED;
+      p.facing = 1;
+      moving = true;
+    }
+    if (!moving) {
+      p.vx *= FRICTION;
+      if (Math.abs(p.vx) < 0.05) p.vx = 0;
+    }
+    if (keys[c.jump] && p.onGround) {
+      p.vy = JUMP_SPEED;
+      p.onGround = false;
+    }
+    if (keys[c.attack] && !p.attacking) {
+      p.attacking = true;
+      p.attackFrame = 0;
+      p.lastHitId = null;
+    }
+  }
+
+  function updatePhysics() {
+    if (projectState.freezeFrames > 0) {
+      projectState.freezeFrames--;
+      return;
+    }
+
+    for (var i = 0; i < players.length; i++) {
+      var p = players[i];
+      handleInput(p);
+
+      p.vy += GRAVITY;
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if (p.x < 16) { p.x = 16; p.vx = 0; }
+      if (p.x > WIDTH - 16 - p.w) { p.x = WIDTH - 16 - p.w; p.vx = 0; }
+
+      // floor
+      if (p.y + p.h >= FLOOR_Y) {
+        p.y = FLOOR_Y - p.h;
+        p.vy = 0;
+        p.onGround = true;
+      } else {
+        p.onGround = false;
+      }
+
+      // simple center platform
+      var platX = WIDTH * 0.35;
+      var platW = WIDTH * 0.3;
+      var platY = HEIGHT * 0.6;
+      var prevY = p.y - p.vy;
+      if (prevY + p.h <= platY && p.y + p.h >= platY &&
+          p.x + p.w > platX && p.x < platX + platW && p.vy >= 0) {
+        p.y = platY - p.h;
+        p.vy = 0;
+        p.onGround = true;
+      }
+
+      if (p.attacking) {
+        p.attackFrame++;
+        if (p.attackFrame > ATTACK_DURATION) {
+          p.attacking = false;
+        }
+      }
+    }
+
+    resolveAttacks();
+    checkBlastZones();
+  }
+
+  function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+    return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+  }
+
+  function resolveAttacks() {
+    for (var i = 0; i < players.length; i++) {
+      var a = players[i];
+      if (!a.attacking || a.attackFrame < 3 || a.attackFrame > 9) continue;
+
+      var hitboxW = 22;
+      var hitboxH = 20;
+      var hx = a.facing === 1 ? a.x + a.w : a.x - hitboxW;
+      var hy = a.y + 4;
+
+      var targetIndex = i === 0 ? 1 : 0;
+      var b = players[targetIndex];
+      if (b.stocks <= 0) continue;
+
+      if (rectsOverlap(hx, hy, hitboxW, hitboxH, b.x, b.y, b.w, b.h)) {
+        var hitId = i + '-' + targetIndex + '-' + a.attackFrame;
+        if (a.lastHitId === hitId) continue;
+        a.lastHitId = hitId;
+
+        var baseDmg = 8 + Math.random() * 10;
+        b.damage += baseDmg;
+
+        var dmgFactor = 1 + b.damage / 80;
+        var knock = 5 * dmgFactor;
+        b.vx = (a.facing === 1 ? 1 : -1) * knock;
+        b.vy = -4 * dmgFactor;
+
+        projectState.freezeFrames = HIT_FREEZE;
+        updateHud();
+      }
+    }
+  }
+
+  function checkBlastZones() {
+    for (var i = 0; i < players.length; i++) {
+      var p = players[i];
+      if (p.y > HEIGHT + 80 || p.x < -80 || p.x > WIDTH + 80) {
+        handleKO(i === 0 ? 1 : 0, i);
+        return;
+      }
+    }
+  }
+
+  function handleKO(winnerIndex, loserIndex) {
+    var loser = players[loserIndex];
+    loser.stocks--;
+    loser.damage = 0;
+
+    if (loser.stocks <= 0) {
+      projectState.running = false;
+      document.getElementById('sbOverlay').classList.add('visible');
+      var title = winnerIndex === 0 ? 'P1 の勝利！' : 'P2 の勝利！';
+      document.getElementById('sbResultTitle').textContent = title;
+      document.getElementById('sbResultText').textContent =
+        '最終ストックを奪ったのは ' + (winnerIndex === 0 ? '青ファイター' : '赤ファイター') + ' だった。';
+    } else {
+      // respawn both at初期位置
+      players[0].x = WIDTH * 0.3;
+      players[0].y = FLOOR_Y - players[0].h;
+      players[0].vx = players[0].vy = 0;
+      players[0].damage = Math.max(players[0].damage, 0);
+
+      players[1].x = WIDTH * 0.7;
+      players[1].y = FLOOR_Y - players[1].h;
+      players[1].vx = players[1].vy = 0;
+      players[1].damage = Math.max(players[1].damage, 0);
+
+      document.getElementById('sbMsg').textContent = (loserIndex === 0 ? 'P1' : 'P2') + ' が場外！ストックを1つ失った。';
+    }
+    updateHud();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+    // background gradient already via CSS; draw stage outlines
+    ctx.save();
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(12, FLOOR_Y + 0.5);
+    ctx.lineTo(WIDTH - 12, FLOOR_Y + 0.5);
+    ctx.stroke();
+
+    // platform
+    var platX = WIDTH * 0.35;
+    var platW = WIDTH * 0.3;
+    var platY = HEIGHT * 0.6;
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(platX, platY, platW, 10);
+    ctx.strokeStyle = '#64748b';
+    ctx.strokeRect(platX, platY, platW, 10);
+    ctx.restore();
+
+    // players
+    players.forEach(function (p, index) {
+      ctx.save();
+      var grd = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
+      if (index === 0) {
+        grd.addColorStop(0, '#60a5fa');
+        grd.addColorStop(1, '#1d4ed8');
+      } else {
+        grd.addColorStop(0, '#fca5a5');
+        grd.addColorStop(1, '#b91c1c');
+      }
+      ctx.fillStyle = grd;
+      ctx.strokeStyle = '#020617';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(p.x, p.y, p.w, p.h, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      // face
+      ctx.fillStyle = '#020617';
+      var eyeY = p.y + 10;
+      var eyeOffset = 5;
+      if (p.facing === 1) {
+        ctx.fillRect(p.x + p.w - 8, eyeY, 2, 2);
+        ctx.fillRect(p.x + p.w - 8 - eyeOffset, eyeY, 2, 2);
+      } else {
+        ctx.fillRect(p.x + 6, eyeY, 2, 2);
+        ctx.fillRect(p.x + 6 + eyeOffset, eyeY, 2, 2);
+      }
+
+      // attack swing
+      if (p.attacking && p.attackFrame >= 3 && p.attackFrame <= 9) {
+        ctx.strokeStyle = 'rgba(248,250,252,0.9)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        var sx = p.facing === 1 ? p.x + p.w : p.x;
+        var sy = p.y + p.h * 0.5;
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx + p.facing * 18, sy - 4);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    });
+  }
+
+  function loop() {
+    updatePhysics();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('keydown', function (e) {
+    keys[e.code] = true;
+    if (e.code === 'Space' && !projectState.running) {
+      resetBattle();
+    }
+  });
+  window.addEventListener('keyup', function (e) {
+    keys[e.code] = false;
+  });
+
+  document.getElementById('sbBtnRestart').addEventListener('click', function () {
+    resetBattle();
+  });
+
+  if (typeof ctx.roundRect !== 'function') {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      r = r || 4;
+      this.beginPath();
+      this.moveTo(x + r, y);
+      this.lineTo(x + w - r, y);
+      this.quadraticCurveTo(x + w, y, x + w, y + r);
+      this.lineTo(x + w, y + h - r);
+      this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      this.lineTo(x + r, y + h);
+      this.quadraticCurveTo(x, y + h, x, y + h - r);
+      this.lineTo(x, y + r);
+      this.quadraticCurveTo(x, y, x + r, y);
+      this.closePath();
+    };
+  }
+
+  resetBattle();
+  requestAnimationFrame(loop);
+})();
+  </script>
+</body>
+</html>
+

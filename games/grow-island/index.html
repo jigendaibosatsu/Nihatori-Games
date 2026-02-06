@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>Grow 島 – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body.game-page {
+      padding-top: 48px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      background: linear-gradient(180deg, #87ceeb 0%, #e0f6ff 40%, #90ee90 100%);
+      color: #1e3a2f;
+    }
+    .grow-wrap {
+      width: 100%;
+      max-width: 480px;
+      padding: 10px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .grow-title {
+      font-size: 1.1rem;
+      text-align: center;
+      font-weight: bold;
+      color: #0d9488;
+    }
+    .grow-sub {
+      font-size: 11px;
+      text-align: center;
+      color: #334155;
+      line-height: 1.5;
+      margin-bottom: 2px;
+    }
+    .grow-stage {
+      flex: 1;
+      min-height: 200px;
+      border-radius: 12px;
+      border: 2px solid #0d9488;
+      background: linear-gradient(180deg, #a7f3d0 0%, #6ee7b7 30%, #34d399 60%, #0d9488 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .grow-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+    }
+    .grow-items {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .grow-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 12px;
+      border: 2px solid #0f766e;
+      background: linear-gradient(180deg, #ccfbf1, #99f6e4);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      color: #134e4a;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .grow-btn:hover { box-shadow: 0 4px 12px rgba(13,148,136,0.3); }
+    .grow-btn:active { transform: scale(0.96); }
+    .grow-btn.done {
+      background: linear-gradient(180deg, #a7f3d0, #5eead4);
+      border-color: #0d9488;
+      color: #0f766e;
+    }
+    .grow-btn .icon { font-size: 20px; margin-bottom: 2px; }
+    .grow-result {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 2px solid #0d9488;
+      background: rgba(255,255,255,0.9);
+      font-size: 12px;
+      line-height: 1.6;
+      color: #134e4a;
+      display: none;
+    }
+    .grow-result.visible { display: block; }
+    .grow-result h3 { font-size: 13px; margin-bottom: 6px; color: #0f766e; }
+    .grow-again {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 2px solid #0d9488;
+      background: linear-gradient(180deg, #2dd4bf, #14b8a6);
+      color: #fff;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .grow-again:hover { opacity: 0.95; }
+    .grow-back {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #0f766e;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="grow-wrap">
+    <h1 class="grow-title">Grow 島</h1>
+    <p class="grow-sub">
+      下のアイテムを「クリックする順番」で世界が変わるよ。<br />
+      全部6つクリックしたら結果が出る。違う順番を試してみよう。
+    </p>
+
+    <div class="grow-stage">
+      <canvas id="growCanvas" class="grow-canvas" width="460" height="240"></canvas>
+    </div>
+
+    <div class="grow-items" id="growItems">
+      <button type="button" class="grow-btn" data-id="tree" title="木"><span class="icon">🌲</span>木</button>
+      <button type="button" class="grow-btn" data-id="water" title="水"><span class="icon">💧</span>水</button>
+      <button type="button" class="grow-btn" data-id="fire" title="火"><span class="icon">🔥</span>火</button>
+      <button type="button" class="grow-btn" data-id="earth" title="土"><span class="icon">🟫</span>土</button>
+      <button type="button" class="grow-btn" data-id="person" title="人"><span class="icon">🧑</span>人</button>
+      <button type="button" class="grow-btn" data-id="house" title="家"><span class="icon">🏠</span>家</button>
+    </div>
+
+    <p class="grow-sub" id="growHint">クリックした順番が「育ち方」になる。いま 0 / 6 個。</p>
+
+    <div class="grow-result" id="growResult">
+      <h3 id="growResultTitle">結果</h3>
+      <p id="growResultText"></p>
+      <button type="button" class="grow-again" id="growAgain">もう一度、順番を変えて遊ぶ</button>
+    </div>
+
+    <a href="/index.html" class="grow-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+(function () {
+  'use strict';
+
+  var ITEMS = ['tree', 'water', 'fire', 'earth', 'person', 'house'];
+  var LABELS = { tree: '木', water: '水', fire: '火', earth: '土', person: '人', house: '家' };
+
+  var state = {
+    order: [],       // クリック順 → [id, id, ...]
+    levels: {},      // id → 1..6 (順番でついたレベル)
+    done: false
+  };
+
+  var canvas = document.getElementById('growCanvas');
+  var ctx = canvas.getContext('2d');
+  var cw = canvas.width;
+  var ch = canvas.height;
+
+  function getLevel(id) {
+    return state.levels[id] || 0;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, cw, ch);
+
+    // 空
+    ctx.fillStyle = '#87ceeb';
+    ctx.fillRect(0, 0, cw, ch * 0.4);
+    // 島の土台
+    ctx.fillStyle = '#8B4513';
+    ctx.beginPath();
+    ctx.ellipse(cw / 2, ch * 0.75, cw * 0.45, ch * 0.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#228B22';
+    ctx.beginPath();
+    ctx.ellipse(cw / 2, ch * 0.72, cw * 0.42, ch * 0.22, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    var scale = function (id) {
+      var lv = getLevel(id);
+      return lv <= 0 ? 0 : 0.2 + (lv / 6) * 0.8;
+    };
+
+    // 配置（左から右）
+    var positions = [
+      { id: 'tree',  x: cw * 0.18, y: ch * 0.65 },
+      { id: 'water', x: cw * 0.32, y: ch * 0.72 },
+      { id: 'fire',  x: cw * 0.48, y: ch * 0.68 },
+      { id: 'earth', x: cw * 0.62, y: ch * 0.72 },
+      { id: 'person', x: cw * 0.76, y: ch * 0.68 },
+      { id: 'house', x: cw * 0.90, y: ch * 0.62 }
+    ];
+
+    positions.forEach(function (p) {
+      var s = scale(p.id);
+      if (s <= 0) return;
+      var x = p.x;
+      var y = p.y;
+
+      switch (p.id) {
+        case 'tree':
+          ctx.fillStyle = '#228B22';
+          ctx.beginPath();
+          ctx.arc(x, y - 12 * s, 14 * s, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#8B4513';
+          ctx.fillRect(x - 3 * s, y, 6 * s, 18 * s);
+          break;
+        case 'water':
+          ctx.fillStyle = 'rgba(30,144,255,0.8)';
+          ctx.beginPath();
+          ctx.ellipse(x, y, 12 * s, 8 * s, 0, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        case 'fire':
+          ctx.fillStyle = '#ff6b35';
+          ctx.beginPath();
+          ctx.moveTo(x, y - 15 * s);
+          ctx.lineTo(x - 8 * s, y + 5 * s);
+          ctx.lineTo(x + 8 * s, y + 5 * s);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = '#ffdd00';
+          ctx.beginPath();
+          ctx.arc(x, y - 5 * s, 5 * s, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        case 'earth':
+          ctx.fillStyle = '#8B4513';
+          ctx.beginPath();
+          ctx.arc(x, y, 14 * s, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#654321';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          break;
+        case 'person':
+          ctx.fillStyle = '#ffdbac';
+          ctx.beginPath();
+          ctx.arc(x, y - 10 * s, 8 * s, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#1a1a1a';
+          ctx.fillRect(x - 6 * s, y, 12 * s, 14 * s);
+          ctx.fillRect(x - 4 * s, y + 14 * s, 5 * s, 12 * s);
+          ctx.fillRect(x + 2 * s, y + 14 * s, 5 * s, 12 * s);
+          break;
+        case 'house':
+          ctx.fillStyle = '#cd853f';
+          ctx.fillRect(x - 12 * s, y - 8 * s, 24 * s, 20 * s);
+          ctx.fillStyle = '#8b0000';
+          ctx.beginPath();
+          ctx.moveTo(x - 14 * s, y - 8 * s);
+          ctx.lineTo(x, y - 22 * s);
+          ctx.lineTo(x + 14 * s, y - 8 * s);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = '#333';
+          ctx.fillRect(x - 4 * s, y + 2 * s, 8 * s, 10 * s);
+          break;
+      }
+    });
+  }
+
+  function updateHint() {
+    var n = state.order.length;
+    document.getElementById('growHint').textContent =
+      'クリックした順番が「育ち方」になる。いま ' + n + ' / 6 個。';
+  }
+
+  var ICONS = { tree: '🌲', water: '💧', fire: '🔥', earth: '🟫', person: '🧑', house: '🏠' };
+
+  function updateButtons() {
+    ITEMS.forEach(function (id) {
+      var btn = document.querySelector('.grow-btn[data-id="' + id + '"]');
+      if (!btn) return;
+      var lv = getLevel(id);
+      btn.classList.toggle('done', lv > 0);
+      var icon = btn.querySelector('.icon');
+      if (!icon) {
+        icon = document.createElement('span');
+        icon.className = 'icon';
+        btn.insertBefore(icon, btn.firstChild);
+      }
+      icon.textContent = ICONS[id];
+      var text = (lv > 0 ? 'Lv.' + lv + ' ' : '') + LABELS[id];
+      var next = icon.nextSibling;
+      if (next && next.nodeType === 3) {
+        next.textContent = text;
+      } else {
+        var t = document.createTextNode(text);
+        if (next) btn.insertBefore(t, next);
+        else btn.appendChild(t);
+      }
+    });
+  }
+
+  function getEnding() {
+    var tree = getLevel('tree');
+    var water = getLevel('water');
+    var fire = getLevel('fire');
+    var earth = getLevel('earth');
+    var person = getLevel('person');
+    var house = getLevel('house');
+
+    if (fire >= 5 && water <= 2) {
+      return { title: '炎の島', text: '火が強く、島は少し焦げている。でも温かい。' };
+    }
+    if (water >= 5 && fire <= 2) {
+      return { title: '潤いの島', text: '水が豊かで、木も人も元気。緑がいっぱい。' };
+    }
+    if (tree >= 5) {
+      return { title: '森の島', text: '木が大きく育った。森の中に家と人がいる。' };
+    }
+    if (house >= 5 && person >= 4) {
+      return { title: 'にぎわいの島', text: '家と人がしっかり育った。暮らしが成り立っている。' };
+    }
+    if (earth >= 5) {
+      return { title: '大地の島', text: '土が豊か。これから何でも育ちそう。' };
+    }
+    if (person >= 5) {
+      return { title: '人の島', text: '人が主役。みんなで島を耕している。' };
+    }
+    var top = Math.max(tree, water, fire, earth, person, house);
+    if (top <= 2) {
+      return { title: 'のんびり島', text: 'どれもほどほど。のんびりした島になった。' };
+    }
+    return { title: 'バランスの島', text: 'いろいろが程よく育った。穏やかな島だ。' };
+  }
+
+  function finish() {
+    state.done = true;
+    var end = getEnding();
+    document.getElementById('growResultTitle').textContent = end.title;
+    document.getElementById('growResultText').textContent = end.text;
+    document.getElementById('growResult').classList.add('visible');
+    document.querySelectorAll('.grow-btn').forEach(function (b) { b.disabled = true; });
+  }
+
+  function onClick(e) {
+    var btn = e.target.closest('.grow-btn');
+    if (!btn || state.done) return;
+    var id = btn.getAttribute('data-id');
+    if (state.levels[id]) return;
+    var nextOrder = state.order.length + 1;
+    state.order.push(id);
+    state.levels[id] = nextOrder;
+    updateHint();
+    updateButtons();
+    draw();
+    if (state.order.length >= 6) {
+      finish();
+    }
+  }
+
+  function reset() {
+    state.order = [];
+    state.levels = {};
+    state.done = false;
+    ITEMS.forEach(function (id) { state.levels[id] = 0; });
+    document.getElementById('growResult').classList.remove('visible');
+    document.querySelectorAll('.grow-btn').forEach(function (b) {
+      b.disabled = false;
+      b.classList.remove('done');
+      b.innerHTML = '';
+      var icon = document.createElement('span');
+      icon.className = 'icon';
+      icon.textContent = { tree: '🌲', water: '💧', fire: '🔥', earth: '🟫', person: '🧑', house: '🏠' }[id];
+      b.appendChild(icon);
+      b.appendChild(document.createTextNode(LABELS[b.getAttribute('data-id')]));
+    });
+    updateHint();
+    draw();
+  }
+
+  document.getElementById('growItems').addEventListener('click', onClick);
+  document.getElementById('growAgain').addEventListener('click', reset);
+
+  reset();
+})();
+  </script>
+</body>
+</html>

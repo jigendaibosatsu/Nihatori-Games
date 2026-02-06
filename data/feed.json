@@ -313,6 +313,45 @@
       "trendingScore": 83
     },
     {
+      "id": "smash-battle",
+      "type": "game",
+      "title": "スマッシュバトル",
+      "url": "./games/smash-battle/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-05T22:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 89
+    },
+    {
+      "id": "grow-island",
+      "type": "game",
+      "title": "Grow 島",
+      "url": "./games/grow-island/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-05T23:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 85
+    },
+    {
+      "id": "unscrew",
+      "type": "game",
+      "title": "ネジ外し",
+      "url": "./games/unscrew/",
+      "image": null,
+      "category": "games",
+      "publishedAt": "2026-02-06T10:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 82
+    },
+    {
       "id": "monster-collection",
       "type": "game",
       "title": "モンスターコレクション",

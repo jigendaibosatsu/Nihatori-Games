@@ -1,0 +1,23 @@
+{
+  "description": "Nihatori Games の自前キャラ・設定。ゲームから fetch して使える。詳細は docs/characters-and-setting.md を参照。",
+  "characters": [
+    {
+      "id": "noboku-kun",
+      "name": "のぼくん",
+      "nameEn": "Noboku-kun",
+      "color": "#4ade80",
+      "memo": "サイトのマスコット。緑系。"
+    },
+    {
+      "id": "slime-kun",
+      "name": "スライムくん",
+      "nameEn": "Slime-kun",
+      "color": "#7dd3fc",
+      "memo": "のんびり系。"
+    }
+  ],
+  "world": {
+    "tone": "",
+    "keywords": []
+  }
+}
