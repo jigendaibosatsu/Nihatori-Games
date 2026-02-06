@@ -539,7 +539,7 @@ body.game-page {
 }
 .ax-tank-action-btn {
   flex: 1;
-  padding: 12px;
+  padding: 8px 12px;
   border-radius: 8px;
   border: 2px solid;
   font-size: 14px;
@@ -547,6 +547,10 @@ body.game-page {
   cursor: pointer;
   min-height: 44px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
   align-items: center;
   justify-content: center;
   transition: opacity 0.2s;

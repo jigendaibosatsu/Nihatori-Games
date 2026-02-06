@@ -45,12 +45,12 @@
   var SICK_DEATH_CHANCE = 0.02;
   var SICK_CHANCE_PER_MONTH = 0.12;
   var HUNGER_DECAY_PER_MONTH = 15;
-  var FEED_ARTIFICIAL_COST = 1500;
-  var FEED_BLOODWORM_COST = 500;
+  var FEED_ARTIFICIAL_COST = 800;  // 採算調整：1500 → 800
+  var FEED_BLOODWORM_COST = 300;  // 採算調整：500 → 300
   var FEED_BLOODWORM_DIRT = 12;
   var FEED_BLOODWORM_HEALTH = 8;
   var FEED_BLOODWORM_HUNGER = 25;
-  var FEED_EARTHWORM_COST = 2500;
+  var FEED_EARTHWORM_COST = 1200;  // 採算調整：2500 → 1200
   var FEED_EARTHWORM_DIRT = 6;
   var FEED_EARTHWORM_HEALTH = 12;
   var FEED_EARTHWORM_HUNGER = 30;
@@ -88,9 +88,11 @@
   };
   
   // 水替え選択肢関連定数
-  var WATER_CHANGE_PARTIAL_COST = 300;
+  var WATER_CHANGE_PARTIAL_COST = 200;  // 採算調整：300 → 200
   var WATER_CHANGE_PARTIAL_BONUS = 15;
-  var WATER_CHANGE_FULL_COST = 800;
+  var WATER_CHANGE_NORMAL_COST = 400;  // 採算調整：500 → 400
+  var WATER_CHANGE_NORMAL_BONUS = 25;
+  var WATER_CHANGE_FULL_COST = 600;  // 採算調整：800 → 600
   var WATER_CHANGE_FULL_BONUS = 30;
   
   // 自動設備関連定数
@@ -513,7 +515,8 @@
     waterChangeType: 'normal',  // デフォルトの水替えタイプ: 'partial', 'normal', 'full'
     reputation100Celebrated: false,  // 満足度100達成時のポップアップ表示済みフラグ
     shopSale: false,  // ショップセール開催中フラグ
-    shopSaleDiscount: 1.0  // ショップセール割引率（1.0 = 通常価格）
+    shopSaleDiscount: 1.0,  // ショップセール割引率（1.0 = 通常価格）
+    shopSaleItems: []  // セール対象の商品リスト（タイプとサイズバンドの組み合わせ）
   };
   
   // マイグレーション: feedTypeとwaterChangeTypeが無い場合は初期化
@@ -531,6 +534,9 @@
   }
   if (state.shopSaleDiscount === undefined) {
     state.shopSaleDiscount = 1.0;
+  }
+  if (state.shopSaleItems === undefined) {
+    state.shopSaleItems = [];
   }
 
   // 種類ごとの特徴説明
@@ -1947,7 +1953,9 @@
           var sprite = document.createElement('img');
           var healthLevel = ax.health || 100;
           var animClass = '';
-          if (!ax.injured && !ax.sick && healthLevel > 0) {
+          // 病気でない、または治療中で健康度が高い場合はアニメーションを表示
+          // 健康度が0より大きく、欠損していない、病気でない（または治療中で健康度が50以上）場合
+          if (healthLevel > 0 && !ax.injured && (!ax.sick || (ax.underTreatment && healthLevel > 50))) {
             if (healthLevel < 50) animClass = ' slow';
             else if (healthLevel > 80) animClass = ' fast';
             else animClass = ' alive';
@@ -1986,17 +1994,14 @@
               sprite.style.imageRendering = 'crisp-edges';
             }
           }
-          // キメラ、イエロー、スーパーブラックは色味変更を適用しない
-          if (ax.type !== 'yellow' && ax.type !== 'superblack' && ax.type !== 'chimera') {
-            sprite.style.filter = 'brightness(' + (ax.brightness || 1) + ') saturate(' + (ax.saturation || 1) + ')';
-          }
+        // Canvasで色味を適用済みなので、CSSのfilterは適用しない（ピクセルアートの品質を保つため）
+        // キメラ、イエロー、スーパーブラックも同様にfilterは適用しない
           // サイズに応じたアイコンサイズを設定
           var iconSize = getIconSizeFromSize(ax.size);
           sprite.style.width = iconSize + 'px';
           sprite.style.height = iconSize + 'px';
-          sprite.addEventListener('click', function () {
-            openDetailModal(parseInt(this.dataset.axolotlId, 10));
-          });
+          // ウーパー自体のクリックは無効化（うんこ処理の誤操作防止）
+          sprite.style.pointerEvents = 'none';
           wrap.appendChild(sprite);
           // 中心で分割するための区切り線（最初の要素の後）
           if (idx === 0) {
@@ -2045,7 +2050,9 @@
         var sprite = document.createElement('img');
         var healthLevel = ax.health || 100;
         var animClass = '';
-        if (!ax.injured && !ax.sick && healthLevel > 0) {
+        // 病気でない、または治療中で健康度が高い場合はアニメーションを表示
+        // 健康度が0より大きく、欠損していない、病気でない（または治療中で健康度が50以上）場合
+        if (healthLevel > 0 && !ax.injured && (!ax.sick || (ax.underTreatment && healthLevel > 50))) {
           if (healthLevel < 50) animClass = ' slow';
           else if (healthLevel > 80) animClass = ' fast';
           else animClass = ' alive';
@@ -2060,7 +2067,6 @@
         sprite.dataset.axolotlId = String(ax.id);
         // ピクセルアートをシャープに保つため、image-renderingを明示的に設定
         sprite.style.imageRendering = 'pixelated';
-        sprite.style.imageRendering = 'crisp-edges';
         // キメラの場合は画像が生成されるまで待つ
         if (ax.type === 'chimera' && ax.chimeraTypes && ax.chimeraTypes.length >= 2) {
           if (!imageCache[cacheKey]) {
@@ -2079,17 +2085,14 @@
             sprite.style.imageRendering = 'crisp-edges';
           }
         }
-        // キメラ、イエロー、スーパーブラックは色味変更を適用しない
-        if (ax.type !== 'yellow' && ax.type !== 'superblack' && ax.type !== 'chimera') {
-          sprite.style.filter = 'brightness(' + (ax.brightness || 1) + ') saturate(' + (ax.saturation || 1) + ')';
-        }
+        // Canvasで色味を適用済みなので、CSSのfilterは適用しない（ピクセルアートの品質を保つため）
+        // キメラ、イエロー、スーパーブラックも同様にfilterは適用しない
         // サイズに応じたアイコンサイズを設定
         var iconSize = getIconSizeFromSize(ax.size);
         sprite.style.width = iconSize + 'px';
         sprite.style.height = iconSize + 'px';
-        sprite.addEventListener('click', function () {
-          openDetailModal(parseInt(this.dataset.axolotlId, 10));
-        });
+        // ウーパー自体のクリックは無効化（うんこ処理の誤操作防止）
+        sprite.style.pointerEvents = 'none';
         body.appendChild(sprite);
         
         // うんこの表示
@@ -2124,7 +2127,14 @@
         var cleanBtn = document.createElement('button');
         cleanBtn.type = 'button';
         cleanBtn.className = 'ax-tank-action-btn clean';
-        cleanBtn.textContent = '水替え';
+        var waterChangeType = state.waterChangeType || 'normal';
+        var waterChangeCost = WATER_CHANGE_NORMAL_COST;
+        if (waterChangeType === 'partial') {
+          waterChangeCost = WATER_CHANGE_PARTIAL_COST;
+        } else if (waterChangeType === 'full') {
+          waterChangeCost = WATER_CHANGE_FULL_COST;
+        }
+        cleanBtn.innerHTML = '水替え<br><span style="font-size:10px; opacity:0.8;">¥' + waterChangeCost.toLocaleString('ja-JP') + '</span>';
         cleanBtn.dataset.tankIndex = String(idx);
         cleanBtn.addEventListener('click', function () {
           doCleanTank(parseInt(this.dataset.tankIndex, 10));
@@ -2135,7 +2145,14 @@
         var feedBtn = document.createElement('button');
         feedBtn.type = 'button';
         feedBtn.className = 'ax-tank-action-btn feed';
-        feedBtn.textContent = '給餌';
+        var feedType = state.feedType || 'artificial';
+        var feedCost = FEED_ARTIFICIAL_COST;
+        if (feedType === 'bloodworm') {
+          feedCost = FEED_BLOODWORM_COST;
+        } else if (feedType === 'earthworm') {
+          feedCost = FEED_EARTHWORM_COST;
+        }
+        feedBtn.innerHTML = '給餌<br><span style="font-size:10px; opacity:0.8;">¥' + feedCost.toLocaleString('ja-JP') + '</span>';
         feedBtn.dataset.tankIndex = String(idx);
         feedBtn.addEventListener('click', function () {
           openTankFeedModal(parseInt(this.dataset.tankIndex, 10));
@@ -2158,7 +2175,14 @@
         var cleanBtn = document.createElement('button');
         cleanBtn.type = 'button';
         cleanBtn.className = 'ax-tank-action-btn clean';
-        cleanBtn.textContent = '水替え';
+        var waterChangeType = state.waterChangeType || 'normal';
+        var waterChangeCost = WATER_CHANGE_NORMAL_COST;
+        if (waterChangeType === 'partial') {
+          waterChangeCost = WATER_CHANGE_PARTIAL_COST;
+        } else if (waterChangeType === 'full') {
+          waterChangeCost = WATER_CHANGE_FULL_COST;
+        }
+        cleanBtn.innerHTML = '水替え<br><span style="font-size:10px; opacity:0.8;">¥' + waterChangeCost.toLocaleString('ja-JP') + '</span>';
         cleanBtn.dataset.tankIndex = String(idx);
         cleanBtn.addEventListener('click', function () {
           doCleanTank(parseInt(this.dataset.tankIndex, 10));
@@ -2169,7 +2193,14 @@
         var feedBtn = document.createElement('button');
         feedBtn.type = 'button';
         feedBtn.className = 'ax-tank-action-btn feed';
-        feedBtn.textContent = '給餌';
+        var feedType = state.feedType || 'artificial';
+        var feedCost = FEED_ARTIFICIAL_COST;
+        if (feedType === 'bloodworm') {
+          feedCost = FEED_BLOODWORM_COST;
+        } else if (feedType === 'earthworm') {
+          feedCost = FEED_EARTHWORM_COST;
+        }
+        feedBtn.innerHTML = '給餌<br><span style="font-size:10px; opacity:0.8;">¥' + feedCost.toLocaleString('ja-JP') + '</span>';
         feedBtn.dataset.tankIndex = String(idx);
         feedBtn.addEventListener('click', function () {
           openTankFeedModal(parseInt(this.dataset.tankIndex, 10));
@@ -2472,14 +2503,37 @@
     // ショップの在庫状態を日ごとに更新（品切れの可能性）
     state.shopStockDaily = {};
     
-    // ショップにセールが発生（20%の確率）
-    if (Math.random() < 0.2) {
-      state.shopSale = true;
-      state.shopSaleDiscount = 0.7; // 30%オフ
-      logLine('【セール開催中】ショップの商品が30%オフになっています！');
-    } else {
-      state.shopSale = false;
-      state.shopSaleDiscount = 1.0;
+    // ショップにセールが発生（毎回1個か2個がランダムでセール）
+    state.shopSale = true;
+    state.shopSaleDiscount = 0.7; // 30%オフ
+    state.shopSaleItems = []; // セール対象をリセット
+    
+    // 利用可能な商品タイプとサイズバンドの組み合わせを取得
+    var availableItems = [];
+    Object.keys(state.fixedTypes).forEach(function(type) {
+      if (state.fixedTypes[type]) {
+        // サイズバンド1（3-5cm）と7（成体）を追加
+        availableItems.push({ type: type, band: 1 });
+        availableItems.push({ type: type, band: 7 });
+      }
+    });
+    
+    // 1個か2個をランダムに選択
+    var saleCount = Math.random() < 0.5 ? 1 : 2;
+    saleCount = Math.min(saleCount, availableItems.length);
+    
+    for (var i = 0; i < saleCount; i++) {
+      if (availableItems.length === 0) break;
+      var randomIndex = Math.floor(Math.random() * availableItems.length);
+      state.shopSaleItems.push(availableItems[randomIndex]);
+      availableItems.splice(randomIndex, 1);
+    }
+    
+    if (state.shopSaleItems.length > 0) {
+      var saleTypes = state.shopSaleItems.map(function(item) {
+        return typeLabel(item.type) + (item.band === 7 ? '（成体）' : '（3-5cm）');
+      }).join('、');
+      logLine('【セール開催中】' + saleTypes + 'が30%オフになっています！');
     }
   }
 
@@ -2555,9 +2609,42 @@
       if (tank.breedingPair) {
         tank.breedingPair.forEach(function (a) {
           a.hunger = clamp((a.hunger || MAX_HUNGER) - HUNGER_DECAY_PER_MONTH, 0, MAX_HUNGER);
+          
+          // 繁殖ペアの病気処理
+          if (a.sick) {
+            if (a.underTreatment && Math.random() < TREATMENT_RECOVER_CHANCE) {
+              a.sick = false;
+              a.underTreatment = false;
+              logLine(typeLabel(a.type) + 'のウパが治療で回復した。');
+            } else if (!a.underTreatment) {
+              if (Math.random() < SICK_DEATH_CHANCE) {
+                if (axolotlRegistry[a.id]) {
+                  axolotlRegistry[a.id].removed = true;
+                }
+                // 繁殖ペアから削除
+                var otherAx = tank.breedingPair.find(function(ax) { return ax.id !== a.id; });
+                if (otherAx) {
+                  tank.axolotl = otherAx;
+                  tank.breedingPair = null;
+                  tank.note = '病気で★になってしまった…';
+                } else {
+                  tank.axolotl = null;
+                  tank.breedingPair = null;
+                  tank.note = '病気で★になってしまった…';
+                }
+                logLine('ウーパールーパーが1匹病気で★になってしまった。');
+                state.reputation = clamp(state.reputation - 10, 0, MAX_REP);
+                return;
+              }
+              if (Math.random() < SICK_INJURY_CHANCE) {
+                a.injured = true;
+                logLine(typeLabel(a.type) + 'のウパが病気で欠損を負った。');
+              }
+            }
+          }
         });
         // 関係メーターの更新（健康と空腹度に基づく）
-        if (tank.relationshipMeter != null) {
+        if (tank.relationshipMeter != null && tank.breedingPair && tank.breedingPair.length === 2) {
           var avgHealth = (tank.breedingPair[0].health + tank.breedingPair[1].health) / 2;
           var avgHunger = (tank.breedingPair[0].hunger + tank.breedingPair[1].hunger) / 2;
           var healthBonus = (avgHealth - 70) / 10; // 70を基準に
@@ -2565,8 +2652,10 @@
           tank.relationshipMeter = clamp(tank.relationshipMeter + healthBonus + hungerBonus, 0, 100);
         }
         
-        // 毎月繁殖を試行
-        tryBreeding(idx);
+        // 毎月繁殖を試行（両方とも病気でない場合のみ）
+        if (tank.breedingPair && tank.breedingPair.length === 2 && !tank.breedingPair[0].sick && !tank.breedingPair[1].sick) {
+          tryBreeding(idx);
+        }
         
         return;
       }
@@ -3265,8 +3354,8 @@
   function actClean() {
     // 即発動：デフォルトの水替え方法で全体水替え
     var waterChangeType = state.waterChangeType || 'normal';
-    var cost = 500;
-    var bonus = 25;
+    var cost = WATER_CHANGE_NORMAL_COST;
+    var bonus = WATER_CHANGE_NORMAL_BONUS;
     if (waterChangeType === 'partial') {
       cost = WATER_CHANGE_PARTIAL_COST;
       bonus = WATER_CHANGE_PARTIAL_BONUS;
@@ -3280,8 +3369,8 @@
   function doCleanTank(tankIdx) {
     // 即発動：デフォルトの水替え方法で個別水替え
     var waterChangeType = state.waterChangeType || 'normal';
-    var cost = 500;
-    var bonus = 25;
+    var cost = WATER_CHANGE_NORMAL_COST;
+    var bonus = WATER_CHANGE_NORMAL_BONUS;
     if (waterChangeType === 'partial') {
       cost = WATER_CHANGE_PARTIAL_COST;
       bonus = WATER_CHANGE_PARTIAL_BONUS;
@@ -3327,7 +3416,7 @@
     
     var methods = [
       { name: '部分水替え', cost: WATER_CHANGE_PARTIAL_COST, bonus: WATER_CHANGE_PARTIAL_BONUS },
-      { name: '通常水替え', cost: 500, bonus: 25 },
+      { name: '通常水替え', cost: WATER_CHANGE_NORMAL_COST, bonus: WATER_CHANGE_NORMAL_BONUS },
       { name: '全換水', cost: WATER_CHANGE_FULL_COST, bonus: WATER_CHANGE_FULL_BONUS }
     ];
     
@@ -3797,9 +3886,17 @@
     var price = bandPrices[sizeBand || 1]; // デフォルトは3-5cm
     if (!price) return;
     
-    // セール適用
-    var discount = state.shopSaleDiscount || 1.0;
-    price = Math.floor(price * discount);
+    // セール適用（該当商品のみ）
+    var isOnSale = false;
+    if (state.shopSale && state.shopSaleItems && state.shopSaleItems.length > 0) {
+      isOnSale = state.shopSaleItems.some(function(item) {
+        return item.type === selectedType && item.band === sizeBand;
+      });
+    }
+    if (isOnSale) {
+      var discount = state.shopSaleDiscount || 0.7;
+      price = Math.floor(price * discount);
+    }
     
     // 品切れチェック（日によって品切れ中）
     var stockKey = selectedType + '_' + sizeBand + '_' + (sex || 'any');
@@ -3814,7 +3911,7 @@
     btn.type = 'button';
     btn.className = 'ax-buy-type-btn';
     var sizeLabel = sizeBand === 7 ? '成体' : '3-5cm';
-    var saleLabel = state.shopSale ? '【セール】' : '';
+    var saleLabel = isOnSale ? '【セール】' : '';
     var sexLabel = sex ? (sex === 'オス' ? ' ♂' : ' ♀') : '';
     var stockStatus = isOutOfStock ? ' <span style="color:#dc2626; font-size:10px;">（品切れ）</span>' : '';
     btn.innerHTML = '<img src="' + typeImagePath(selectedType) + '" alt="" class="ax-buy-type-img">' +
@@ -4228,6 +4325,7 @@
     state.reputation100Celebrated = false;  // 満足度100達成時のポップアップ表示済みフラグをリセット
     state.shopSale = false;  // ショップセールをリセット
     state.shopSaleDiscount = 1.0;  // ショップセール割引率をリセット
+    state.shopSaleItems = [];  // ショップセール対象商品をリセット
     initTanks();
     
     // 初期個体を図鑑に追加
