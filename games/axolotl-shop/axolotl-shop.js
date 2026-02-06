@@ -1620,14 +1620,15 @@
         // うんこの表示（繁殖ペアの場合）
         if (tank.poop) {
           var poopEl = document.createElement('img');
-          poopEl.src = '/assets/unko-1fac2af1-5a22-43ef-908b-b268d6f5f7fa.png';
-          poopEl.style.width = '20px';
-          poopEl.style.height = '20px';
+          poopEl.src = '/assets/unko-9250e8d5-2b39-43ed-b760-387753235a7f.png';
+          poopEl.style.width = '16px';
+          poopEl.style.height = '16px';
           poopEl.style.position = 'absolute';
           poopEl.style.bottom = '20px';
           poopEl.style.right = '4px';
           poopEl.style.cursor = 'pointer';
           poopEl.style.zIndex = '10';
+          poopEl.style.imageRendering = 'pixelated';
           poopEl.title = 'クリックでうんこを掃除';
           poopEl.dataset.tankIndex = String(idx);
           poopEl.addEventListener('click', function(e) {
@@ -1676,14 +1677,15 @@
         // うんこの表示
         if (tank.poop) {
           var poopEl = document.createElement('img');
-          poopEl.src = '/assets/unko-1fac2af1-5a22-43ef-908b-b268d6f5f7fa.png';
-          poopEl.style.width = '20px';
-          poopEl.style.height = '20px';
+          poopEl.src = '/assets/unko-9250e8d5-2b39-43ed-b760-387753235a7f.png';
+          poopEl.style.width = '16px';
+          poopEl.style.height = '16px';
           poopEl.style.position = 'absolute';
           poopEl.style.bottom = '20px';
           poopEl.style.right = '4px';
           poopEl.style.cursor = 'pointer';
           poopEl.style.zIndex = '10';
+          poopEl.style.imageRendering = 'pixelated';
           poopEl.title = 'クリックでうんこを掃除';
           poopEl.dataset.tankIndex = String(idx);
           poopEl.addEventListener('click', function(e) {
