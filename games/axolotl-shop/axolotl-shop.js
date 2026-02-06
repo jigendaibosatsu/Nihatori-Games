@@ -460,7 +460,7 @@
 
   var state = {
     month: 1,
-    money: 50000,
+    money: 60000,
     clean: 80,
     reputation: 30,
     tanks: [],
@@ -482,7 +482,8 @@
       bottomCleaner: false
     },
     feedType: 'artificial',  // デフォルトの餌タイプ: 'artificial', 'bloodworm', 'earthworm'
-    waterChangeType: 'normal'  // デフォルトの水替えタイプ: 'partial', 'normal', 'full'
+    waterChangeType: 'normal',  // デフォルトの水替えタイプ: 'partial', 'normal', 'full'
+    reputation100Celebrated: false  // 満足度100達成時のポップアップ表示済みフラグ
   };
   
   // マイグレーション: feedTypeとwaterChangeTypeが無い場合は初期化
@@ -491,6 +492,9 @@
   }
   if (state.waterChangeType === undefined) {
     state.waterChangeType = 'normal';
+  }
+  if (state.reputation100Celebrated === undefined) {
+    state.reputation100Celebrated = false;
   }
 
   // 種類ごとの特徴説明
@@ -992,6 +996,12 @@
     var band = sizeBandFromAge(ax.age);
     var bandPrices = sizePriceTable[ax.type] || sizePriceTable.nomal;
     var base = (bandPrices[band] || bandPrices[bandPrices.length - 1]) || 8000;
+    
+    // 幼生（age=0）の価格を大幅に下げる
+    if (ax.age === 0) {
+      base = Math.floor(base * 0.1); // 10%の価格
+    }
+    
     var healthRate = ax.health / 100;
     var repBonus = clamp(0.85 + state.reputation / 300, 0.85, 1.20);
     var shadeRate = shadePriceRate[ax.shade] != null ? shadePriceRate[ax.shade] : 1;
@@ -1411,7 +1421,7 @@
       var overlay = document.createElement('div');
       overlay.className = 'ax-overlay';
       overlay.id = 'axOverlayHatch';
-      overlay.innerHTML = '<div class="ax-overlay-box"><h2>孵化した幼生から1匹を選ぶ</h2><p style="font-size:12px; margin-bottom:8px;">3匹の候補から1匹を選んでください。残りは自動的に売却されます。</p><div id="axHatchList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div><button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axHatchCancel">キャンセル</button></div>';
+      overlay.innerHTML = '<div class="ax-overlay-box"><h2>孵化した幼生から1匹を選ぶ</h2><p style="font-size:12px; margin-bottom:8px;">5匹の候補から1匹を選んでください。残りは自動的に売却されます。</p><div id="axHatchList" style="margin-bottom:12px; max-height:60vh; overflow-y:auto;"></div><button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axHatchCancel">キャンセル</button></div>';
       document.body.appendChild(overlay);
       list = $('axHatchList');
       $('axHatchCancel').addEventListener('click', function() {
@@ -1424,41 +1434,59 @@
     candidates.forEach(function(candidate, idx) {
       var div = document.createElement('div');
       div.style.marginBottom = '12px';
-      div.style.padding = '8px';
+      div.style.padding = '12px';
       div.style.border = '2px solid #bfdbfe';
-      div.style.borderRadius = '6px';
+      div.style.borderRadius = '8px';
       div.style.background = '#f0f9ff';
       
       var header = document.createElement('div');
       header.style.display = 'flex';
       header.style.alignItems = 'center';
-      header.style.gap = '8px';
-      header.style.marginBottom = '4px';
+      header.style.gap = '12px';
+      header.style.marginBottom = '8px';
       
       var img = document.createElement('img');
       img.src = typeImagePath(candidate.type);
-      img.style.width = '40px';
-      img.style.height = '40px';
+      img.style.width = '60px';
+      img.style.height = '60px';
       img.style.imageRendering = 'pixelated';
       header.appendChild(img);
       
       var info = document.createElement('div');
       info.style.flex = '1';
-      info.innerHTML = '<div style="font-weight:bold;">' + typeLabel(candidate.type) + '</div><div style="font-size:10px; color:#64748b;">健康度: ' + candidate.health + ' / 空腹度: ' + candidate.hunger + '</div>';
+      info.innerHTML = '<div style="font-weight:bold; font-size:16px; margin-bottom:4px;">' + typeLabel(candidate.type) + '</div><div style="font-size:12px; color:#64748b;">健康度: ' + candidate.health + ' / 空腹度: ' + candidate.hunger + '</div>';
       header.appendChild(info);
       div.appendChild(header);
+      
+      var btnRow = document.createElement('div');
+      btnRow.style.display = 'flex';
+      btnRow.style.gap = '8px';
+      
+      var detailBtn = document.createElement('button');
+      detailBtn.type = 'button';
+      detailBtn.className = 'ax-btn detail';
+      detailBtn.textContent = '詳細';
+      detailBtn.style.flex = '1';
+      detailBtn.style.minHeight = '44px';
+      detailBtn.dataset.axolotlId = String(candidate.id);
+      detailBtn.addEventListener('click', function() {
+        openDetailModal(parseInt(this.dataset.axolotlId, 10));
+      });
+      btnRow.appendChild(detailBtn);
       
       var selectBtn = document.createElement('button');
       selectBtn.type = 'button';
       selectBtn.className = 'ax-btn breed';
       selectBtn.textContent = 'この子を育てる';
-      selectBtn.style.width = '100%';
+      selectBtn.style.flex = '1';
+      selectBtn.style.minHeight = '44px';
       selectBtn.dataset.candidateIndex = String(idx);
       selectBtn.addEventListener('click', function() {
         selectHatchCandidate(tankIdx, parseInt(this.dataset.candidateIndex, 10), candidates, remainingJuveniles);
       });
-      div.appendChild(selectBtn);
+      btnRow.appendChild(selectBtn);
       
+      div.appendChild(btnRow);
       list.appendChild(div);
     });
     
@@ -1498,10 +1526,10 @@
     
     state.money += totalPrice;
     
-    // 選択した1匹を保持
+    // 選択した1匹を保持（混雑表記なし）
     tank.juveniles = [selected];
     tank.juvenileAge = 0;
-    tank.note = '幼生 1匹（0/5ヶ月）';
+    tank.note = '幼生（0/5ヶ月）';
     
     // 一時データをクリア
     tank._hatchCandidates = null;
@@ -1673,9 +1701,9 @@
     state.tanks.forEach(function (tank, idx) {
       var div = document.createElement('div');
       div.className = 'ax-tank';
-      // 水質に応じた背景色を設定（空き水槽は色なし）
+      // 水質に応じた背景色を設定（空き水槽と卵の水槽は色なし）
       var isEmpty = !tank.axolotl && !tank.breedingPair && !tank.juveniles && !tank.egg;
-      if (!isEmpty) {
+      if (!isEmpty && !tank.egg) {
         var tankClean = tank.clean !== undefined ? tank.clean : 80;
         div.style.background = getCleanColor(tankClean);
       } else {
@@ -1780,7 +1808,7 @@
         var eggText = '卵 ' + (tank.eggCount || 500) + '個\n孵化まであと' + (tank.hatchMonthsLeft != null ? tank.hatchMonthsLeft : 1) + 'ヶ月';
         lines.textContent = eggText;
       } else if (tank.juveniles && tank.juveniles.length > 0) {
-        lines.textContent = '幼生：' + tank.juveniles.length + '匹\n' + (tank.juvenileAge || 0) + '/5ヶ月\n（混雑で死亡率が高い）';
+        lines.textContent = '幼生：' + tank.juveniles.length + '匹\n' + (tank.juvenileAge || 0) + '/5ヶ月';
         lines.classList.add('clickable');
         lines.addEventListener('click', function () {
           openJuvenileSelectionModal(idx);
@@ -1937,17 +1965,6 @@
       foot.className = 'ax-tank-footer';
       if (tank.axolotl) {
         var ax = tank.axolotl;
-        // 給餌ボタン
-        var feedBtn = document.createElement('button');
-        feedBtn.type = 'button';
-        feedBtn.className = 'ax-tank-action-btn feed';
-        feedBtn.textContent = '給餌';
-        feedBtn.dataset.tankIndex = String(idx);
-        feedBtn.addEventListener('click', function () {
-          openTankFeedModal(parseInt(this.dataset.tankIndex, 10));
-        });
-        foot.appendChild(feedBtn);
-        
         // 水替えボタン
         var cleanBtn = document.createElement('button');
         cleanBtn.type = 'button';
@@ -1958,6 +1975,17 @@
           doCleanTank(parseInt(this.dataset.tankIndex, 10));
         });
         foot.appendChild(cleanBtn);
+        
+        // 給餌ボタン
+        var feedBtn = document.createElement('button');
+        feedBtn.type = 'button';
+        feedBtn.className = 'ax-tank-action-btn feed';
+        feedBtn.textContent = '給餌';
+        feedBtn.dataset.tankIndex = String(idx);
+        feedBtn.addEventListener('click', function () {
+          openTankFeedModal(parseInt(this.dataset.tankIndex, 10));
+        });
+        foot.appendChild(feedBtn);
         
         // 詳細ボタン
         var detailBtn = document.createElement('button');
@@ -1971,17 +1999,6 @@
         foot.appendChild(detailBtn);
       } else if (tank.breedingPair) {
         var pair = tank.breedingPair;
-        // 給餌ボタン
-        var feedBtn = document.createElement('button');
-        feedBtn.type = 'button';
-        feedBtn.className = 'ax-tank-action-btn feed';
-        feedBtn.textContent = '給餌';
-        feedBtn.dataset.tankIndex = String(idx);
-        feedBtn.addEventListener('click', function () {
-          openTankFeedModal(parseInt(this.dataset.tankIndex, 10));
-        });
-        foot.appendChild(feedBtn);
-        
         // 水替えボタン
         var cleanBtn = document.createElement('button');
         cleanBtn.type = 'button';
@@ -1992,6 +2009,17 @@
           doCleanTank(parseInt(this.dataset.tankIndex, 10));
         });
         foot.appendChild(cleanBtn);
+        
+        // 給餌ボタン
+        var feedBtn = document.createElement('button');
+        feedBtn.type = 'button';
+        feedBtn.className = 'ax-tank-action-btn feed';
+        feedBtn.textContent = '給餌';
+        feedBtn.dataset.tankIndex = String(idx);
+        feedBtn.addEventListener('click', function () {
+          openTankFeedModal(parseInt(this.dataset.tankIndex, 10));
+        });
+        foot.appendChild(feedBtn);
         
         // 詳細ボタン（最初の個体を表示）
         var detailBtn = document.createElement('button');
@@ -2145,26 +2173,25 @@
 
   function checkEnd() {
     if (state.ended) return;
-    if (state.money >= TARGET_MONEY && state.reputation >= 60) {
-      state.ended = true;
-      $('axOverlayEnd').classList.add('visible');
-      $('axEndTitle').textContent = '人気店エンド';
-      $('axEndMessage').textContent =
-        '所持金 ' + formatMoney(state.money) + '、評判 ' + Math.round(state.reputation) + '。\n' +
-        '大切に育てたウーパールーパーのおかげで、地域で有名なショップになった。';
-      updateUI();
-      return;
+    
+    // 満足度（評判）が100になったらおめでとうポップアップ（続けられる）
+    if (state.reputation >= MAX_REP && !state.reputation100Celebrated) {
+      state.reputation100Celebrated = true;
+      var overlay = document.getElementById('axOverlayReputation100');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'ax-overlay';
+        overlay.id = 'axOverlayReputation100';
+        overlay.innerHTML = '<div class="ax-overlay-box"><h2>おめでとうございます！</h2><p style="font-size:14px; margin-bottom:12px;">満足度が100に達しました！<br>素晴らしいショップですね。</p><button type="button" class="btn" id="axReputation100Close">続ける</button></div>';
+        document.body.appendChild(overlay);
+        document.getElementById('axReputation100Close').addEventListener('click', function() {
+          $('axOverlayReputation100').classList.remove('visible');
+        });
+      }
+      overlay.classList.add('visible');
     }
-    var hasAxolotlOrHope = state.tanks.some(function (t) { return t.axolotl || t.breedingPair || t.egg; });
-    if (state.money <= 0 && !hasAxolotlOrHope) {
-      state.ended = true;
-      $('axOverlayEnd').classList.add('visible');
-      $('axEndTitle').textContent = '閉店エンド';
-      $('axEndMessage').textContent =
-        '資金もウーパールーパーも尽きてしまった。\n' +
-        '次は、水とエサを優先して、ゆっくり増やしていこう。';
-      updateUI();
-    }
+    
+    // エンド条件は削除（続けられる）
   }
 
   function tryBreeding(tankIdx) {
@@ -2377,12 +2404,19 @@
         return;
       }
       if (tank.egg) {
-        tank.hatchMonthsLeft = (tank.hatchMonthsLeft || 1) - 1;
+        // 孵化までの月数を減らす（初期化されていない場合は1ヶ月に設定）
+        if (tank.hatchMonthsLeft === undefined || tank.hatchMonthsLeft === null) {
+          tank.hatchMonthsLeft = 1;
+        }
+        tank.hatchMonthsLeft = tank.hatchMonthsLeft - 1;
+        
         if (tank.hatchMonthsLeft <= 0) {
+          // 孵化前に必要な情報を保存
           var parentTypes = tank.eggParentTypes || ['nomal', 'nomal'];
           var parentIds = tank.eggParentIds || [null, null];
           var parentShades = tank.eggParentShades || ['normal', 'normal'];
           var eggCount = tank.eggCount || 500;
+          var relationshipMeter = tank.eggRelationshipMeter || 50;
           
           // 空き水槽がない場合は卵を売却
           var emptySlots = [];
@@ -2407,28 +2441,9 @@
             return;
           }
           
-          // 卵が孵化して幼生が生まれる
-          tank.egg = false;
-          tank.eggCount = null;
-          tank.eggParentTypes = null;
-          tank.eggParentIds = null;
-          tank.eggRelationshipMeter = null;
-          tank.hatchMonthsLeft = null;
-          tank.juveniles = [];
-          tank.juvenileAge = 0; // 0ヶ月（孵化直後）
-          
-          // 孵化数の計算（基本90%、健康度や水の汚れ、血の濃さやカップル関係性にも依存）
-          var baseHatchRate = 0.9; // 基本90%
-          var relationshipMeter = tank.eggRelationshipMeter || 50;
-          var relationshipBonus = (relationshipMeter - 50) / 200; // -0.25 から +0.25
-          
-          // 親の健康度とshadeを取得
+          // 親の健康度を取得（孵化前に取得）
           var parent1Health = 100;
           var parent2Health = 100;
-          var parent1Shade = parentShades[0] || 'normal';
-          var parent2Shade = parentShades[1] || 'normal';
-          
-          // 現在の水槽から健康度を取得
           state.tanks.forEach(function(t) {
             if (t.breedingPair) {
               t.breedingPair.forEach(function(ax) {
@@ -2438,6 +2453,12 @@
             }
           });
           
+          var parent1Shade = parentShades[0] || 'normal';
+          var parent2Shade = parentShades[1] || 'normal';
+          
+          // 孵化数の計算（基本90%、健康度や水の汚れ、血の濃さやカップル関係性にも依存）
+          var baseHatchRate = 0.9; // 基本90%
+          var relationshipBonus = (relationshipMeter - 50) / 200; // -0.25 から +0.25
           var avgHealth = (parent1Health + parent2Health) / 2;
           var healthBonus = (avgHealth - 70) / 300; // 健康度による補正
           
@@ -2474,10 +2495,18 @@
             checkForFixation(juvenile.id);
           }
           
-          // 3匹の候補をランダムに選択
+          // 卵の状態をクリア（孵化処理の前に）
+          tank.egg = false;
+          tank.eggCount = null;
+          tank.eggParentTypes = null;
+          tank.eggParentIds = null;
+          tank.eggParentShades = null;
+          tank.eggRelationshipMeter = null;
+          tank.hatchMonthsLeft = null;
+          
+          // 5匹の候補をランダムに選択
           var candidates = [];
-          var candidateIndices = [];
-          var maxCandidates = Math.min(3, allJuveniles.length);
+          var maxCandidates = Math.min(5, allJuveniles.length);
           while (candidates.length < maxCandidates && allJuveniles.length > 0) {
             var randomIndex = Math.floor(Math.random() * allJuveniles.length);
             candidates.push(allJuveniles[randomIndex]);
@@ -2539,7 +2568,7 @@
           tank.note = '育ったウパ';
           logLine('幼生が成長し、' + typeLabel(selected.type) + 'の成体になった。残り' + remainingCount + '匹は売却された。');
         } else {
-          tank.note = '幼生 ' + tank.juveniles.length + '匹（' + tank.juvenileAge + '/5ヶ月）';
+          tank.note = '幼生（' + tank.juvenileAge + '/5ヶ月）';
         }
         return;
       }
@@ -3993,7 +4022,7 @@
 
   function resetGame() {
     state.month = 1;
-    state.money = 50000;
+    state.money = 60000;
     state.reputation = 30;
     state.ended = false;
     state.lastBreedParent1 = null;
@@ -4015,6 +4044,7 @@
     state.equipment = { autoFeeder: false, filter: false, bottomCleaner: false };  // 設備をリセット
     state.feedType = 'artificial';  // デフォルトの餌タイプをリセット
     state.waterChangeType = 'normal';  // デフォルトの水替えタイプをリセット
+    state.reputation100Celebrated = false;  // 満足度100達成時のポップアップ表示済みフラグをリセット
     initTanks();
     
     // 初期個体を図鑑に追加
