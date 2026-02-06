@@ -1883,7 +1883,7 @@
         // うんこの表示（繁殖ペアの場合）
         if (tank.poop) {
           var poopEl = document.createElement('img');
-          poopEl.src = '/assets/unko-9250e8d5-2b39-43ed-b760-387753235a7f.png';
+          poopEl.src = '/assets/unko.png';
           poopEl.style.width = '16px';
           poopEl.style.height = '16px';
           poopEl.style.position = 'absolute';
@@ -1940,7 +1940,7 @@
         // うんこの表示
         if (tank.poop) {
           var poopEl = document.createElement('img');
-          poopEl.src = '/assets/unko-9250e8d5-2b39-43ed-b760-387753235a7f.png';
+          poopEl.src = '/assets/unko.png';
           poopEl.style.width = '16px';
           poopEl.style.height = '16px';
           poopEl.style.position = 'absolute';
@@ -4114,11 +4114,13 @@
   function openMenu() {
     if (menuOverlay) menuOverlay.classList.add('visible');
     if (menu) menu.classList.add('visible');
+    document.body.classList.add('menu-open');
   }
   
   function closeMenu() {
     if (menuOverlay) menuOverlay.classList.remove('visible');
     if (menu) menu.classList.remove('visible');
+    document.body.classList.remove('menu-open');
   }
   
   if (menuToggle) {

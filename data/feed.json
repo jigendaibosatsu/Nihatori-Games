@@ -1,6 +1,32 @@
 {
   "items": [
     {
+      "id": "axolotl-shop",
+      "type": "game",
+      "title": "ウーパールーパーショップ",
+      "url": "./games/axolotl-shop/",
+      "image": "./assets/axolotl-shop-icon.png",
+      "category": "games",
+      "publishedAt": "2026-02-01T23:00:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 95
+    },
+    {
+      "id": "post-axolotl-shop-recommend",
+      "type": "post",
+      "title": "おすすめ：ウーパールーパーショップ（育成ゲーム）",
+      "url": "./games/axolotl-shop/",
+      "image": "./assets/axolotl-shop-icon.png",
+      "category": "devlog",
+      "publishedAt": "2026-02-01T22:30:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": true,
+      "trendingScore": 90
+    },
+    {
       "id": "post-2026-02-01-devlog",
       "type": "post",
       "title": "開発メモ：トップをYahoo!ニュース風に",
@@ -304,13 +330,13 @@
       "type": "game",
       "title": "ウーパールーパーショップ",
       "url": "./games/axolotl-shop/",
-      "image": null,
+      "image": "./assets/axolotl-shop-icon.png",
       "category": "games",
-      "publishedAt": "2026-02-05T21:00:00+09:00",
+      "publishedAt": "2026-02-01T23:00:00+09:00",
       "commentCount": 0,
       "isNew": true,
       "recommended": true,
-      "trendingScore": 83
+      "trendingScore": 95
     },
     {
       "id": "smash-battle",

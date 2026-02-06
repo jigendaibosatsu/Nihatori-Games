@@ -21,6 +21,10 @@ body.game-page {
   gap: 12px;
   margin-top: 120px;
   margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+body.game-page.menu-open .ax-wrap {
+  transform: translateX(-220px);
 }
 /* ヘッダー（sticky） */
 .ax-header {
@@ -32,6 +36,10 @@ body.game-page {
   background: rgba(255,255,255,0.98);
   border-bottom: 2px solid #bae6fd;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+body.game-page.menu-open .ax-header {
+  transform: translateX(-220px);
 }
 .ax-header-content {
   display: flex;
@@ -141,8 +149,8 @@ body.game-page {
 .ax-menu {
   position: fixed;
   top: 0;
-  right: -300px;
-  width: 280px;
+  right: -240px;
+  width: 220px;
   height: 100vh;
   background: rgba(255,255,255,0.98);
   box-shadow: -2px 0 8px rgba(0,0,0,0.2);
@@ -180,22 +188,22 @@ body.game-page {
   padding: 12px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 8px;
 }
 .ax-menu-item {
   width: 100%;
-  padding: 16px 12px;
-  border-radius: 12px;
+  padding: 12px 8px;
+  border-radius: 10px;
   border: 2px solid;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
   cursor: pointer;
-  min-height: 100px;
+  min-height: 90px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   transition: all 0.2s;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   position: relative;
@@ -205,7 +213,7 @@ body.game-page {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 .ax-menu-icon {
-  font-size: 48px;
+  font-size: 40px;
   line-height: 1;
 }
 .ax-menu-label {
@@ -263,6 +271,10 @@ body.game-page {
   border-top: 2px solid #bae6fd;
   box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
   padding: 8px 12px;
+  transition: transform 0.3s ease;
+}
+body.game-page.menu-open .ax-footer {
+  transform: translateX(-220px);
 }
 .ax-next-month-btn {
   width: 100%;
