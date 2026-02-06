@@ -156,29 +156,36 @@
       img1.crossOrigin = 'anonymous'; // CORS対応
       img2.crossOrigin = 'anonymous'; // CORS対応
       var loaded = 0;
+      var chimeraDrawn = false; // キメラが既に描画されたかどうかのフラグ
+      
       var drawChimera = function() {
         if (loaded < 2) return;
         
+        // 既に描画されている場合はスキップ（重複実行を防ぐ）
+        if (chimeraDrawn) {
+          return;
+        }
+        
         // 画像が完全に読み込まれているか確認
         if (!img1.complete || !img2.complete || 
+            !img1.naturalWidth || !img1.naturalHeight ||
+            !img2.naturalWidth || !img2.naturalHeight ||
             img1.naturalWidth === 0 || img1.naturalHeight === 0 ||
             img2.naturalWidth === 0 || img2.naturalHeight === 0) {
           return;
         }
         
-        // 画像の実際のサイズを取得（確実に取得する）
+        chimeraDrawn = true; // フラグを設定
+        
+        // 画像の実際のサイズを取得
         var img1Width = img1.naturalWidth;
         var img1Height = img1.naturalHeight;
         var img2Width = img2.naturalWidth;
         var img2Height = img2.naturalHeight;
         
-        // 画像が読み込まれていない場合はスキップ
-        if (!img1Width || !img1Height || img1Width === 0 || img1Height === 0 ||
-            !img2Width || !img2Height || img2Width === 0 || img2Height === 0) {
-          return;
-        }
-        
-        // Canvasを完全にクリア
+        // Canvasを完全にクリア（透明色で塗りつぶす）
+        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+        ctx.fillRect(0, 0, 40, 40);
         ctx.clearRect(0, 0, 40, 40);
         
         // 左半分：左側の画像の左半分をキャンバスの左半分に描画
@@ -191,6 +198,7 @@
           ctx.drawImage(img2, halfWidth2, 0, halfWidth2, img2Height, 20, 0, 20, 40);
         } catch (e) {
           // エラー時は処理を中断
+          chimeraDrawn = false; // フラグをリセット
           return;
         }
         
@@ -231,11 +239,20 @@
       img2.src = typeImagePath(chimeraTypes[1]);
       
       // 画像が既に読み込まれている場合（キャッシュされている場合）
-      if (img1.complete && img1.naturalWidth > 0) {
-        img1.onload();
+      // setTimeoutで遅延させて、確実に読み込み完了を待つ
+      if (img1.complete && img1.naturalWidth > 0 && img1.naturalHeight > 0) {
+        setTimeout(function() {
+          if (!chimeraDrawn) {
+            img1.onload();
+          }
+        }, 0);
       }
-      if (img2.complete && img2.naturalWidth > 0) {
-        img2.onload();
+      if (img2.complete && img2.naturalWidth > 0 && img2.naturalHeight > 0) {
+        setTimeout(function() {
+          if (!chimeraDrawn) {
+            img2.onload();
+          }
+        }, 0);
       }
       
       // 一時的に左側の画像を返す（後で更新される）
@@ -252,26 +269,32 @@
     // ピクセルアートをシャープに保つため、スムージングを無効化
     ctx.imageSmoothingEnabled = false;
     
+    var imageLoaded = false; // 画像が既に読み込まれたかどうかのフラグ
+    
     img.onload = function() {
-      // 画像が完全に読み込まれるまで待つ
-      if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {
+      // 既に読み込まれている場合はスキップ（重複実行を防ぐ）
+      if (imageLoaded) {
         return;
       }
       
-      // 画像の実際のサイズを取得（確実に取得する）
+      // 画像が完全に読み込まれるまで待つ
+      if (!img.complete || !img.naturalWidth || !img.naturalHeight || 
+          img.naturalWidth === 0 || img.naturalHeight === 0) {
+        return;
+      }
+      
+      imageLoaded = true; // フラグを設定
+      
+      // 画像の実際のサイズを取得
       var imgWidth = img.naturalWidth;
       var imgHeight = img.naturalHeight;
       
-      // 画像が読み込まれていない場合はスキップ
-      if (!imgWidth || !imgHeight || imgWidth === 0 || imgHeight === 0) {
-        return;
-      }
-      
-      // Canvasを完全にクリア
+      // Canvasを完全にクリア（透明色で塗りつぶす）
+      ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+      ctx.fillRect(0, 0, 40, 40);
       ctx.clearRect(0, 0, 40, 40);
       
       // 画像を40x40のCanvasに正しく描画
-      // ソース画像の全体を、Canvasの全体に描画
       try {
         ctx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, 40, 40);
       } catch (e) {
@@ -353,10 +376,12 @@
     img.src = typeImagePath(ax.type);
     
     // 画像が既に読み込まれている場合（キャッシュされている場合）
+    // setTimeoutで遅延させて、確実に読み込み完了を待つ
     if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-      // すぐに描画処理を実行
       setTimeout(function() {
-        img.onload();
+        if (!imageLoaded) {
+          img.onload();
+        }
       }, 0);
     }
     
