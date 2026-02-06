@@ -6,12 +6,12 @@
   var MAX_REP = 100;
   var MAX_HEALTH = 100;
   var TARGET_MONEY = 200000;
-  var MAX_TANKS = 10;
+  var MAX_TANKS = 15;
   var WATER_CHANGE_COST = 1000;
 
   var AXO_TYPES = ['nomal', 'albino', 'gold', 'marble', 'copper', 'black', 'goldblackeye', 'chimera'];
   var typeLabels = {
-    nomal: 'ノーマル(白)',
+    nomal: 'リューシ',
     albino: 'アルビノ',
     gold: 'ゴールド',
     marble: 'マーブル',
@@ -203,17 +203,30 @@
       return { type: 'chimera', chimeraTypes: [parent1Type, parent2Type] };
     }
     
+    var inbreedingCoeff = calculateInbreedingCoefficient(parent1Id, parent2Id);
+    
     var weights = breedingTable[parent1Type][parent2Type] || breedingTable[parent2Type][parent1Type];
-    if (!weights) return { type: AXO_TYPES[0] };
+    if (!weights) return { type: AXO_TYPES[0], inbreedingCoeff: inbreedingCoeff };
+    
+    // 近親交配度が高いと、親の形質が似やすい（85%→95%）
+    var parentTraitChance = 0.85 + (inbreedingCoeff / 100) * 0.1;
+    
     var total = 0;
     AXO_TYPES.forEach(function (k) { total += weights[k] || 0; });
     var r = Math.random() * total;
+    
+    // 近親交配度が高い場合、親の形質を優先
+    if (Math.random() < parentTraitChance) {
+      var parentTypes = [parent1Type, parent2Type];
+      return { type: parentTypes[Math.floor(Math.random() * parentTypes.length)], inbreedingCoeff: inbreedingCoeff };
+    }
+    
     for (var i = 0; i < AXO_TYPES.length; i++) {
       var k = AXO_TYPES[i];
       r -= weights[k] || 0;
-      if (r <= 0) return { type: k };
+      if (r <= 0) return { type: k, inbreedingCoeff: inbreedingCoeff };
     }
-    return { type: AXO_TYPES[AXO_TYPES.length - 1] };
+    return { type: AXO_TYPES[AXO_TYPES.length - 1], inbreedingCoeff: inbreedingCoeff };
   }
 
   var state = {
@@ -225,7 +238,10 @@
     ended: false,
     lastBreedParent1: null,
     lastBreedParent2: null,
-    nextAxolotlId: 1
+    nextAxolotlId: 1,
+    auctionAvailable: false,
+    auctionType: null,
+    auctionPrice: 0
   };
 
   // 個体レジストリ（家系図用）
@@ -308,7 +324,7 @@
       age: age,
       health: clamp(70 + randInt(-10, 10), 40, MAX_HEALTH),
       type: type,
-      sex: Math.random() < 0.5 ? '♂' : '♀',
+      sex: Math.random() < 0.5 ? 'オス' : 'メス',
       shade: pickRandomShade(),
       injured: false,
       hunger: age >= 12 ? 80 : 70,
@@ -404,6 +420,13 @@
     goldblackeye: [8000, 12000, 15000, 20000, 28000, 40000, 60000, 65000],
     chimera: [10000, 15000, 20000, 28000, 35000, 50000, 80000, 90000]
   };
+  function calcBaseMarketPrice(ax) {
+    var band = sizeBandFromAge(ax.age);
+    var bandPrices = sizePriceTable[ax.type] || sizePriceTable.nomal;
+    var base = (bandPrices[band] || bandPrices[bandPrices.length - 1]) || 8000;
+    return base;
+  }
+
   function calcPrice(ax) {
     var band = sizeBandFromAge(ax.age);
     var bandPrices = sizePriceTable[ax.type] || sizePriceTable.nomal;
@@ -415,6 +438,18 @@
     if (ax.sick) price *= SICK_PRICE_RATE;
     if (ax.injured) price *= 0.3;
     return Math.round(price / 1000) * 1000;
+  }
+
+  function getHealthBarColor(health) {
+    if (health >= 80) return '#22c55e'; // 緑
+    if (health >= 50) return '#eab308'; // 黄
+    if (health >= 30) return '#f97316'; // オレンジ
+    return '#dc2626'; // 赤
+  }
+
+  function getSexDisplay(ax) {
+    if (ax.age < 12) return '不明';
+    return ax.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>';
   }
 
   function getFamilyTree(axolotlId) {
@@ -442,6 +477,58 @@
       }
     });
     return tree;
+  }
+
+  // 近親交配度を計算（0-100、高いほど血が濃い）
+  function calculateInbreedingCoefficient(parent1Id, parent2Id) {
+    if (!parent1Id || !parent2Id) return 0;
+    var p1 = axolotlRegistry[parent1Id];
+    var p2 = axolotlRegistry[parent2Id];
+    if (!p1 || !p2) return 0;
+    
+    var coefficient = 0;
+    
+    // 同じ親から生まれた場合（兄弟）
+    if (p1.parent1Id && p2.parent1Id && p1.parent1Id === p2.parent1Id) coefficient += 25;
+    if (p1.parent2Id && p2.parent2Id && p1.parent2Id === p2.parent2Id) coefficient += 25;
+    if (p1.parent1Id && p2.parent2Id && p1.parent1Id === p2.parent2Id) coefficient += 25;
+    if (p1.parent2Id && p2.parent1Id && p1.parent2Id === p2.parent1Id) coefficient += 25;
+    
+    // 親子関係
+    if (p1.id === p2.parent1Id || p1.id === p2.parent2Id) coefficient += 50;
+    if (p2.id === p1.parent1Id || p2.id === p1.parent2Id) coefficient += 50;
+    
+    // 祖父母が共通
+    var p1Grandparents = [];
+    var p2Grandparents = [];
+    if (p1.parent1Id && axolotlRegistry[p1.parent1Id]) {
+      var gp1 = axolotlRegistry[p1.parent1Id];
+      if (gp1.parent1Id) p1Grandparents.push(gp1.parent1Id);
+      if (gp1.parent2Id) p1Grandparents.push(gp1.parent2Id);
+    }
+    if (p1.parent2Id && axolotlRegistry[p1.parent2Id]) {
+      var gp2 = axolotlRegistry[p1.parent2Id];
+      if (gp2.parent1Id) p1Grandparents.push(gp2.parent1Id);
+      if (gp2.parent2Id) p1Grandparents.push(gp2.parent2Id);
+    }
+    if (p2.parent1Id && axolotlRegistry[p2.parent1Id]) {
+      var gp3 = axolotlRegistry[p2.parent1Id];
+      if (gp3.parent1Id) p2Grandparents.push(gp3.parent1Id);
+      if (gp3.parent2Id) p2Grandparents.push(gp3.parent2Id);
+    }
+    if (p2.parent2Id && axolotlRegistry[p2.parent2Id]) {
+      var gp4 = axolotlRegistry[p2.parent2Id];
+      if (gp4.parent1Id) p2Grandparents.push(gp4.parent1Id);
+      if (gp4.parent2Id) p2Grandparents.push(gp4.parent2Id);
+    }
+    
+    var commonGrandparents = 0;
+    p1Grandparents.forEach(function (gpid) {
+      if (p2Grandparents.indexOf(gpid) >= 0) commonGrandparents++;
+    });
+    coefficient += commonGrandparents * 12.5;
+    
+    return clamp(coefficient, 0, 100);
   }
 
   function openDetailModal(axolotlId) {
@@ -474,7 +561,8 @@
     var bodyEl = $('axDetailBody');
     var familyEl = $('axDetailFamily');
     
-    nameEl.textContent = typeLabel(displayAx.type) + ' ' + displayAx.sex;
+    var sexDisplay = displayAx.age >= 12 ? (displayAx.sex === 'オス' ? '♂' : '♀') : '不明';
+    nameEl.innerHTML = typeLabel(displayAx.type) + ' ' + (displayAx.age >= 12 ? (displayAx.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>') : '不明');
     
     var sizeBand = sizeBandFromAge(displayAx.age);
     var bodyText = 
@@ -497,10 +585,11 @@
       if (tree.parents.length > 0) {
         var parentDiv = document.createElement('div');
         parentDiv.className = 'ax-detail-family-item';
-        parentDiv.textContent = '親：';
+        parentDiv.innerHTML = '親：';
         tree.parents.forEach(function (p, idx) {
-          if (idx > 0) parentDiv.textContent += '、';
-          parentDiv.textContent += typeLabel(p.type) + ' ' + p.sex;
+          if (idx > 0) parentDiv.innerHTML += '、';
+          var pSexDisplay = p.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>';
+          parentDiv.innerHTML += typeLabel(p.type) + ' ' + pSexDisplay;
         });
         familyEl.appendChild(parentDiv);
       } else {
@@ -513,10 +602,11 @@
       if (tree.grandparents.length > 0) {
         var grandparentDiv = document.createElement('div');
         grandparentDiv.className = 'ax-detail-family-item';
-        grandparentDiv.textContent = '祖父母：';
+        grandparentDiv.innerHTML = '祖父母：';
         tree.grandparents.forEach(function (gp, idx) {
-          if (idx > 0) grandparentDiv.textContent += '、';
-          grandparentDiv.textContent += typeLabel(gp.type) + ' ' + gp.sex;
+          if (idx > 0) grandparentDiv.innerHTML += '、';
+          var gpSexDisplay = gp.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>';
+          grandparentDiv.innerHTML += typeLabel(gp.type) + ' ' + gpSexDisplay;
         });
         familyEl.appendChild(grandparentDiv);
       }
@@ -681,9 +771,18 @@
       lines.className = 'ax-tank-lines';
       if (tank.breedingPair) {
         var months = tank.breedingMonthsLeft != null ? tank.breedingMonthsLeft : 0;
-        lines.textContent = '親1：' + typeLabel(tank.breedingPair[0].type) + ' ' + tank.breedingPair[0].sex + '\n親2：' + typeLabel(tank.breedingPair[1].type) + ' ' + tank.breedingPair[1].sex + '\nあと' + months + 'ヶ月で結果';
+        var p1 = tank.breedingPair[0];
+        var p2 = tank.breedingPair[1];
+        var p1Sex = p1.age >= 12 ? (p1.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>') : '不明';
+        var p2Sex = p2.age >= 12 ? (p2.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>') : '不明';
+        lines.innerHTML = 
+          '<div>' + typeLabel(p1.type) + ' ' + p1Sex + ' / ' + typeLabel(p2.type) + ' ' + p2Sex + '</div>' +
+          '<div>齢: ' + p1.age + ' / ' + p2.age + '</div>' +
+          '<div class="ax-health-bar-wrap"><div class="ax-health-bar"><div class="ax-health-bar-fill" style="width:' + Math.round(p1.health) + '%;background:' + getHealthBarColor(p1.health) + ';"></div></div><div class="ax-health-bar"><div class="ax-health-bar-fill" style="width:' + Math.round(p2.health) + '%;background:' + getHealthBarColor(p2.health) + ';"></div></div></div>' +
+          '<div class="ax-hunger-bar-wrap"><div class="ax-hunger-bar"><div class="ax-hunger-bar-fill" style="width:' + Math.round(p1.hunger || 100) + '%"></div></div><div class="ax-hunger-bar"><div class="ax-hunger-bar-fill" style="width:' + Math.round(p2.hunger || 100) + '%"></div></div></div>' +
+          '<div>あと' + months + 'ヶ月';
         lines.classList.add('clickable');
-        lines.dataset.axolotlId = String(tank.breedingPair[0].id);
+        lines.dataset.axolotlId = String(p1.id);
         lines.addEventListener('click', function () {
           openDetailModal(parseInt(this.dataset.axolotlId, 10));
         });
@@ -698,12 +797,13 @@
         });
       } else if (tank.axolotl) {
         var ax = tank.axolotl;
-        lines.textContent =
-          '性別：' + ax.sex + '\n' +
-          '種類：' + typeLabel(ax.type) + '\n' +
-          '色味：' + (shadeLabels[ax.shade] || '普通') + '\n' +
-          '年齢：' + ax.age + 'ヶ月\n' +
-          '健康：' + Math.round(ax.health) + '/100' + (ax.injured ? '\n欠損' : '') + (ax.sick ? '\n病気' : '') + (ax.underTreatment ? '\n治療中' : '');
+        var sexDisplay = getSexDisplay(ax);
+        lines.innerHTML =
+          '<div>' + typeLabel(ax.type) + ' ' + sexDisplay + '</div>' +
+          '<div>齢: ' + ax.age + '</div>' +
+          '<div class="ax-health-bar-wrap"><div class="ax-health-bar"><div class="ax-health-bar-fill" style="width:' + Math.round(ax.health) + '%;background:' + getHealthBarColor(ax.health) + ';"></div></div></div>' +
+          '<div class="ax-hunger-bar-wrap"><div class="ax-hunger-bar"><div class="ax-hunger-bar-fill" style="width:' + Math.round(ax.hunger || 100) + '%"></div></div></div>' +
+          '<div>' + (ax.injured ? '欠損 ' : '') + (ax.sick ? '病気 ' : '') + (ax.underTreatment ? '治療中' : '') + '</div>';
         lines.classList.add('clickable');
         lines.dataset.axolotlId = String(ax.id);
         lines.addEventListener('click', function () {
@@ -777,9 +877,18 @@
       foot.className = 'ax-tank-footer';
       if (tank.axolotl) {
         var price = calcPrice(tank.axolotl);
+        var basePrice = calcBaseMarketPrice(tank.axolotl);
+        var priceRatio = price / basePrice;
         foot.innerHTML = '';
         var priceSpan = document.createElement('span');
         priceSpan.textContent = '予想販売：' + formatMoney(price);
+        // 相場より高い場合は色を変更（1.2倍以上で青、1.5倍以上で濃い青）
+        if (priceRatio >= 1.5) {
+          priceSpan.style.color = '#1e40af'; // 濃い青
+          priceSpan.style.fontWeight = 'bold';
+        } else if (priceRatio >= 1.2) {
+          priceSpan.style.color = '#3b82f6'; // 青
+        }
         foot.appendChild(priceSpan);
         var sellBtn = document.createElement('button');
         sellBtn.type = 'button';
@@ -790,8 +899,29 @@
           actSellTank(parseInt(this.dataset.tankIndex, 10));
         });
         foot.appendChild(sellBtn);
-      } else if (tank.breedingPair || tank.egg) {
-        foot.textContent = tank.note || (tank.egg ? '孵化を待つ' : '繁殖結果を待つ');
+      } else if (tank.breedingPair) {
+        var separateBtn = document.createElement('button');
+        separateBtn.type = 'button';
+        separateBtn.className = 'ax-tank-sell';
+        separateBtn.textContent = '離別';
+        separateBtn.dataset.tankIndex = String(idx);
+        separateBtn.addEventListener('click', function () {
+          separateBreedingPair(parseInt(this.dataset.tankIndex, 10));
+        });
+        foot.innerHTML = '';
+        foot.appendChild(separateBtn);
+      } else if (tank.egg) {
+        var eggPrice = Math.floor((tank.eggCount || 500) * 50); // 卵1個50円
+        var sellEggBtn = document.createElement('button');
+        sellEggBtn.type = 'button';
+        sellEggBtn.className = 'ax-tank-sell';
+        sellEggBtn.textContent = '卵を売る ' + formatMoney(eggPrice);
+        sellEggBtn.dataset.tankIndex = String(idx);
+        sellEggBtn.addEventListener('click', function () {
+          sellEggs(parseInt(this.dataset.tankIndex, 10));
+        });
+        foot.innerHTML = '';
+        foot.appendChild(sellEggBtn);
       } else if (tank.juveniles && tank.juveniles.length > 0) {
         var sellJuvenileBtn = document.createElement('button');
         sellJuvenileBtn.type = 'button';
@@ -868,90 +998,104 @@
     if (!tank || !tank.breedingPair) return;
     var pair = tank.breedingPair;
     var relationshipMeter = tank.relationshipMeter || 50; // 0-100
-    var emptySlots = [];
-    state.tanks.forEach(function (t, i) {
-      if (!t.axolotl && !t.breedingPair && !t.egg) emptySlots.push(i);
-    });
+    var inbreedingCoeff = calculateInbreedingCoefficient(pair[0].id, pair[1].id);
     
     // 関係メーターに基づいて成功率を調整
     var baseSuccessRate = 0.7;
     var relationshipBonus = (relationshipMeter - 50) / 100; // -0.5 から +0.5
-    var successRate = clamp(baseSuccessRate + relationshipBonus, 0.3, 0.95);
+    
+    // 近親交配度が高いと成功率が下がる、卵も生まれづらくなる
+    var inbreedingPenalty = inbreedingCoeff / 200; // 最大-0.5
+    var successRate = clamp(baseSuccessRate + relationshipBonus - inbreedingPenalty, 0.2, 0.95);
     var success = Math.random() < successRate;
     
     // 関係メーターが低いと大失敗の確率が上がる
-    var bigFailChance = relationshipMeter < 30 ? 0.3 : (relationshipMeter < 50 ? 0.15 : 0.05);
+    // 近親交配度が高いと大失敗の確率も上がる
+    var baseBigFailChance = relationshipMeter < 30 ? 0.3 : (relationshipMeter < 50 ? 0.15 : 0.05);
+    var inbreedingFailBonus = inbreedingCoeff / 200; // 最大+0.5
+    var bigFailChance = clamp(baseBigFailChance + inbreedingFailBonus, 0.05, 0.6);
     
-    if (success && emptySlots.length >= 2) {
-      state.tanks[emptySlots[0]].axolotl = pair[0];
-      state.tanks[emptySlots[0]].note = '親ウパ';
-      state.tanks[emptySlots[1]].axolotl = pair[1];
-      state.tanks[emptySlots[1]].note = '親ウパ';
-      tank.breedingPair = null;
-      tank.breedingMonthsLeft = null;
-      tank.relationshipMeter = null;
-      
+    if (success) {
       // 卵の数を決定（300-1000個）
-      var eggCount = randInt(300, 1000);
+      // 近親交配度が高いと卵の数が減る
+      var baseEggCount = randInt(300, 1000);
+      var eggCount = Math.floor(baseEggCount * (1 - inbreedingCoeff / 200)); // 最大50%減
+      eggCount = Math.max(100, eggCount); // 最低100個
+      
       tank.egg = true;
       tank.eggCount = eggCount;
       tank.eggParentTypes = [pair[0].type, pair[1].type];
       tank.eggParentIds = [pair[0].id, pair[1].id];
       tank.hatchMonthsLeft = 1;
-      tank.note = '卵 ' + eggCount + '個（あと1ヶ月で孵化）';
-      state.reputation = clamp(state.reputation + 3, 0, MAX_REP);
-      logLine('繁殖に成功！水槽' + (tankIdx + 1) + 'に' + eggCount + '個の卵が産まれた。');
-    } else if (success) {
-      emptySlots.push(tankIdx);
-      for (var i = 0; i < pair.length && i < emptySlots.length; i++) {
-        state.tanks[emptySlots[i]].axolotl = pair[i];
-        state.tanks[emptySlots[i]].note = '親ウパ';
-      }
       tank.breedingPair = null;
       tank.breedingMonthsLeft = null;
       tank.relationshipMeter = null;
-      tank.note = '空き水槽';
-      logLine('繁殖は成功したが、空き水槽が足りず卵を置けなかった。');
+      tank.note = '卵 ' + eggCount + '個（あと1ヶ月で孵化）';
+      state.reputation = clamp(state.reputation + 3, 0, MAX_REP);
+      logLine('繁殖に成功！水槽' + (tankIdx + 1) + 'に' + eggCount + '個の卵が産まれた。' + (inbreedingCoeff > 50 ? '（血が濃いため卵が少ない）' : ''));
     } else {
       var bigFail = Math.random() < bigFailChance;
-      var survivors = [];
       if (bigFail) {
+        // 近親交配度が高いと死亡・欠損の確率が上がる
+        var deathChance = 0.1 + (inbreedingCoeff / 200); // 最大0.6
+        var injuryChance = 0.4 + (inbreedingCoeff / 200); // 最大0.9
+        
         [0, 1].forEach(function (i) {
           var ax = pair[i];
           var roll = Math.random();
-          if (roll < 0.1) {
-            logLine(typeLabel(ax.type) + 'が繁殖中の事故で★になってしまった…');
+          if (roll < deathChance) {
+            logLine(typeLabel(ax.type) + 'が繁殖中の事故で★になってしまった…' + (inbreedingCoeff > 50 ? '（血が濃すぎた）' : ''));
             state.reputation = clamp(state.reputation - 8, 0, MAX_REP);
             if (axolotlRegistry[ax.id]) {
               axolotlRegistry[ax.id].removed = true;
             }
-          } else if (roll < 0.4) {
+            pair[i] = null;
+          } else if (roll < deathChance + injuryChance) {
             ax.injured = true;
-            survivors.push(ax);
-            logLine(typeLabel(ax.type) + 'が欠損を負った。値段が下がる。');
-          } else {
-            survivors.push(ax);
+            logLine(typeLabel(ax.type) + 'が欠損を負った。値段が下がる。' + (inbreedingCoeff > 50 ? '（血が濃すぎた）' : ''));
           }
         });
+        // nullを除去
+        tank.breedingPair = pair.filter(function (ax) { return ax != null; });
+        if (tank.breedingPair.length === 0) {
+          tank.breedingPair = null;
+          tank.breedingMonthsLeft = null;
+          tank.relationshipMeter = null;
+          tank.note = '空き水槽';
+        } else if (tank.breedingPair.length === 1) {
+          tank.axolotl = tank.breedingPair[0];
+          tank.breedingPair = null;
+          tank.breedingMonthsLeft = null;
+          tank.relationshipMeter = null;
+          tank.note = '親ウパ';
+        }
       } else {
-        survivors = [pair[0], pair[1]];
-        logLine('繁殖に失敗した。');
-      }
-      tank.breedingPair = null;
-      tank.breedingMonthsLeft = null;
-      tank.relationshipMeter = null;
-      tank.note = '空き水槽';
-      var slotsForSurvivors = emptySlots.slice();
-      if (slotsForSurvivors.indexOf(tankIdx) < 0) slotsForSurvivors.push(tankIdx);
-      for (var j = 0; j < survivors.length && j < slotsForSurvivors.length; j++) {
-        state.tanks[slotsForSurvivors[j]].axolotl = survivors[j];
-        state.tanks[slotsForSurvivors[j]].note = survivors[j].injured ? '欠損あり' : '親ウパ';
+        logLine('繁殖に失敗した。' + (inbreedingCoeff > 50 ? '（血が濃すぎる）' : ''));
+        // 失敗しても同じ水槽に残る（何もしない）
       }
     }
   }
 
   function countOccupiedTanks() {
     return state.tanks.filter(function (t) { return t.axolotl || t.breedingPair; }).length;
+  }
+
+  function checkAuction() {
+    // オークションは低確率で発生（5%）
+    if (Math.random() < 0.05) {
+      var rareTypes = ['goldblackeye', 'chimera', 'copper', 'black'];
+      var selectedType = rareTypes[Math.floor(Math.random() * rareTypes.length)];
+      var basePrice = typePriceBase[selectedType] || 20000;
+      var auctionPrice = basePrice * randInt(8, 15); // 8-15倍の価格
+      state.auctionAvailable = true;
+      state.auctionType = selectedType;
+      state.auctionPrice = auctionPrice;
+      logLine('【オークション】' + typeLabel(selectedType) + 'が' + formatMoney(auctionPrice) + 'で出品されています！仕入れ画面を確認してください。');
+    } else {
+      state.auctionAvailable = false;
+      state.auctionType = null;
+      state.auctionPrice = 0;
+    }
   }
 
   function endOfMonthDrift() {
@@ -984,6 +1128,27 @@
           var parentIds = tank.eggParentIds || [null, null];
           var eggCount = tank.eggCount || 500;
           
+          // 空き水槽がない場合は卵を売却
+          var emptySlots = [];
+          state.tanks.forEach(function (t, i) {
+            if (i !== idx && !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles) {
+              emptySlots.push(i);
+            }
+          });
+          
+          if (emptySlots.length === 0) {
+            var eggPrice = Math.floor(eggCount * 50);
+            state.money += eggPrice;
+            tank.egg = false;
+            tank.eggCount = null;
+            tank.eggParentTypes = null;
+            tank.eggParentIds = null;
+            tank.hatchMonthsLeft = null;
+            tank.note = '空き水槽';
+            logLine('空き水槽がないため、卵' + eggCount + '個を' + formatMoney(eggPrice) + 'で販売した。');
+            return;
+          }
+          
           // 卵が孵化して幼生が生まれる
           tank.egg = false;
           tank.eggCount = null;
@@ -995,13 +1160,17 @@
           
           // 幼生を生成（300-1000個から、種類ごとに確率で生成）
           for (var i = 0; i < Math.min(eggCount, 100); i++) { // 最大100匹まで表示
-            var offspringResult;
-            if (Math.random() < 0.85) {
-              offspringResult = { type: parentTypes[Math.floor(Math.random() * parentTypes.length)] };
-            } else {
-              offspringResult = pickOffspringType(parentTypes[0], parentTypes[1], parentIds[0], parentIds[1]);
-            }
-            var juvenile = createAxolotl(0, offspringResult.type, parentIds[0], parentIds[1], offspringResult.chimeraTypes);
+          var offspringResult;
+          var inbreedingCoeff = calculateInbreedingCoefficient(parentIds[0], parentIds[1]);
+          var parentTraitChance = 0.85 + (inbreedingCoeff / 100) * 0.1;
+          
+          if (Math.random() < parentTraitChance) {
+            offspringResult = { type: parentTypes[Math.floor(Math.random() * parentTypes.length)], inbreedingCoeff: inbreedingCoeff };
+          } else {
+            offspringResult = pickOffspringType(parentTypes[0], parentTypes[1], parentIds[0], parentIds[1]);
+          }
+          var juvenile = createAxolotl(0, offspringResult.type, parentIds[0], parentIds[1], offspringResult.chimeraTypes);
+          juvenile.inbreedingCoeff = offspringResult.inbreedingCoeff || 0;
             tank.juveniles.push(juvenile);
           }
           
@@ -1018,7 +1187,16 @@
         // 混雑度に基づいて死亡率を計算
         var crowdingFactor = tank.juveniles.length / 50; // 50匹を基準
         var baseDeathRate = 0.05; // 5%の基本死亡率
-        var deathRate = baseDeathRate * crowdingFactor;
+        
+        // 近親交配度が高いと死亡率が上がる
+        var avgInbreeding = 0;
+        tank.juveniles.forEach(function (j) {
+          if (j.inbreedingCoeff) avgInbreeding += j.inbreedingCoeff;
+        });
+        avgInbreeding = tank.juveniles.length > 0 ? avgInbreeding / tank.juveniles.length : 0;
+        var inbreedingDeathBonus = avgInbreeding > 50 ? (avgInbreeding - 50) / 100 : 0; // 最大+0.5
+        
+        var deathRate = baseDeathRate * crowdingFactor + inbreedingDeathBonus;
         
         // 幼生の死亡処理
         var survivors = [];
@@ -1042,13 +1220,13 @@
           logLine('すべての幼生が★になってしまった…');
         } else if (tank.juvenileAge >= 5) {
           // 5ヶ月経過したら、1匹を選んで成体にする
+          var remainingCount = tank.juveniles.length - 1;
           var selected = tank.juveniles[Math.floor(Math.random() * tank.juveniles.length)];
           tank.axolotl = selected;
           tank.juveniles = null;
           tank.juvenileAge = null;
           tank.baby = false;
           tank.note = '育ったウパ';
-          var remainingCount = tank.juveniles ? tank.juveniles.length - 1 : 0;
           logLine('幼生が成長し、' + typeLabel(selected.type) + 'の成体になった。残り' + remainingCount + '匹は売却された。');
         } else {
           tank.note = '幼生 ' + tank.juveniles.length + '匹（' + tank.juvenileAge + '/5ヶ月）';
@@ -1062,9 +1240,16 @@
       else if (state.clean < 70) ax.health -= 6;
       if (ax.hunger < 30) ax.health -= 6;
       ax.health = clamp(ax.health, 0, MAX_HEALTH);
-      if (!ax.sick && (state.clean < 40 || ax.hunger < 30) && Math.random() < SICK_CHANCE_PER_MONTH) {
+      // 近親交配度が高いと病気になりやすい
+      var inbreedingCoeff = calculateInbreedingCoefficient(ax.parent1Id, ax.parent2Id);
+      var sickChance = SICK_CHANCE_PER_MONTH;
+      if (inbreedingCoeff > 50) {
+        sickChance *= (1 + inbreedingCoeff / 100); // 最大2倍
+      }
+      
+      if (!ax.sick && (state.clean < 40 || ax.hunger < 30) && Math.random() < sickChance) {
         ax.sick = true;
-        logLine(typeLabel(ax.type) + 'のウパが病気になった。');
+        logLine(typeLabel(ax.type) + 'のウパが病気になった。' + (inbreedingCoeff > 50 ? '（血が濃いため）' : ''));
       }
       if (ax.sick) {
         if (ax.underTreatment && Math.random() < TREATMENT_RECOVER_CHANCE) {
@@ -1110,6 +1295,7 @@
 
   function nextMonth() {
     state.month += 1;
+    checkAuction();
     endOfMonthDrift();
     checkEnd();
     updateUI();
@@ -1197,6 +1383,64 @@
     updateUI();
   }
 
+  function separateBreedingPair(tankIdx) {
+    var tank = state.tanks[tankIdx];
+    if (!tank || !tank.breedingPair) return;
+    var pair = tank.breedingPair;
+    var emptySlots = [];
+    state.tanks.forEach(function (t, i) {
+      if (i !== tankIdx && !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles) {
+        emptySlots.push(i);
+      }
+    });
+    
+    // 空き水槽があれば移動、なければ売却
+    if (emptySlots.length >= pair.length) {
+      for (var i = 0; i < pair.length; i++) {
+        state.tanks[emptySlots[i]].axolotl = pair[i];
+        state.tanks[emptySlots[i]].note = '親ウパ';
+      }
+      tank.breedingPair = null;
+      tank.breedingMonthsLeft = null;
+      tank.relationshipMeter = null;
+      tank.note = '空き水槽';
+      logLine('繁殖ペアを離別させた。');
+    } else {
+      // 空き水槽が足りない場合は売却
+      var totalPrice = 0;
+      pair.forEach(function (ax) {
+        var price = calcPrice(ax);
+        totalPrice += price;
+        if (axolotlRegistry[ax.id]) {
+          axolotlRegistry[ax.id].removed = true;
+        }
+      });
+      state.money += totalPrice;
+      tank.breedingPair = null;
+      tank.breedingMonthsLeft = null;
+      tank.relationshipMeter = null;
+      tank.note = '空き水槽';
+      logLine('空き水槽がないため、繁殖ペアを' + formatMoney(totalPrice) + 'で販売した。');
+    }
+    updateUI();
+  }
+
+  function sellEggs(tankIdx) {
+    var tank = state.tanks[tankIdx];
+    if (!tank || !tank.egg) return;
+    var eggCount = tank.eggCount || 500;
+    var eggPrice = Math.floor(eggCount * 50); // 卵1個50円
+    state.money += eggPrice;
+    tank.egg = false;
+    tank.eggCount = null;
+    tank.eggParentTypes = null;
+    tank.eggParentIds = null;
+    tank.hatchMonthsLeft = null;
+    tank.note = '空き水槽';
+    logLine('卵' + eggCount + '個を' + formatMoney(eggPrice) + 'で販売した。');
+    updateUI();
+  }
+
   function getAdultTanks() {
     return state.tanks.map(function (t, idx) {
       return { tank: t, idx: idx };
@@ -1215,7 +1459,8 @@
       if (parent1Sex && x.tank.axolotl.sex === parent1Sex) return;
       var opt = document.createElement('option');
       opt.value = String(x.idx);
-      opt.textContent = '水槽' + (x.idx + 1) + '（' + typeLabel(x.tank.axolotl.type) + ' ' + x.tank.axolotl.sex + '）';
+      var sexSymbol = x.tank.axolotl.sex === 'オス' ? '♂' : '♀';
+      opt.textContent = '水槽' + (x.idx + 1) + '（' + typeLabel(x.tank.axolotl.type) + ' ' + sexSymbol + '）';
       sel2.appendChild(opt);
     });
     var curB = parseInt(sel2.value, 10);
@@ -1226,7 +1471,7 @@
 
   function openBreedOverlay() {
     var adults = getAdultTanks();
-    var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg; });
+    var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
     if (adults.length < 2 || !empty) {
       logLine('12ヶ月以上の成体2匹と空き水槽が必要だ。');
       return;
@@ -1246,7 +1491,8 @@
     adults.forEach(function (x) {
       var opt = document.createElement('option');
       opt.value = String(x.idx);
-      opt.textContent = '水槽' + (x.idx + 1) + '（' + typeLabel(x.tank.axolotl.type) + ' ' + x.tank.axolotl.sex + '）';
+      var sexSymbol = x.tank.axolotl.sex === 'オス' ? '♂' : '♀';
+      opt.textContent = '水槽' + (x.idx + 1) + '（' + typeLabel(x.tank.axolotl.type) + ' ' + sexSymbol + '）';
       sel1.appendChild(opt);
     });
     var last1 = state.lastBreedParent1;
@@ -1282,7 +1528,7 @@
     }
     var t1 = state.tanks[parent1Idx];
     var t2 = state.tanks[parent2Idx];
-    var emptyIdx = state.tanks.findIndex(function (t) { return !t.axolotl && !t.breedingPair && !t.egg; });
+    var emptyIdx = state.tanks.findIndex(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
     if (!t1 || !t2 || !t1.axolotl || !t2.axolotl || emptyIdx < 0) {
       logLine('条件を満たしていません。');
       return;
@@ -1359,9 +1605,30 @@
     updateUI();
   }
 
-  function fillBuySizeList(selectedType) {
+  function fillBuySizeList(selectedType, isAuction) {
     var list = $('axBuyTypeList');
     list.innerHTML = '';
+    
+    if (isAuction && state.auctionAvailable && state.auctionType === selectedType) {
+      // オークションの場合は1つのみ表示
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ax-buy-type-btn ax-auction-btn';
+      btn.innerHTML = '<img src="' + typeImagePath(selectedType) + '" alt="" class="ax-buy-type-img">' +
+        '<span class="ax-buy-type-name">🔴 オークション出品</span>' +
+        '<span class="ax-buy-type-price">' + formatMoney(state.auctionPrice) + '</span>';
+      btn.dataset.type = selectedType;
+      btn.dataset.band = '7'; // 成体
+      btn.dataset.price = String(state.auctionPrice);
+      btn.dataset.isAuction = 'true';
+      if (state.money < state.auctionPrice) btn.disabled = true;
+      btn.addEventListener('click', function () {
+        doBuy(this.dataset.type, parseInt(this.dataset.band, 10), parseInt(this.dataset.price, 10), true);
+      });
+      list.appendChild(btn);
+      return;
+    }
+    
     var bandPrices = sizePriceTable[selectedType] || sizePriceTable.nomal;
     for (var band = 0; band < sizeBandLabels.length; band++) {
       var price = bandPrices[band];
@@ -1377,40 +1644,62 @@
       btn.dataset.price = String(price);
       if (state.money < price) btn.disabled = true;
       btn.addEventListener('click', function () {
-        doBuy(this.dataset.type, parseInt(this.dataset.band, 10), parseInt(this.dataset.price, 10));
+        doBuy(this.dataset.type, parseInt(this.dataset.band, 10), parseInt(this.dataset.price, 10), false);
       });
       list.appendChild(btn);
     }
   }
 
   function openBuyOverlay() {
-    var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg; });
+    var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
     if (!empty) {
       logLine('空き水槽がないので、新しいウパをお迎えできない。');
       return;
     }
     var tabsEl = $('axBuyTabs');
     tabsEl.innerHTML = '';
+    
+    // オークションがある場合は最初に表示
+    if (state.auctionAvailable && state.auctionType) {
+      var auctionTab = document.createElement('button');
+      auctionTab.type = 'button';
+      auctionTab.className = 'ax-buy-tab ax-auction-tab';
+      auctionTab.innerHTML = '🔴 ' + typeLabel(state.auctionType) + ' !';
+      auctionTab.dataset.type = state.auctionType;
+      auctionTab.classList.add('active');
+      auctionTab.addEventListener('click', function () {
+        tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
+        auctionTab.classList.add('active');
+        fillBuySizeList(state.auctionType, true);
+      });
+      tabsEl.appendChild(auctionTab);
+    }
+    
     AXO_TYPES_BUY.forEach(function (type, i) {
       var tab = document.createElement('button');
       tab.type = 'button';
       tab.className = 'ax-buy-tab';
       tab.textContent = typeLabel(type);
       tab.dataset.type = type;
-      if (i === 0) tab.classList.add('active');
+      if (i === 0 && !state.auctionAvailable) tab.classList.add('active');
       tab.addEventListener('click', function () {
         tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
         tab.classList.add('active');
-        fillBuySizeList(tab.dataset.type);
+        fillBuySizeList(tab.dataset.type, false);
       });
       tabsEl.appendChild(tab);
     });
-    fillBuySizeList(AXO_TYPES_BUY[0]);
+    
+    if (state.auctionAvailable && state.auctionType) {
+      fillBuySizeList(state.auctionType, true);
+    } else {
+      fillBuySizeList(AXO_TYPES_BUY[0], false);
+    }
     $('axOverlayBuy').classList.add('visible');
   }
 
-  function doBuy(type, sizeBand, price) {
-    var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg; });
+  function doBuy(type, sizeBand, price, isAuction) {
+    var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
     if (!empty || state.money < price) {
       logLine('購入できません。');
       $('axOverlayBuy').classList.remove('visible');
@@ -1423,7 +1712,15 @@
     empty.axolotl = ax;
     empty.baby = age < 4;
     empty.note = '仕入れたウパ';
-    logLine(typeLabel(type) + ' ' + sizeBandLabels[sizeBand] + 'を1匹お迎えした。');
+    
+    if (isAuction) {
+      logLine('【オークション落札】' + typeLabel(type) + 'を' + formatMoney(price) + 'で購入した！');
+      state.auctionAvailable = false;
+      state.auctionType = null;
+      state.auctionPrice = 0;
+    } else {
+      logLine(typeLabel(type) + ' ' + sizeBandLabels[sizeBand] + 'を1匹お迎えした。');
+    }
     $('axOverlayBuy').classList.remove('visible');
     updateUI();
   }
@@ -1456,6 +1753,9 @@
     state.ended = false;
     state.lastBreedParent1 = null;
     state.lastBreedParent2 = null;
+    state.auctionAvailable = false;
+    state.auctionType = null;
+    state.auctionPrice = 0;
     initTanks();
     $('axLog').textContent = 'ショップを始めた。親ウパ2匹・水槽3つから。水とエサを整えよう。';
     $('axOverlayEnd').classList.remove('visible');
@@ -1463,6 +1763,7 @@
     $('axOverlayBuy').classList.remove('visible');
     $('axOverlayTreat').classList.remove('visible');
     $('axOverlayDetail').classList.remove('visible');
+    $('axOverlayJuvenile').classList.remove('visible');
     updateUI();
   }
 
