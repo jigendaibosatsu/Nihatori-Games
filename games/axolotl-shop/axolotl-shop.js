@@ -130,6 +130,8 @@
       canvas.width = 40;
       canvas.height = 40;
       var ctx = canvas.getContext('2d');
+      // ピクセルアートをシャープに保つため、スムージングを無効化
+      ctx.imageSmoothingEnabled = false;
       
       // 左半分と右半分を描画
       var img1 = new Image();
@@ -175,6 +177,8 @@
     canvas.width = 40;
     canvas.height = 40;
     var ctx = canvas.getContext('2d');
+    // ピクセルアートをシャープに保つため、スムージングを無効化
+    ctx.imageSmoothingEnabled = false;
     
     img.onload = function() {
       ctx.drawImage(img, 0, 0, 40, 40);
@@ -1961,18 +1965,25 @@
           sprite.src = imgSrc;
           sprite.alt = typeLabel(ax.type);
           sprite.dataset.axolotlId = String(ax.id);
+          // ピクセルアートをシャープに保つため、image-renderingを明示的に設定
+          sprite.style.imageRendering = 'pixelated';
+          sprite.style.imageRendering = 'crisp-edges';
           // キメラの場合は画像が生成されるまで待つ
           if (ax.type === 'chimera' && ax.chimeraTypes && ax.chimeraTypes.length >= 2) {
             if (!imageCache[cacheKey]) {
               var checkChimera = setInterval(function() {
                 if (imageCache[cacheKey]) {
                   sprite.src = imageCache[cacheKey];
+                  sprite.style.imageRendering = 'pixelated';
+                  sprite.style.imageRendering = 'crisp-edges';
                   clearInterval(checkChimera);
                 }
               }, 100);
               setTimeout(function() { clearInterval(checkChimera); }, 3000);
             } else {
               sprite.src = imageCache[cacheKey];
+              sprite.style.imageRendering = 'pixelated';
+              sprite.style.imageRendering = 'crisp-edges';
             }
           }
           // キメラ、イエロー、スーパーブラックは色味変更を適用しない
@@ -2047,18 +2058,25 @@
         sprite.src = imgSrc;
         sprite.alt = typeLabel(ax.type);
         sprite.dataset.axolotlId = String(ax.id);
+        // ピクセルアートをシャープに保つため、image-renderingを明示的に設定
+        sprite.style.imageRendering = 'pixelated';
+        sprite.style.imageRendering = 'crisp-edges';
         // キメラの場合は画像が生成されるまで待つ
         if (ax.type === 'chimera' && ax.chimeraTypes && ax.chimeraTypes.length >= 2) {
           if (!imageCache[cacheKey]) {
             var checkChimera = setInterval(function() {
               if (imageCache[cacheKey]) {
                 sprite.src = imageCache[cacheKey];
+                sprite.style.imageRendering = 'pixelated';
+                sprite.style.imageRendering = 'crisp-edges';
                 clearInterval(checkChimera);
               }
             }, 100);
             setTimeout(function() { clearInterval(checkChimera); }, 3000);
           } else {
             sprite.src = imageCache[cacheKey];
+            sprite.style.imageRendering = 'pixelated';
+            sprite.style.imageRendering = 'crisp-edges';
           }
         }
         // キメラ、イエロー、スーパーブラックは色味変更を適用しない
@@ -2231,7 +2249,9 @@
     if (btnBreed) {
       var adults = getAdultTanks();
       var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
-      var canBreed = !disabled && adults.length >= 2 && empty && adults.filter(function (x) { return x.tank.axolotl.sex === 'オス'; }).length > 0 && adults.filter(function (x) { return x.tank.axolotl.sex === 'メス'; }).length > 0;
+      var males = adults.filter(function (x) { return x.tank.axolotl && x.tank.axolotl.sex === 'オス'; });
+      var females = adults.filter(function (x) { return x.tank.axolotl && x.tank.axolotl.sex === 'メス'; });
+      var canBreed = !disabled && adults.length >= 2 && empty && males.length > 0 && females.length > 0;
       btnBreed.disabled = !canBreed;
     }
     if (btnTreat) btnTreat.disabled = disabled;
@@ -3497,7 +3517,7 @@
     return state.tanks.map(function (t, idx) {
       return { tank: t, idx: idx };
     }).filter(function (x) {
-      return x.tank.axolotl && !x.tank.breedingPair && x.tank.axolotl.age >= 12 && x.tank.axolotl.health > 0 && !x.tank.axolotl.injured && !x.tank.axolotl.sick;
+      return x.tank.axolotl && !x.tank.breedingPair && x.tank.axolotl.age >= 12 && x.tank.axolotl.health > 0 && !x.tank.axolotl.injured && !x.tank.axolotl.sick && x.tank.axolotl.sex && (x.tank.axolotl.sex === 'オス' || x.tank.axolotl.sex === 'メス');
     });
   }
 
@@ -4423,6 +4443,8 @@
         canvas.width = 40;
         canvas.height = 40;
         var ctx = canvas.getContext('2d');
+        // ピクセルアートをシャープに保つため、スムージングを無効化
+        ctx.imageSmoothingEnabled = false;
         var img1 = new Image();
         var img2 = new Image();
         var loaded = 0;
@@ -4443,6 +4465,8 @@
           ctx.drawImage(img2, halfWidth2, 0, halfWidth2, img2Height, 20, 0, 20, 40);
           
           img.src = canvas.toDataURL();
+          img.style.imageRendering = 'pixelated';
+          img.style.imageRendering = 'crisp-edges';
         };
         img1.onload = function() { loaded++; drawChimera(); };
         img2.onload = function() { loaded++; drawChimera(); };
@@ -4548,4 +4572,15 @@
   }
 
   resetGame();
+  
+  // スマホのブラウザバーによるビューポート高さの変動を防ぐ
+  function setViewportHeight() {
+    var vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', vh + 'px');
+  }
+  setViewportHeight();
+  window.addEventListener('resize', setViewportHeight);
+  window.addEventListener('orientationchange', function() {
+    setTimeout(setViewportHeight, 100);
+  });
 })();
