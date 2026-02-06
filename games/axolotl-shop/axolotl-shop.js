@@ -102,191 +102,210 @@
   var AUTO_FEEDER_HUNGER_THRESHOLD = 50;
   var AUTO_FEEDER_COST_PER_FEED = 1000;
   
+  // プロジェクトルートの assets/axolotl を参照（games/axolotl-shop から ../../assets/axolotl）
+  var AXOLOTL_IMAGE_BASE = '../../assets/axolotl/';
   function typeImagePath(t) {
-    if (t === 'goldblackeye') return '/assets/axolotl/axo_gold.png';
-    if (t === 'yellow') return '/assets/axolotl/axo_yellow.png'; // イエロー専用画像
-    if (t === 'superblack') return '/assets/axolotl/axo_superblack.png'; // スーパーブラック専用画像
-    if (t === 'dalmatian') return '/assets/axolotl/axo_dalmatian.png'; // ダルメシアン専用画像
-    return '/assets/axolotl/axo_' + t + '.png';
+    if (t === 'goldblackeye') return AXOLOTL_IMAGE_BASE + 'axo_gold.png';
+    if (t === 'yellow') return AXOLOTL_IMAGE_BASE + 'axo_yellow.png';
+    if (t === 'superblack') return AXOLOTL_IMAGE_BASE + 'axo_superblack.png';
+    if (t === 'dalmatian') return AXOLOTL_IMAGE_BASE + 'axo_dalmatian.png';
+    return AXOLOTL_IMAGE_BASE + 'axo_' + t + '.png';
   }
 
-  // 画像を動的に生成（Canvas APIを使用）
-  var imageCache = {};
-  function generateAxolotlImage(ax) {
-    // スーパーブラック、イエロー、キメラの場合は色味の変更がないため、タイプのみでキャッシュキーを作成
-    var cacheKey;
-    if (ax.type === 'superblack' || ax.type === 'yellow') {
-      cacheKey = ax.type;
-    } else if (ax.type === 'chimera') {
-      // キメラの場合はchimeraTypesを使用（設定されていない場合はデフォルト）
-      var chimeraTypes = ax.chimeraTypes && ax.chimeraTypes.length >= 2 
-        ? ax.chimeraTypes 
-        : ['gold', 'marble'];
-      cacheKey = 'chimera_' + chimeraTypes[0] + '_' + chimeraTypes[1];
-    } else {
-      cacheKey = ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
-    }
-    if (imageCache[cacheKey]) {
-      return imageCache[cacheKey];
-    }
-    
-    // キメラの場合は画像生成を無効化（ゴールド画像を表示）
-    if (ax.type === 'chimera') {
-      return typeImagePath('gold');
-    }
-    
-    // 通常の個体差適用
-    var img = new Image();
-    img.crossOrigin = 'anonymous'; // CORS対応
-    var canvas = document.createElement('canvas');
-    canvas.width = 40;
-    canvas.height = 40;
-    var ctx = canvas.getContext('2d');
-    // ピクセルアートをシャープに保つため、スムージングを無効化
-    ctx.imageSmoothingEnabled = false;
-    
-    var imageLoaded = false; // 画像が既に読み込まれたかどうかのフラグ
-    
-    img.onload = function() {
-      // 既に読み込まれている場合はスキップ（重複実行を防ぐ）
-      if (imageLoaded) {
-        return;
-      }
-      
-      // 画像が完全に読み込まれるまで確実に待つ
-      var ensureLoaded = function() {
-        if (!img.complete || !img.naturalWidth || !img.naturalHeight || 
-            img.naturalWidth === 0 || img.naturalHeight === 0) {
-          setTimeout(ensureLoaded, 10);
-          return;
-        }
-        
-        imageLoaded = true; // フラグを設定
-        
-        // 画像の実際のサイズを取得
-        var imgWidth = img.naturalWidth;
-        var imgHeight = img.naturalHeight;
-        
-        // 新しいCanvasを作成（毎回新しく作成して確実にクリア）
-        var newCanvas = document.createElement('canvas');
-        newCanvas.width = 40;
-        newCanvas.height = 40;
-        var newCtx = newCanvas.getContext('2d');
-        newCtx.imageSmoothingEnabled = false;
-        
-        // 画像を40x40のCanvasに正しく描画
-        try {
-          // ソース画像全体を、Canvas全体（40x40）に描画
-          newCtx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, 40, 40);
-        } catch (e) {
-          // エラー時は元の画像パスを使用
-          imageCache[cacheKey] = typeImagePath(ax.type);
-          return;
-        }
-        
-        // 元のCanvasコンテキストを新しいものに置き換え
-        ctx = newCtx;
-        canvas = newCanvas;
-        
-        // 以降の処理を続行
-        processImageData();
-      };
-      
-      ensureLoaded();
-      
-      var processImageData = function() {
-      
-        // スーパーブラックとイエローの場合は画像をそのまま使用（色味の変更なし、固定）
-        if (ax.type === 'superblack' || ax.type === 'yellow') {
-          // 画像をそのまま使用し、色味の変更は行わない
-          imageCache[cacheKey] = canvas.toDataURL('image/png');
-          if (typeof updateUI === 'function') {
-            setTimeout(updateUI, 50);
-          }
-          return;
-        }
-        
-        // brightnessとsaturationを適用
-        var imageData = ctx.getImageData(0, 0, 40, 40);
-        var data = imageData.data;
-        var brightness = ax.brightness || 1;
-        var saturation = ax.saturation || 1;
-        
-        for (var i = 0; i < data.length; i += 4) {
-          if (data[i + 3] === 0) continue; // alpha == 0はスキップ
-          
-          var r = data[i];
-          var g = data[i + 1];
-          var b = data[i + 2];
-          
-          // brightness適用
-          r = Math.min(255, r * brightness);
-          g = Math.min(255, g * brightness);
-          b = Math.min(255, b * brightness);
-          
-          // saturation適用
-          var gray = 0.299 * r + 0.587 * g + 0.114 * b;
-          r = gray + (r - gray) * saturation;
-          g = gray + (g - gray) * saturation;
-          b = gray + (b - gray) * saturation;
-          
-          data[i] = Math.max(0, Math.min(255, r));
-          data[i + 1] = Math.max(0, Math.min(255, g));
-          data[i + 2] = Math.max(0, Math.min(255, b));
-        }
-        
-        ctx.putImageData(imageData, 0, 0);
-        
-        // spotsを追加（marbleのみ）
-        if (ax.spots && ax.type === 'marble') {
-          var spotsCtx = ctx;
-          var density = ax.spotsDensity || 0.1;
-          for (var y = 10; y < 30; y++) {
-            for (var x = 5; x < 35; x++) {
-              // 目の周辺は避ける
-              if (x >= 12 && x <= 28 && y >= 12 && y <= 20) continue;
-              if (Math.random() < density) {
-                spotsCtx.fillStyle = 'rgba(0,0,0,' + (0.3 + Math.random() * 0.4) + ')';
-                spotsCtx.fillRect(x, y, 2, 2);
-              }
-            }
-          }
-        }
-        
-        imageCache[cacheKey] = canvas.toDataURL('image/png');
-        // UIを更新（画像が生成されたことを通知）
-        if (typeof updateUI === 'function') {
-          setTimeout(updateUI, 50);
-        }
-      };
-      
-      checkLoaded();
-    };
-    
-    img.onerror = function() {
-      // エラー時は元の画像パスをキャッシュに保存（フォールバック）
-      imageCache[cacheKey] = typeImagePath(ax.type);
-      if (typeof updateUI === 'function') {
-        setTimeout(updateUI, 50);
-      }
-    };
-    
-    // 画像の読み込みを開始
-    img.src = typeImagePath(ax.type);
-    
-    // 画像が既に読み込まれている場合（キャッシュされている場合）
-    // setTimeoutで遅延させて、確実に読み込み完了を待つ
-    if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-      setTimeout(function() {
-        if (!imageLoaded) {
-          img.onload();
-        }
-      }, 0);
-    }
-    
-    // 画像が生成されるまで、元の画像パスを返す（後で更新される）
-    return typeImagePath(ax.type);
+  // ===== 32pxドット絵保護ユーティリティ =====
+  var PIXEL_ART_BASE_SIZE = 32;
+  
+  // 32の整数倍に丸める（最も近い整数倍へ）
+  function roundToPixelArtMultiple(size) {
+    if (size <= 0) return PIXEL_ART_BASE_SIZE;
+    var multiplier = Math.round(size / PIXEL_ART_BASE_SIZE);
+    if (multiplier < 1) multiplier = 1;
+    return multiplier * PIXEL_ART_BASE_SIZE;
   }
+  
+  // サイズが32の整数倍かチェック
+  function isValidPixelArtSize(size) {
+    return size > 0 && size % PIXEL_ART_BASE_SIZE === 0;
+  }
+  
+  // Canvasの設定を検証・強制
+  function ensurePixelArtCanvas(canvas, ctx) {
+    if (!isValidPixelArtSize(canvas.width) || !isValidPixelArtSize(canvas.height)) {
+      console.error('[PixelArt] Canvasサイズが32の整数倍ではありません:', canvas.width, 'x', canvas.height);
+      canvas.width = roundToPixelArtMultiple(canvas.width);
+      canvas.height = roundToPixelArtMultiple(canvas.height);
+    }
+    if (ctx.imageSmoothingEnabled !== false) {
+      console.error('[PixelArt] imageSmoothingEnabledが有効です！強制的に無効化します。');
+      ctx.imageSmoothingEnabled = false;
+    }
+  }
+  
+  // drawImageのラッパー（小数座標チェック）
+  function safeDrawImage(ctx, img, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    var allIntegers = true;
+    var checkValues = [sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight].filter(function(v) { return v != null; });
+    
+    for (var i = 0; i < checkValues.length; i++) {
+      if (checkValues[i] % 1 !== 0) {
+        allIntegers = false;
+        console.warn('[PixelArt] drawImageに小数座標が検出されました:', checkValues);
+        break;
+      }
+    }
+    
+    if (!allIntegers) {
+      // 小数を整数に丸める
+      args = args.map(function(v) {
+        return typeof v === 'number' ? Math.round(v) : v;
+      });
+    }
+    
+    ctx.drawImage.apply(ctx, [img].concat(args));
+  }
+  
+  // 画像要素のサイズを32の整数倍に設定（非整数倍で引き延ばさない＝ぼやけ防止）
+  function setPixelArtImageSize(img, width, height) {
+    var roundedWidth = roundToPixelArtMultiple(width);
+    var roundedHeight = roundToPixelArtMultiple(height);
+    if (roundedWidth !== width || roundedHeight !== height) {
+      console.warn('[PixelArt] 画像サイズが32の整数倍ではありません。', width, 'x', height, '→', roundedWidth, 'x', roundedHeight);
+    }
+    img.style.width = roundedWidth + 'px';
+    img.style.height = roundedHeight + 'px';
+    img.style.minWidth = roundedWidth + 'px';
+    img.style.minHeight = roundedHeight + 'px';
+    img.style.flexShrink = '0';
+    img.style.imageRendering = 'pixelated';
+    img.style.imageRendering = '-webkit-optimize-contrast';
+    img.style.imageRendering = 'crisp-edges';
+    
+    // 検証（DOMに追加されている場合のみ）
+    if (img.parentNode && document.body.contains(img.parentNode)) {
+      try {
+        var computedWidth = parseFloat(window.getComputedStyle(img).width);
+        var computedHeight = parseFloat(window.getComputedStyle(img).height);
+        if (isNaN(computedWidth) || isNaN(computedHeight)) {
+          // DOMに追加されていない、またはまだレンダリングされていない場合はスキップ
+          return;
+        }
+        if (!isValidPixelArtSize(computedWidth) || !isValidPixelArtSize(computedHeight)) {
+          console.error('[PixelArt] 計算後のサイズが32の整数倍ではありません:', computedWidth, 'x', computedHeight);
+        }
+      } catch (e) {
+        // getComputedStyleが失敗した場合はスキップ
+      }
+    }
+  }
+
+  // 表示用: タイプに応じた画像パスを返すだけ。キャッシュ・濃淡・キメラ合成は使わない（シンプル表示）
+  // キメラは画像表示しない（ax.type === 'chimera' のときは img を出さない）
+
+  // 32pxテクスチャをくっきり表示するためのCanvas（DPR対応・補間なし）
+  // ① image-rendering ② 実サイズ＝表示サイズ ③ devicePixelRatio ④ drawImage で拡大
+  function createPixelArtCanvasSprite(ax, iconSize) {
+    var dpr = window.devicePixelRatio || 1;
+    var canvas = document.createElement('canvas');
+    var w = Math.round(iconSize * dpr);
+    var h = Math.round(iconSize * dpr);
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.width = iconSize + 'px';
+    canvas.style.height = iconSize + 'px';
+    canvas.style.minWidth = iconSize + 'px';
+    canvas.style.minHeight = iconSize + 'px';
+    canvas.style.flexShrink = '0';
+    canvas.style.imageRendering = 'pixelated';
+    canvas.style.imageRendering = '-webkit-optimize-contrast';
+    canvas.style.imageRendering = 'crisp-edges';
+    canvas.style.pointerEvents = 'none';
+    // イエロー・スーパーブラックは固定、それ以外は薄い・濃いを適用
+    canvas.className = 'ax-axolotl-img' + (ax.type === 'yellow' || ax.type === 'superblack' ? '' : ' ax-shade-' + (ax.shade || 'normal'));
+    canvas.dataset.axolotlId = String(ax.id);
+    canvas.title = typeLabel(ax.type);
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      var ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.scale(dpr, dpr);
+      ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, iconSize, iconSize);
+    };
+    img.src = typeImagePath(ax.type);
+    return canvas;
+  }
+
+  // キメラ: 左右半分ずつ合成してDPR対応Canvasで表示（くっきり）
+  function createChimeraCanvasSprite(ax, iconSize) {
+    var dpr = window.devicePixelRatio || 1;
+    var canvas = document.createElement('canvas');
+    var w = Math.round(iconSize * dpr);
+    var h = Math.round(iconSize * dpr);
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.width = iconSize + 'px';
+    canvas.style.height = iconSize + 'px';
+    canvas.style.minWidth = iconSize + 'px';
+    canvas.style.minHeight = iconSize + 'px';
+    canvas.style.flexShrink = '0';
+    canvas.style.imageRendering = 'pixelated';
+    canvas.style.imageRendering = '-webkit-optimize-contrast';
+    canvas.style.imageRendering = 'crisp-edges';
+    canvas.style.pointerEvents = 'none';
+    canvas.className = 'ax-axolotl-img ax-shade-' + (ax.shade || 'normal');
+    canvas.dataset.axolotlId = String(ax.id);
+    canvas.title = typeLabel('chimera');
+    var chimeraTypes = ax.chimeraTypes && ax.chimeraTypes.length >= 2 ? ax.chimeraTypes : ['nomal', 'marble'];
+    var img1 = new Image();
+    var img2 = new Image();
+    img1.crossOrigin = 'anonymous';
+    img2.crossOrigin = 'anonymous';
+    var loaded = 0;
+    function tryDraw() {
+      if (loaded < 2) return;
+      if (!img1.complete || !img2.complete || !img1.naturalWidth || !img2.naturalHeight) return;
+      var c32 = document.createElement('canvas');
+      c32.width = PIXEL_ART_BASE_SIZE;
+      c32.height = PIXEL_ART_BASE_SIZE;
+      var ctx32 = c32.getContext('2d');
+      ctx32.imageSmoothingEnabled = false;
+      var half1 = Math.floor(img1.naturalWidth / 2);
+      var half2 = Math.floor(img2.naturalWidth / 2);
+      ctx32.drawImage(img1, 0, 0, half1, img1.naturalHeight, 0, 0, 16, PIXEL_ART_BASE_SIZE);
+      ctx32.drawImage(img2, img2.naturalWidth - half2, 0, half2, img2.naturalHeight, 16, 0, 16, PIXEL_ART_BASE_SIZE);
+      var ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.scale(dpr, dpr);
+      ctx.drawImage(c32, 0, 0, PIXEL_ART_BASE_SIZE, PIXEL_ART_BASE_SIZE, 0, 0, iconSize, iconSize);
+    }
+    img1.onload = function() { loaded++; tryDraw(); };
+    img2.onload = function() { loaded++; tryDraw(); };
+    img1.onerror = function() { loaded++; tryDraw(); };
+    img2.onerror = function() { loaded++; tryDraw(); };
+    img1.src = typeImagePath(chimeraTypes[0]);
+    img2.src = typeImagePath(chimeraTypes[1]);
+    return canvas;
+  }
+
+  // Idle Bob: 2コマのみ [0, AMPLITUDE]。下に沈めず上に弾むだけ。整数px・sin禁止。
+  // requestAnimationFrame(60fps想定)で stepEvery フレームごとに切り替え。「タッ……タッ……」遅めテンポ。
+  var BOB_AMPLITUDE = 8;   // 6〜12で調整可
+  var BOB_STEP_EVERY = 120; // 約2秒ごと（60fps×2秒）
+  var _bob = [0, -BOB_AMPLITUDE];
+  var _bobIndex = 0;
+  var _bobTick = 0;
+  function idleBobUpdate() {
+    _bobTick++;
+    if (_bobTick % BOB_STEP_EVERY === 0) _bobIndex ^= 1;
+    var y = _bob[_bobIndex];
+    var list = document.querySelectorAll('.ax-axolotl-img.ax-idle');
+    for (var i = 0; i < list.length; i++) {
+      list[i].style.transform = 'translateY(' + y + 'px)';
+    }
+    requestAnimationFrame(idleBobUpdate);
+  }
+  requestAnimationFrame(idleBobUpdate);
 
   // ショップで購入可能な種類（品切れの可能性あり）
   var AXO_TYPES_BUY = ['nomal', 'albino', 'gold', 'marble', 'black', 'yellow'];
@@ -1020,26 +1039,35 @@
     return Math.round(size * 10) / 10 + 'cm';
   }
 
-  // サイズに応じたアイコンサイズを計算（px単位）
+  // サイズに応じたアイコンサイズを計算（px単位、32の整数倍のみ）
   function getIconSizeFromSize(size) {
-    if (size == null) return 96; // デフォルトサイズ（さらに大きく）
-    // サイズに応じてアイコンサイズを計算（さらに大きく）
-    // 2-3cm: 48px（最小）
-    // 3-5cm: 60px
-    // 5-8cm: 72px
-    // 8-12cm: 84px
-    // 12-16cm: 96px
-    // 16-18cm: 108px
-    // 18-21cm: 120px
-    // 20-22cm: 132px（最大）
-    if (size <= 3) return 48;
-    if (size <= 5) return 60;
-    if (size <= 8) return 72;
-    if (size <= 12) return 84;
-    if (size <= 16) return 96;
-    if (size <= 18) return 108;
-    if (size <= 21) return 120;
-    return 132;
+    if (size == null) return 96; // デフォルトサイズ（32の倍数）
+    // サイズに応じてアイコンサイズを計算（32の整数倍で、CSSでスケール）
+    // 2-3cm: 64px（32×2）
+    // 3-5cm: 96px（32×3）
+    // 5-8cm: 128px（32×4）
+    // 8-12cm: 160px（32×5）
+    // 12-16cm: 192px（32×6）
+    // 16-18cm: 224px（32×7）
+    // 18-21cm: 256px（32×8）
+    // 20-22cm: 288px（32×9）
+    var iconSize;
+    if (size <= 3) iconSize = 64;
+    else if (size <= 5) iconSize = 96;
+    else if (size <= 8) iconSize = 128;
+    else if (size <= 12) iconSize = 160;
+    else if (size <= 16) iconSize = 192;
+    else if (size <= 18) iconSize = 224;
+    else if (size <= 21) iconSize = 256;
+    else iconSize = 288;
+    
+    // 32の整数倍であることを保証
+    if (!isValidPixelArtSize(iconSize)) {
+      console.warn('[PixelArt] getIconSizeFromSizeが32の整数倍でない値を返しました:', iconSize);
+      iconSize = roundToPixelArtMultiple(iconSize);
+    }
+    
+    return iconSize;
   }
 
   // 親のサイズから子のサイズを計算（親の影響を受ける）
@@ -1605,9 +1633,7 @@
       
       var img = document.createElement('img');
       img.src = typeImagePath(candidate.type);
-      img.style.width = '60px';
-      img.style.height = '60px';
-      img.style.imageRendering = 'pixelated';
+      setPixelArtImageSize(img, 64, 64);
       header.appendChild(img);
       
       var info = document.createElement('div');
@@ -2004,61 +2030,17 @@
         wrap.style.gap = '4px';
         wrap.style.justifyContent = 'center';
         [pair[0], pair[1]].forEach(function (ax, idx) {
-          var sprite = document.createElement('img');
-          var healthLevel = ax.health || 100;
-          // アニメーションを無効化
-          sprite.className = 'ax-axolotl-img ax-shade-' + (ax.shade || 'normal');
-          var cacheKey;
-          if (ax.type === 'superblack' || ax.type === 'yellow') {
-            cacheKey = ax.type;
-          } else if (ax.type === 'chimera') {
-            // キメラの場合はchimeraTypesを使用（設定されていない場合はデフォルト）
-            var chimeraTypes = ax.chimeraTypes && ax.chimeraTypes.length >= 2 
-              ? ax.chimeraTypes 
-              : ['gold', 'marble'];
-            cacheKey = 'chimera_' + chimeraTypes[0] + '_' + chimeraTypes[1];
+          if (ax.type === 'chimera') {
+            var iconSize = getIconSizeFromSize(ax.size);
+            var sprite = createChimeraCanvasSprite(ax, iconSize);
+            sprite.classList.add('ax-idle');
+            wrap.appendChild(sprite);
           } else {
-            cacheKey = ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
+            var iconSize = getIconSizeFromSize(ax.size);
+            var sprite = createPixelArtCanvasSprite(ax, iconSize);
+            sprite.classList.add('ax-idle');
+            wrap.appendChild(sprite);
           }
-          
-          // 画像を生成（キャッシュがあればそれを使用）
-          var imgSrc = imageCache[cacheKey];
-          if (!imgSrc) {
-            imgSrc = generateAxolotlImage(ax);
-            // 生成された画像がDataURLでない場合（元の画像パスの場合）、画像が生成されるまで待つ
-            if (imgSrc && !imgSrc.startsWith('data:')) {
-              // 一時的に元の画像を表示（後で更新される）
-              sprite.src = imgSrc;
-              var checkImage = setInterval(function() {
-                if (imageCache[cacheKey] && imageCache[cacheKey].startsWith('data:')) {
-                  sprite.src = imageCache[cacheKey];
-                  sprite.style.imageRendering = 'pixelated';
-                  sprite.style.imageRendering = '-webkit-optimize-contrast';
-                  sprite.style.imageRendering = 'crisp-edges';
-                  clearInterval(checkImage);
-                }
-              }, 50);
-              setTimeout(function() { clearInterval(checkImage); }, 5000);
-            }
-          }
-          
-          sprite.src = imgSrc;
-          sprite.alt = typeLabel(ax.type);
-          sprite.dataset.axolotlId = String(ax.id);
-          // ピクセルアートをシャープに保つため、image-renderingを明示的に設定
-          sprite.style.imageRendering = 'pixelated';
-          sprite.style.imageRendering = '-webkit-optimize-contrast';
-          sprite.style.imageRendering = 'crisp-edges';
-        // Canvasで色味を適用済みなので、CSSのfilterは適用しない（ピクセルアートの品質を保つため）
-        // キメラ、イエロー、スーパーブラックも同様にfilterは適用しない
-          // サイズに応じたアイコンサイズを設定
-          var iconSize = getIconSizeFromSize(ax.size);
-          sprite.style.width = iconSize + 'px';
-          sprite.style.height = iconSize + 'px';
-          // ウーパー自体のクリックは無効化（うんこ処理の誤操作防止）
-          sprite.style.pointerEvents = 'none';
-          wrap.appendChild(sprite);
-          // 中心で分割するための区切り線（最初の要素の後）
           if (idx === 0) {
             var divider = document.createElement('div');
             divider.style.width = '1px';
@@ -2102,60 +2084,17 @@
         body.appendChild(juvenileEl);
       } else if (tank.axolotl) {
         var ax = tank.axolotl;
-        var sprite = document.createElement('img');
-        var healthLevel = ax.health || 100;
-        // アニメーションを無効化
-        sprite.className = 'ax-axolotl-img ax-shade-' + (ax.shade || 'normal');
-        var cacheKey;
-        if (ax.type === 'superblack' || ax.type === 'yellow') {
-          cacheKey = ax.type;
-        } else if (ax.type === 'chimera') {
-          // キメラの場合はchimeraTypesを使用（設定されていない場合はデフォルト）
-          var chimeraTypes = ax.chimeraTypes && ax.chimeraTypes.length >= 2 
-            ? ax.chimeraTypes 
-            : ['gold', 'marble'];
-          cacheKey = 'chimera_' + chimeraTypes[0] + '_' + chimeraTypes[1];
+        if (ax.type === 'chimera') {
+          var iconSize = getIconSizeFromSize(ax.size);
+          var sprite = createChimeraCanvasSprite(ax, iconSize);
+          sprite.classList.add('ax-idle');
+          body.appendChild(sprite);
         } else {
-          cacheKey = ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
+          var iconSize = getIconSizeFromSize(ax.size);
+          var sprite = createPixelArtCanvasSprite(ax, iconSize);
+          sprite.classList.add('ax-idle');
+          body.appendChild(sprite);
         }
-        
-        // 画像を生成（キャッシュがあればそれを使用）
-        var imgSrc = imageCache[cacheKey];
-        if (!imgSrc) {
-          imgSrc = generateAxolotlImage(ax);
-          // 生成された画像がDataURLでない場合（元の画像パスの場合）、画像が生成されるまで待つ
-          if (imgSrc && !imgSrc.startsWith('data:')) {
-            // 一時的に元の画像を表示（後で更新される）
-            sprite.src = imgSrc;
-            var checkImage = setInterval(function() {
-              if (imageCache[cacheKey] && imageCache[cacheKey].startsWith('data:')) {
-                sprite.src = imageCache[cacheKey];
-                sprite.style.imageRendering = 'pixelated';
-                sprite.style.imageRendering = '-webkit-optimize-contrast';
-                sprite.style.imageRendering = 'crisp-edges';
-                clearInterval(checkImage);
-              }
-            }, 50);
-            setTimeout(function() { clearInterval(checkImage); }, 5000);
-          }
-        }
-        
-        sprite.src = imgSrc;
-        sprite.alt = typeLabel(ax.type);
-        sprite.dataset.axolotlId = String(ax.id);
-        // ピクセルアートをシャープに保つため、image-renderingを明示的に設定
-        sprite.style.imageRendering = 'pixelated';
-        sprite.style.imageRendering = '-webkit-optimize-contrast';
-        sprite.style.imageRendering = 'crisp-edges';
-        // Canvasで色味を適用済みなので、CSSのfilterは適用しない（ピクセルアートの品質を保つため）
-        // キメラ、イエロー、スーパーブラックも同様にfilterは適用しない
-        // サイズに応じたアイコンサイズを設定
-        var iconSize = getIconSizeFromSize(ax.size);
-        sprite.style.width = iconSize + 'px';
-        sprite.style.height = iconSize + 'px';
-        // ウーパー自体のクリックは無効化（うんこ処理の誤操作防止）
-        sprite.style.pointerEvents = 'none';
-        body.appendChild(sprite);
         
         // うんこの表示
         if (tank.poop) {
@@ -2547,6 +2486,18 @@
         state.auctionAvailable = true;
         state.auctionType = selectedType;
         state.auctionPrice = auctionPrice;
+        // キメラの場合はランダムな2種類を選択
+        if (selectedType === 'chimera') {
+          var availableTypes = ['nomal', 'albino', 'gold', 'marble', 'copper', 'black'];
+          var type1 = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+          var type2 = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+          while (type1 === type2) {
+            type2 = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+          }
+          state.auctionChimeraTypes = [type1, type2];
+        } else {
+          state.auctionChimeraTypes = null;
+        }
         logLine('【オークション】' + typeLabel(selectedType) + 'が' + formatMoney(auctionPrice) + 'で出品されています！オークションボタン!を確認してください。');
         updateAuctionButton();
       } else {
@@ -3929,34 +3880,11 @@
       btn.type = 'button';
       btn.className = 'ax-buy-type-btn ax-auction-btn';
       
-      // キメラの場合は画像を動的に生成
-      var imgSrc = typeImagePath(selectedType);
       if (selectedType === 'chimera') {
-        // キメラの場合はデフォルトでゴールドとマーブルのキメラ画像を生成
-        var tempAx = { type: 'chimera', chimeraTypes: ['gold', 'marble'] };
-        var cacheKey = 'chimera_gold_marble';
-        if (!imageCache[cacheKey]) {
-          generateAxolotlImage(tempAx);
-        }
-        // 画像が生成されるまで待つ
-        var imgEl = document.createElement('img');
-        imgEl.className = 'ax-buy-type-img';
-        imgEl.style.imageRendering = 'pixelated';
-        if (imageCache[cacheKey]) {
-          imgEl.src = imageCache[cacheKey];
-        } else {
-          imgEl.src = typeImagePath('gold'); // 一時的にゴールドの画像を表示
-          var checkChimera = setInterval(function() {
-            if (imageCache[cacheKey]) {
-              imgEl.src = imageCache[cacheKey];
-              clearInterval(checkChimera);
-            }
-          }, 100);
-          setTimeout(function() { clearInterval(checkChimera); }, 3000);
-        }
-        btn.appendChild(imgEl);
+        var fakeAx = { id: 0, type: 'chimera', chimeraTypes: state.auctionChimeraTypes || ['nomal', 'marble'] };
+        btn.appendChild(createChimeraCanvasSprite(fakeAx, 64));
       } else {
-        btn.innerHTML = '<img src="' + imgSrc + '" alt="" class="ax-buy-type-img">';
+        btn.innerHTML = '<img src="' + typeImagePath(selectedType) + '" alt="" class="ax-buy-type-img">';
       }
       
       var nameSpan = document.createElement('span');
@@ -4014,9 +3942,17 @@
     var saleLabel = isOnSale ? '【セール】' : '';
     var sexLabel = sex ? (sex === 'オス' ? ' ♂' : ' ♀') : '';
     var stockStatus = isOutOfStock ? ' <span style="color:#dc2626; font-size:10px;">（品切れ）</span>' : '';
-    btn.innerHTML = '<img src="' + typeImagePath(selectedType) + '" alt="" class="ax-buy-type-img">' +
-      '<span class="ax-buy-type-name">' + saleLabel + typeLabel(selectedType) + ' (' + sizeLabel + sexLabel + ')' + stockStatus + '</span>' +
-      '<span class="ax-buy-type-price">' + formatMoney(price) + '</span>';
+    
+    if (selectedType === 'chimera') {
+      var fakeAx = { id: 0, type: 'chimera', chimeraTypes: ['nomal', 'marble'] };
+      btn.appendChild(createChimeraCanvasSprite(fakeAx, 64));
+      btn.innerHTML += '<span class="ax-buy-type-name">' + saleLabel + typeLabel(selectedType) + ' (' + sizeLabel + sexLabel + ')' + stockStatus + '</span>' +
+        '<span class="ax-buy-type-price">' + formatMoney(price) + '</span>';
+    } else {
+      btn.innerHTML = '<img src="' + typeImagePath(selectedType) + '" alt="" class="ax-buy-type-img">' +
+        '<span class="ax-buy-type-name">' + saleLabel + typeLabel(selectedType) + ' (' + sizeLabel + sexLabel + ')' + stockStatus + '</span>' +
+        '<span class="ax-buy-type-price">' + formatMoney(price) + '</span>';
+    }
     btn.dataset.type = selectedType;
     btn.dataset.band = String(sizeBand || 1);
     btn.dataset.sex = sex || '';
@@ -4283,10 +4219,15 @@
     }
     state.money -= price;
     var age = ageFromSizeBand(sizeBand);
-    // キメラの場合はデフォルトのchimeraTypesを設定
+    // キメラの場合はchimeraTypesを設定
     var chimeraTypes = null;
     if (type === 'chimera') {
-      chimeraTypes = ['gold', 'marble']; // デフォルトでゴールドとマーブルのキメラ
+      // オークションの場合はオークションで設定されたchimeraTypesを使用
+      if (isAuction && state.auctionChimeraTypes) {
+        chimeraTypes = state.auctionChimeraTypes;
+      } else {
+        chimeraTypes = ['nomal', 'marble']; // デフォルトでリューシとマーブルのキメラ
+      }
     }
     var ax = createAxolotl(age, type, null, null, chimeraTypes);
     // 性別を指定
@@ -4639,51 +4580,22 @@
       header.style.gap = '8px';
       header.style.marginBottom = '8px';
       
-      var img = document.createElement('img');
       if (type === 'chimera') {
-        // キメラの場合はゴールドとマーブルのキメラ画像を生成（左右半分ずつ）
-        var canvas = document.createElement('canvas');
-        canvas.width = 40;
-        canvas.height = 40;
-        var ctx = canvas.getContext('2d');
-        // ピクセルアートをシャープに保つため、スムージングを無効化
-        ctx.imageSmoothingEnabled = false;
-        var img1 = new Image();
-        var img2 = new Image();
-        var loaded = 0;
-        var drawChimera = function() {
-          if (loaded < 2) return;
-          // 画像の実際のサイズを取得
-          var img1Width = img1.naturalWidth || img1.width || 40;
-          var img1Height = img1.naturalHeight || img1.height || 40;
-          var img2Width = img2.naturalWidth || img2.width || 40;
-          var img2Height = img2.naturalHeight || img2.height || 40;
-          
-          // 左半分：ゴールドの左半分をキャンバスの左半分に描画
-          var halfWidth1 = Math.floor(img1Width / 2);
-          ctx.drawImage(img1, 0, 0, halfWidth1, img1Height, 0, 0, 20, 40);
-          
-          // 右半分：マーブルの右半分をキャンバスの右半分に描画
-          var halfWidth2 = Math.floor(img2Width / 2);
-          ctx.drawImage(img2, halfWidth2, 0, halfWidth2, img2Height, 20, 0, 20, 40);
-          
-          img.src = canvas.toDataURL();
-          img.style.imageRendering = 'pixelated';
-          img.style.imageRendering = 'crisp-edges';
-        };
-        img1.onload = function() { loaded++; drawChimera(); };
-        img2.onload = function() { loaded++; drawChimera(); };
-        img1.onerror = function() { loaded++; drawChimera(); };
-        img2.onerror = function() { loaded++; drawChimera(); };
-        img1.src = typeImagePath('gold');
-        img2.src = typeImagePath('marble');
+        // 図鑑のキメラ: 基本種5種から毎回ランダムな2種類の組み合わせ
+        var basicTypes = ['nomal', 'albino', 'gold', 'marble', 'black'];
+        var i0 = Math.floor(Math.random() * basicTypes.length);
+        var i1 = Math.floor(Math.random() * basicTypes.length);
+        while (i1 === i0) i1 = Math.floor(Math.random() * basicTypes.length);
+        var fakeAx = { id: 0, type: 'chimera', chimeraTypes: [basicTypes[i0], basicTypes[i1]] };
+        var sprite = createChimeraCanvasSprite(fakeAx, 64);
+        sprite.style.marginLeft = '0';
+        header.appendChild(sprite);
       } else {
-        img.src = typeImagePath(type);
+        var fakeAx = { id: 0, type: type };
+        var sprite = createPixelArtCanvasSprite(fakeAx, 64);
+        sprite.style.marginLeft = '0'; // 図鑑は左揃え（水槽は右寄せのため .ax-axolotl-img に margin-left:auto あり）
+        header.appendChild(sprite);
       }
-      img.style.width = '40px';
-      img.style.height = '40px';
-      img.style.imageRendering = 'pixelated';
-      header.appendChild(img);
       
       var title = document.createElement('h3');
       title.style.margin = '0';
