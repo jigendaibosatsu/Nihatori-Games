@@ -158,6 +158,14 @@
       var loaded = 0;
       var drawChimera = function() {
         if (loaded < 2) return;
+        
+        // 画像が完全に読み込まれているか確認
+        if (!img1.complete || !img2.complete || 
+            img1.naturalWidth === 0 || img1.naturalHeight === 0 ||
+            img2.naturalWidth === 0 || img2.naturalHeight === 0) {
+          return;
+        }
+        
         // 画像の実際のサイズを取得（確実に取得する）
         var img1Width = img1.naturalWidth;
         var img1Height = img1.naturalHeight;
@@ -165,27 +173,26 @@
         var img2Height = img2.naturalHeight;
         
         // 画像が読み込まれていない場合はスキップ
-        if (!img1Width || !img1Height || img1Width === 0 || img1Height === 0) {
-          img1Width = 40;
-          img1Height = 40;
-        }
-        if (!img2Width || !img2Height || img2Width === 0 || img2Height === 0) {
-          img2Width = 40;
-          img2Height = 40;
+        if (!img1Width || !img1Height || img1Width === 0 || img1Height === 0 ||
+            !img2Width || !img2Height || img2Width === 0 || img2Height === 0) {
+          return;
         }
         
-        // Canvasを完全にクリア（白で塗りつぶす）
-        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-        ctx.fillRect(0, 0, 40, 40);
+        // Canvasを完全にクリア
         ctx.clearRect(0, 0, 40, 40);
         
         // 左半分：左側の画像の左半分をキャンバスの左半分に描画
-        var halfWidth1 = Math.floor(img1Width / 2);
-        ctx.drawImage(img1, 0, 0, halfWidth1, img1Height, 0, 0, 20, 40);
-        
-        // 右半分：右側の画像の右半分をキャンバスの右半分に描画
-        var halfWidth2 = Math.floor(img2Width / 2);
-        ctx.drawImage(img2, halfWidth2, 0, halfWidth2, img2Height, 20, 0, 20, 40);
+        try {
+          var halfWidth1 = Math.floor(img1Width / 2);
+          ctx.drawImage(img1, 0, 0, halfWidth1, img1Height, 0, 0, 20, 40);
+          
+          // 右半分：右側の画像の右半分をキャンバスの右半分に描画
+          var halfWidth2 = Math.floor(img2Width / 2);
+          ctx.drawImage(img2, halfWidth2, 0, halfWidth2, img2Height, 20, 0, 20, 40);
+        } catch (e) {
+          // エラー時は処理を中断
+          return;
+        }
         
         imageCache[cacheKey] = canvas.toDataURL();
         // UIを更新（画像が生成されたことを通知）
@@ -246,24 +253,32 @@
     ctx.imageSmoothingEnabled = false;
     
     img.onload = function() {
+      // 画像が完全に読み込まれるまで待つ
+      if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {
+        return;
+      }
+      
       // 画像の実際のサイズを取得（確実に取得する）
       var imgWidth = img.naturalWidth;
       var imgHeight = img.naturalHeight;
       
       // 画像が読み込まれていない場合はスキップ
       if (!imgWidth || !imgHeight || imgWidth === 0 || imgHeight === 0) {
-        imgWidth = 40;
-        imgHeight = 40;
+        return;
       }
       
-      // Canvasを完全にクリア（白で塗りつぶす）
-      ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-      ctx.fillRect(0, 0, 40, 40);
+      // Canvasを完全にクリア
       ctx.clearRect(0, 0, 40, 40);
       
       // 画像を40x40のCanvasに正しく描画
-      // ソース画像の全体を、Canvasの全体に描画（アスペクト比を維持）
-      ctx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, 40, 40);
+      // ソース画像の全体を、Canvasの全体に描画
+      try {
+        ctx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, 40, 40);
+      } catch (e) {
+        // エラー時は元の画像パスを使用
+        imageCache[cacheKey] = typeImagePath(ax.type);
+        return;
+      }
       
       // スーパーブラックとイエローの場合は画像をそのまま使用（色味の変更なし、固定）
       if (ax.type === 'superblack' || ax.type === 'yellow') {
@@ -334,15 +349,19 @@
       }
     };
     
+    // 画像の読み込みを開始
     img.src = typeImagePath(ax.type);
     
     // 画像が既に読み込まれている場合（キャッシュされている場合）
-    if (img.complete && img.naturalWidth > 0) {
+    if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
       // すぐに描画処理を実行
-      img.onload();
+      setTimeout(function() {
+        img.onload();
+      }, 0);
     }
     
-    return typeImagePath(ax.type); // 一時的に返す
+    // 画像が生成されるまで、元の画像パスを返す（後で更新される）
+    return typeImagePath(ax.type);
   }
 
   // ショップで購入可能な種類（品切れの可能性あり）
@@ -2091,10 +2110,14 @@
             imgSrc = generateAxolotlImage(ax);
             // 生成された画像がDataURLでない場合（元の画像パスの場合）、画像が生成されるまで待つ
             if (imgSrc && !imgSrc.startsWith('data:')) {
+              // 一時的に元の画像を表示（後で更新される）
+              sprite.src = imgSrc;
               var checkImage = setInterval(function() {
                 if (imageCache[cacheKey] && imageCache[cacheKey].startsWith('data:')) {
                   sprite.src = imageCache[cacheKey];
                   sprite.style.imageRendering = 'pixelated';
+                  sprite.style.imageRendering = '-webkit-optimize-contrast';
+                  sprite.style.imageRendering = 'crisp-edges';
                   clearInterval(checkImage);
                 }
               }, 50);
@@ -2192,6 +2215,8 @@
           imgSrc = generateAxolotlImage(ax);
           // 生成された画像がDataURLでない場合（元の画像パスの場合）、画像が生成されるまで待つ
           if (imgSrc && !imgSrc.startsWith('data:')) {
+            // 一時的に元の画像を表示（後で更新される）
+            sprite.src = imgSrc;
             var checkImage = setInterval(function() {
               if (imageCache[cacheKey] && imageCache[cacheKey].startsWith('data:')) {
                 sprite.src = imageCache[cacheKey];
