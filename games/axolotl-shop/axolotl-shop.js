@@ -291,7 +291,7 @@
   // Idle Bob: 2コマのみ [0, AMPLITUDE]。下に沈めず上に弾むだけ。整数px・sin禁止。
   // requestAnimationFrame(60fps想定)で stepEvery フレームごとに切り替え。「タッ……タッ……」遅めテンポ。
   var BOB_AMPLITUDE = 8;   // 6〜12で調整可
-  var BOB_STEP_EVERY = 120; // 約2秒ごと（60fps×2秒）
+  var BOB_STEP_EVERY = 60; // 約1秒ごと（60fps×1秒）
   var _bob = [0, -BOB_AMPLITUDE];
   var _bobIndex = 0;
   var _bobTick = 0;
