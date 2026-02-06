@@ -10,68 +10,83 @@
 <body class="game-page">
   <div id="site-header"></div>
 
+  <!-- ヘッダー（sticky） -->
+  <header class="ax-header">
+    <div class="ax-header-content">
+      <div class="ax-header-status">
+        <span class="ax-day" id="axDay">1月目</span>
+        <span class="ax-money" id="axMoney">¥50,000</span>
+        <div class="ax-header-reputation">
+          <span class="ax-reputation-label">評判</span>
+          <div class="ax-bar"><div class="ax-bar-fill reputation" id="axRepBar"></div></div>
+        </div>
+      </div>
+      <button type="button" class="ax-menu-toggle" id="axMenuToggle" aria-label="メニュー">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <!-- 全体操作セクション -->
+    <div class="ax-global-actions">
+      <button type="button" class="ax-global-btn feed" id="btnFeedAll">
+        <span>全体給餌</span>
+      </button>
+      <button type="button" class="ax-global-btn clean" id="btnCleanAll">
+        <span>全体水替え</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 折りたたみメニュー -->
+  <div class="ax-menu-overlay" id="axMenuOverlay"></div>
+  <nav class="ax-menu" id="axMenu">
+    <div class="ax-menu-header">
+      <h3>メニュー</h3>
+      <button type="button" class="ax-menu-close" id="axMenuClose">×</button>
+    </div>
+    <div class="ax-menu-items">
+      <button type="button" class="ax-menu-item breed" id="btnBreed">
+        <span>繁殖</span>
+      </button>
+      <button type="button" class="ax-menu-item treat" id="btnTreat">
+        <span>治療 ¥5,000</span>
+      </button>
+      <button type="button" class="ax-menu-item shop" id="btnBuy">
+        <span>ショップ</span>
+      </button>
+      <button type="button" class="ax-menu-item encyclopedia" id="btnEncyclopedia">
+        <span>図鑑</span>
+      </button>
+      <button type="button" class="ax-menu-item achievements" id="btnAchievements">
+        <span>実績</span>
+      </button>
+      <button type="button" class="ax-menu-item auction" id="btnAuction">
+        <span>オークション</span>
+      </button>
+    </div>
+  </nav>
+
   <div class="ax-wrap">
     <h1 class="ax-title" id="axShopTitle" style="cursor:pointer;" title="クリックで名前を変更">ウーパールーパーショップ</h1>
     <p class="ax-sub">水質・エサ・繁殖のバランスでお店を続けよう。</p>
 
     <div class="ax-panel">
-      <div class="ax-status-row">
-        <span class="ax-day" id="axDay">1月目</span>
-        <span class="ax-money" id="axMoney">¥50,000</span>
-      </div>
-      <div class="ax-bars-row">
-        <div class="ax-bar-wrap">
-          <div class="ax-bar-label">評判</div>
-          <div class="ax-bar"><div class="ax-bar-fill reputation" id="axRepBar"></div></div>
-        </div>
-      </div>
       <div class="ax-tanks" id="axTanks"></div>
-    </div>
-
-    <div class="ax-panel">
-      <div class="ax-actions">
-        <button type="button" class="ax-btn day" id="btnNextMonth">
-          <span class="label">月を進める</span>
-        </button>
-        <div class="ax-feed-group">
-          <button type="button" class="ax-btn feed" id="btnFeedArtificial">
-            <span class="label">💊人工餌(全体x1個¥200)</span>
-          </button>
-          <button type="button" class="ax-btn feed-bloodworm" id="btnFeedBloodworm">
-            <span class="label">アカムシ（全体）¥500</span>
-          </button>
-          <button type="button" class="ax-btn feed-earthworm" id="btnFeedEarthworm">
-            <span class="label">🪱みみず(全体x1個¥500)</span>
-          </button>
-        </div>
-        <button type="button" class="ax-btn clean" id="btnClean">
-          <span class="label">🔁水替(全体x1個¥500)</span>
-        </button>
-        <button type="button" class="ax-btn breed" id="btnBreed">
-          <span class="label">繁殖</span>
-        </button>
-        <button type="button" class="ax-btn treat" id="btnTreat">
-          <span class="label">治療 ¥5,000</span>
-        </button>
-        <button type="button" class="ax-btn shop" id="btnBuy">
-          <span class="label">ショップ</span>
-        </button>
-        <button type="button" class="ax-btn encyclopedia" id="btnEncyclopedia">
-          <span class="label">図鑑</span>
-        </button>
-        <button type="button" class="ax-btn achievements" id="btnAchievements">
-          <span class="label">実績</span>
-        </button>
-        <button type="button" class="ax-btn auction" id="btnAuction">
-          <span class="label">オークション</span>
-        </button>
-      </div>
     </div>
 
     <div class="ax-log" id="axLog">ショップを始めた。親ウパ2匹・水槽3つから。水とエサを整えよう。</div>
 
     <a href="/index.html" class="ax-back">← トップへ戻る</a>
   </div>
+
+  <!-- 月送りボタン（下部sticky） -->
+  <footer class="ax-footer">
+    <button type="button" class="ax-next-month-btn" id="btnNextMonth">
+      <span class="ax-next-month-label">月を進める</span>
+      <span class="ax-next-month-alerts" id="axNextMonthAlerts"></span>
+    </button>
+  </footer>
 
   <div class="ax-overlay" id="axOverlayBreed">
     <div class="ax-overlay-box">
@@ -86,6 +101,7 @@
         <select id="axBreedParent2" style="display:block; width:100%; padding:6px; margin-top:2px;"></select>
       </div>
       <button type="button" class="btn" id="axBreedConfirm">交配する</button>
+      <button type="button" class="btn" id="axBreedLineageIntroduction" style="margin-left:8px; background:#f97316; border-color:#f97316;">血統導入</button>
       <button type="button" class="btn" style="margin-left:8px; background:#64748b; border-color:#64748b;" id="axBreedCancel">キャンセル</button>
     </div>
   </div>
@@ -126,6 +142,15 @@
       <div id="axDetailBody" style="text-align:left; font-size:12px; white-space:pre-line; margin-bottom:8px;"></div>
       <div id="axDetailFamily" class="ax-detail-family"></div>
       <button type="button" class="btn" id="axDetailCancel" style="background:#64748b; border-color:#64748b;">閉じる</button>
+    </div>
+  </div>
+
+  <div class="ax-overlay" id="axOverlayHatch">
+    <div class="ax-overlay-box">
+      <h2>孵化した幼生から1匹を選ぶ</h2>
+      <p style="font-size:12px; margin-bottom:8px;">3匹の候補から1匹を選んでください。残りは自動的に売却されます。</p>
+      <div id="axHatchList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axHatchCancel">キャンセル</button>
     </div>
   </div>
 

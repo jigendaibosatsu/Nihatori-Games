@@ -2,6 +2,7 @@
 html, body { height: 100%; }
 body.game-page {
   padding-top: 48px;
+  padding-bottom: 70px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -17,7 +18,260 @@ body.game-page {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
+  margin-top: 120px;
+  margin-bottom: 20px;
+}
+/* ヘッダー（sticky） */
+.ax-header {
+  position: fixed;
+  top: 48px;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: rgba(255,255,255,0.98);
+  border-bottom: 2px solid #bae6fd;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.ax-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 8px;
+}
+.ax-header-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  font-size: 14px;
+}
+.ax-header-status .ax-day {
+  color: #475569;
+  font-weight: normal;
+}
+.ax-header-status .ax-money {
+  font-weight: bold;
+  color: #047857;
+}
+.ax-header-reputation {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.ax-reputation-label {
+  font-size: 12px;
+  color: #475569;
+  white-space: nowrap;
+}
+.ax-header-reputation .ax-bar {
+  flex: 1;
+  height: 8px;
+  min-width: 60px;
+}
+.ax-menu-toggle {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+.ax-menu-toggle span {
+  width: 24px;
+  height: 3px;
+  background: #0369a1;
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+.ax-global-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid #e5e7eb;
+}
+.ax-global-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 2px solid;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+.ax-global-btn.feed {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+  border-color: #4ade80;
+  color: #f0fdf4;
+}
+.ax-global-btn.clean {
+  background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+  border-color: #7dd3fc;
+  color: #ecfeff;
+}
+.ax-global-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+/* 折りたたみメニュー */
+.ax-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 25;
+  display: none;
+}
+.ax-menu-overlay.visible {
+  display: block;
+}
+.ax-menu {
+  position: fixed;
+  top: 0;
+  right: -300px;
+  width: 280px;
+  height: 100vh;
+  background: rgba(255,255,255,0.98);
+  box-shadow: -2px 0 8px rgba(0,0,0,0.2);
+  z-index: 26;
+  transition: right 0.3s ease;
+  overflow-y: auto;
+}
+.ax-menu.visible {
+  right: 0;
+}
+.ax-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 2px solid #e5e7eb;
+}
+.ax-menu-header h3 {
+  font-size: 18px;
+  color: #0f172a;
+}
+.ax-menu-close {
+  width: 44px;
+  height: 44px;
+  font-size: 28px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ax-menu-items {
+  padding: 8px;
+}
+.ax-menu-item {
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border: 2px solid;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+.ax-menu-item.breed {
+  background: linear-gradient(180deg, #f472b6, #ec4899);
+  border-color: #f9a8d4;
+  color: #fdf2f8;
+}
+.ax-menu-item.treat {
+  background: linear-gradient(180deg, #a78bfa, #7c3aed);
+  border-color: #c4b5fd;
+  color: #f5f3ff;
+}
+.ax-menu-item.shop {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  border-color: #60a5fa;
+  color: #eff6ff;
+}
+.ax-menu-item.encyclopedia {
+  background: linear-gradient(180deg, #8b5cf6, #7c3aed);
+  border-color: #a78bfa;
+  color: #faf5ff;
+}
+.ax-menu-item.achievements {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+  border-color: #fbbf24;
+  color: #fffbeb;
+}
+.ax-menu-item.auction {
+  background: linear-gradient(180deg, #dc2626, #b91c1c);
+  border-color: #f87171;
+  color: #fef2f2;
+}
+.ax-menu-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+/* フッター（月送りボタン） */
+.ax-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: rgba(255,255,255,0.98);
+  border-top: 2px solid #bae6fd;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+  padding: 8px 12px;
+}
+.ax-next-month-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  border: 2px solid #94a3b8;
+  background: linear-gradient(180deg, #64748b, #475569);
+  color: #f1f5f9;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  transition: opacity 0.2s;
+}
+.ax-next-month-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ax-next-month-alerts {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.ax-alert-badge {
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  background: #dc2626;
+  color: #fff;
 }
 .ax-title {
   font-size: 1rem;
@@ -56,6 +310,25 @@ body.game-page {
 }
 .ax-bar-wrap { flex: 1; min-width: 0; }
 .ax-bar-label { font-size: 10px; color: #475569; }
+/* 水槽カード内のステータスバー */
+.ax-tank-status-bars {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+.ax-tank-status-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ax-tank-status-label {
+  font-size: 10px;
+  color: #475569;
+}
+.ax-tank-status-bar .ax-bar {
+  height: 8px;
+}
 .ax-bar {
   position: relative;
   height: 6px;
@@ -76,24 +349,19 @@ body.game-page {
 .ax-bar-fill.food { background: linear-gradient(90deg, #4ade80, #22c55e); }
 .ax-bar-fill.reputation { background: linear-gradient(90deg, #fbbf24, #f97316); }
 .ax-tanks {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0,1fr));
-  gap: 3px;
-  margin-top: 2px;
-}
-@media (max-width: 480px) {
-  .ax-tanks {
-    grid-template-columns: repeat(2, minmax(0,1fr));
-    gap: 2px;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
 }
 .ax-tank {
-  border-radius: 6px;
-  border: 1px solid #bfdbfe;
-  padding: 2px 3px;
+  border-radius: 10px;
+  border: 2px solid #bfdbfe;
+  padding: 12px;
   background: linear-gradient(180deg, #e0f2fe, #f0f9ff);
-  font-size: 9px;
+  font-size: 12px;
   position: relative;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .ax-tank-header {
   display: flex;
@@ -206,13 +474,45 @@ body.game-page {
 }
 .ax-tank-footer {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 2px;
-  font-size: 10px;
-  color: #475569;
-  margin-top: 2px;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+.ax-tank-action-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+.ax-tank-action-btn.feed {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+  border-color: #4ade80;
+  color: #f0fdf4;
+}
+.ax-tank-action-btn.clean {
+  background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+  border-color: #7dd3fc;
+  color: #ecfeff;
+}
+.ax-tank-action-btn.detail {
+  background: linear-gradient(180deg, #64748b, #475569);
+  border-color: #94a3b8;
+  color: #f1f5f9;
+}
+.ax-tank-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .ax-tank-sell {
   padding: 2px 4px;
