@@ -102,7 +102,7 @@
   
   function typeImagePath(t) {
     if (t === 'goldblackeye') return '/assets/axolotl/axo_gold.png';
-    if (t === 'yellow') return '/assets/axolotl/axo_gold.png'; // イエローはゴールドの画像を使用
+    if (t === 'yellow') return '/assets/axolotl/axo_yellow.png'; // イエロー専用画像
     if (t === 'superblack') return '/assets/axolotl/axo_superblack.png'; // スーパーブラック専用画像
     if (t === 'dalmatian') return '/assets/axolotl/axo_dalmatian.png'; // ダルメシアン専用画像
     return '/assets/axolotl/axo_' + t + '.png';
@@ -111,8 +111,8 @@
   // 画像を動的に生成（Canvas APIを使用）
   var imageCache = {};
   function generateAxolotlImage(ax) {
-    // スーパーブラックの場合は色味の変更がないため、タイプのみでキャッシュキーを作成
-    var cacheKey = ax.type === 'superblack' 
+    // スーパーブラックとイエローの場合は色味の変更がないため、タイプのみでキャッシュキーを作成
+    var cacheKey = (ax.type === 'superblack' || ax.type === 'yellow')
       ? ax.type 
       : ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
     if (imageCache[cacheKey]) {
@@ -135,13 +135,18 @@
         ctx.drawImage(img1, 0, 0, 20, 40, 0, 0, 20, 40);
         ctx.drawImage(img2, 0, 0, 20, 40, 20, 0, 20, 40);
         imageCache[cacheKey] = canvas.toDataURL();
+        // UIを更新（画像が生成されたことを通知）
+        if (typeof updateUI === 'function') {
+          setTimeout(updateUI, 100);
+        }
       };
       img1.onload = function() { loaded++; drawChimera(); };
       img2.onload = function() { loaded++; drawChimera(); };
       img1.src = typeImagePath(ax.chimeraTypes[0]);
       img2.src = typeImagePath(ax.chimeraTypes[1]);
       
-      return typeImagePath(ax.chimeraTypes[0]); // 一時的に返す
+      // 一時的に左側の画像を返す（後で更新される）
+      return typeImagePath(ax.chimeraTypes[0]);
     }
     
     // 通常の個体差適用
@@ -155,8 +160,8 @@
     img.onload = function() {
       ctx.drawImage(img, 0, 0, 40, 40);
       
-      // スーパーブラックの場合は画像をそのまま使用（色味の変更なし、固定）
-      if (ax.type === 'superblack') {
+      // スーパーブラックとイエローの場合は画像をそのまま使用（色味の変更なし、固定）
+      if (ax.type === 'superblack' || ax.type === 'yellow') {
         // 画像をそのまま使用し、色味の変更は行わない
         imageCache[cacheKey] = canvas.toDataURL();
         return;
@@ -483,7 +488,9 @@
     },
     feedType: 'artificial',  // デフォルトの餌タイプ: 'artificial', 'bloodworm', 'earthworm'
     waterChangeType: 'normal',  // デフォルトの水替えタイプ: 'partial', 'normal', 'full'
-    reputation100Celebrated: false  // 満足度100達成時のポップアップ表示済みフラグ
+    reputation100Celebrated: false,  // 満足度100達成時のポップアップ表示済みフラグ
+    shopSale: false,  // ショップセール開催中フラグ
+    shopSaleDiscount: 1.0  // ショップセール割引率（1.0 = 通常価格）
   };
   
   // マイグレーション: feedTypeとwaterChangeTypeが無い場合は初期化
@@ -495,6 +502,12 @@
   }
   if (state.reputation100Celebrated === undefined) {
     state.reputation100Celebrated = false;
+  }
+  if (state.shopSale === undefined) {
+    state.shopSale = false;
+  }
+  if (state.shopSaleDiscount === undefined) {
+    state.shopSaleDiscount = 1.0;
   }
 
   // 種類ごとの特徴説明
@@ -937,24 +950,24 @@
 
   // サイズに応じたアイコンサイズを計算（px単位）
   function getIconSizeFromSize(size) {
-    if (size == null) return 32; // デフォルトサイズ
-    // サイズに応じてアイコンサイズを計算
-    // 2-3cm: 16px（最小）
-    // 3-5cm: 20px
-    // 5-8cm: 24px
-    // 8-12cm: 28px
-    // 12-16cm: 32px
-    // 16-18cm: 36px
-    // 18-21cm: 40px
-    // 20-22cm: 44px（最大）
-    if (size <= 3) return 16;
-    if (size <= 5) return 20;
-    if (size <= 8) return 24;
-    if (size <= 12) return 28;
-    if (size <= 16) return 32;
-    if (size <= 18) return 36;
-    if (size <= 21) return 40;
-    return 44;
+    if (size == null) return 64; // デフォルトサイズ（倍に）
+    // サイズに応じてアイコンサイズを計算（全て倍に）
+    // 2-3cm: 32px（最小）
+    // 3-5cm: 40px
+    // 5-8cm: 48px
+    // 8-12cm: 56px
+    // 12-16cm: 64px
+    // 16-18cm: 72px
+    // 18-21cm: 80px
+    // 20-22cm: 88px（最大）
+    if (size <= 3) return 32;
+    if (size <= 5) return 40;
+    if (size <= 8) return 48;
+    if (size <= 12) return 56;
+    if (size <= 16) return 64;
+    if (size <= 18) return 72;
+    if (size <= 21) return 80;
+    return 88;
   }
 
   // 親のサイズから子のサイズを計算（親の影響を受ける）
@@ -1317,11 +1330,15 @@
       bodyEl.appendChild(familyNameEditDiv);
     }
     
+    // 水質の数値を取得
+    var tankClean = foundTank && foundTank.clean !== undefined ? foundTank.clean : 80;
+    
     var bodyText = 
       'サイズ：' + formatSize(displayAx.size) + '\n' +
       '年齢：' + displayAx.age + 'ヶ月\n' +
       '健康：' + Math.round(displayAx.health || 100) + '/100\n' +
       '空腹：' + Math.round(displayAx.hunger || 100) + '/100\n' +
+      '水質：' + Math.round(tankClean) + '/100\n' +
       '色味：' + (shadeLabels[displayAx.shade] || '普通') + '\n' +
       '状態：' + (displayAx.injured ? '欠損' : '') + (displayAx.sick ? '病気' : '') + (displayAx.underTreatment ? '治療中' : '') + (!displayAx.injured && !displayAx.sick && !displayAx.underTreatment ? '健康' : '') + '\n' +
       '予想販売価格：' + formatMoney(calcPrice(displayAx));
@@ -1372,22 +1389,78 @@
       familyEl.appendChild(noFamilyDiv);
     }
     
-    // 最初のウパの名付け画面の場合のみ「決定」に変更
+    // 最初のウパの名付け画面の場合のみ「決定」に変更（名前がついていない場合のみ）
     var isInitialAxolotl = false;
     state.tanks.forEach(function(tank) {
-      if (tank.axolotl && tank.axolotl.id === axolotlId && tank.note === '最初のウパ') {
+      if (tank.axolotl && tank.axolotl.id === axolotlId && tank.note === '最初のウパ' && !tank.axolotl.name) {
         isInitialAxolotl = true;
       }
     });
     
     var cancelBtn = $('axDetailCancel');
+    var sellBtn = $('axDetailSell');
     if (isInitialAxolotl) {
       cancelBtn.textContent = '決定';
+      if (sellBtn) sellBtn.style.display = 'none';
     } else {
       cancelBtn.textContent = '閉じる';
+      if (sellBtn) {
+        sellBtn.style.display = 'block';
+        sellBtn.textContent = '販売 ' + formatMoney(calcPrice(displayAx));
+        // 既存のイベントリスナーを削除
+        var newSellBtn = sellBtn.cloneNode(true);
+        sellBtn.parentNode.replaceChild(newSellBtn, sellBtn);
+        // 新しいボタンにイベントリスナーを設定
+        var currentAxolotlId = axolotlId; // クロージャで保持
+        newSellBtn.onclick = function() {
+          sellAxolotlFromDetail(currentAxolotlId);
+        };
+      }
     }
     
     $('axOverlayDetail').classList.add('visible');
+  }
+  
+  function sellAxolotlFromDetail(axolotlId) {
+    // 水槽から該当個体を探して販売
+    var foundTank = null;
+    var isBreedingPair = false;
+    state.tanks.forEach(function(tank, idx) {
+      if (tank.axolotl && tank.axolotl.id === axolotlId) {
+        foundTank = { tank: tank, idx: idx };
+      }
+      if (tank.breedingPair) {
+        tank.breedingPair.forEach(function(pairAx) {
+          if (pairAx.id === axolotlId) {
+            foundTank = { tank: tank, idx: idx };
+            isBreedingPair = true;
+          }
+        });
+      }
+    });
+    
+    if (!foundTank) {
+      logLine('この個体は既に販売されています。');
+      $('axOverlayDetail').classList.remove('visible');
+      updateUI();
+      return;
+    }
+    
+    if (isBreedingPair) {
+      // 繁殖ペアの場合は分離してから販売
+      separateBreedingPair(foundTank.idx);
+      // 分離後、該当個体を探して販売
+      state.tanks.forEach(function(tank, idx) {
+        if (tank.axolotl && tank.axolotl.id === axolotlId) {
+          actSellTank(idx);
+        }
+      });
+    } else {
+      actSellTank(foundTank.idx);
+    }
+    
+    $('axOverlayDetail').classList.remove('visible');
+    updateUI();
   }
 
   function closeDetailModal() {
@@ -1402,6 +1475,8 @@
         var axName = initialTank.axolotl.name;
         // 店名を更新
         state.shopName = 'ウーパーショップ『' + axName + '』';
+        // 最初のウパのnoteを更新（名前がついたので通常の個体として扱う）
+        initialTank.note = '親ウパ';
         setTimeout(function() {
           logLine(axName + 'と一緒にいい店にできるように頑張ろう！');
           updateUI();
@@ -1855,12 +1930,27 @@
             else animClass = ' alive';
           }
           sprite.className = 'ax-axolotl-img ax-shade-' + (ax.shade || 'normal') + animClass;
-          var cacheKey = ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
+          var cacheKey = (ax.type === 'superblack' || ax.type === 'yellow')
+            ? ax.type 
+            : ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
           var imgSrc = imageCache[cacheKey] || generateAxolotlImage(ax);
           sprite.src = imgSrc;
           sprite.alt = typeLabel(ax.type);
           sprite.dataset.axolotlId = String(ax.id);
-          sprite.style.filter = 'brightness(' + (ax.brightness || 1) + ') saturate(' + (ax.saturation || 1) + ')';
+          // キメラの場合は画像が生成されるまで待つ
+          if (ax.type === 'chimera' && ax.chimeraTypes && !imageCache[cacheKey]) {
+            var checkChimera = setInterval(function() {
+              if (imageCache[cacheKey]) {
+                sprite.src = imageCache[cacheKey];
+                clearInterval(checkChimera);
+              }
+            }, 100);
+            setTimeout(function() { clearInterval(checkChimera); }, 2000);
+          }
+          // イエローとスーパーブラックは色味変更を適用しない
+          if (ax.type !== 'yellow' && ax.type !== 'superblack') {
+            sprite.style.filter = 'brightness(' + (ax.brightness || 1) + ') saturate(' + (ax.saturation || 1) + ')';
+          }
           // サイズに応じたアイコンサイズを設定
           var iconSize = getIconSizeFromSize(ax.size);
           sprite.style.width = iconSize + 'px';
@@ -1883,7 +1973,7 @@
         // うんこの表示（繁殖ペアの場合）
         if (tank.poop) {
           var poopEl = document.createElement('img');
-          poopEl.src = '/assets/unko.png';
+          poopEl.src = './assets/unko.png';
           poopEl.style.width = '16px';
           poopEl.style.height = '16px';
           poopEl.style.position = 'absolute';
@@ -1922,12 +2012,27 @@
           else animClass = ' alive';
         }
         sprite.className = 'ax-axolotl-img ax-shade-' + (ax.shade || 'normal') + animClass;
-        var cacheKey = ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
+        var cacheKey = (ax.type === 'superblack' || ax.type === 'yellow')
+          ? ax.type 
+          : ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
         var imgSrc = imageCache[cacheKey] || generateAxolotlImage(ax);
         sprite.src = imgSrc;
         sprite.alt = typeLabel(ax.type);
         sprite.dataset.axolotlId = String(ax.id);
-        sprite.style.filter = 'brightness(' + (ax.brightness || 1) + ') saturate(' + (ax.saturation || 1) + ')';
+        // キメラの場合は画像が生成されるまで待つ
+        if (ax.type === 'chimera' && ax.chimeraTypes && !imageCache[cacheKey]) {
+          var checkChimera = setInterval(function() {
+            if (imageCache[cacheKey]) {
+              sprite.src = imageCache[cacheKey];
+              clearInterval(checkChimera);
+            }
+          }, 100);
+          setTimeout(function() { clearInterval(checkChimera); }, 2000);
+        }
+        // イエローとスーパーブラックは色味変更を適用しない
+        if (ax.type !== 'yellow' && ax.type !== 'superblack') {
+          sprite.style.filter = 'brightness(' + (ax.brightness || 1) + ') saturate(' + (ax.saturation || 1) + ')';
+        }
         // サイズに応じたアイコンサイズを設定
         var iconSize = getIconSizeFromSize(ax.size);
         sprite.style.width = iconSize + 'px';
@@ -1940,7 +2045,7 @@
         // うんこの表示
         if (tank.poop) {
           var poopEl = document.createElement('img');
-          poopEl.src = '/assets/unko.png';
+          poopEl.src = './assets/unko.png';
           poopEl.style.width = '16px';
           poopEl.style.height = '16px';
           poopEl.style.position = 'absolute';
@@ -2293,7 +2398,7 @@
       if (unfixedTypes.length > 0) {
         var selectedType = unfixedTypes[Math.floor(Math.random() * unfixedTypes.length)];
         var basePrice = typePriceBase[selectedType] || 20000;
-        var auctionPrice = basePrice * randInt(8, 15); // 8-15倍の価格
+        var auctionPrice = basePrice * randInt(4, 8); // 4-8倍の価格（下げる）
         state.auctionAvailable = true;
         state.auctionType = selectedType;
         state.auctionPrice = auctionPrice;
@@ -2314,6 +2419,16 @@
     
     // ショップの在庫状態を日ごとに更新（品切れの可能性）
     state.shopStockDaily = {};
+    
+    // ショップにセールが発生（20%の確率）
+    if (Math.random() < 0.2) {
+      state.shopSale = true;
+      state.shopSaleDiscount = 0.7; // 30%オフ
+      logLine('【セール開催中】ショップの商品が30%オフになっています！');
+    } else {
+      state.shopSale = false;
+      state.shopSaleDiscount = 1.0;
+    }
   }
 
   function endOfMonthDrift() {
@@ -2742,6 +2857,15 @@
     if (auctionBtn) {
       var auctionMark = state.auctionAvailable && state.auctionType ? ' !' : '';
       auctionBtn.innerHTML = '<span class="label">オークション' + auctionMark + '</span>';
+    }
+    // ハンバーガーアイコンに!を表示
+    var menuToggle = document.getElementById('axMenuToggle');
+    if (menuToggle) {
+      if (state.auctionAvailable && state.auctionType) {
+        menuToggle.classList.add('has-notification');
+      } else {
+        menuToggle.classList.remove('has-notification');
+      }
     }
   }
   
@@ -3341,7 +3465,7 @@
     return state.tanks.map(function (t, idx) {
       return { tank: t, idx: idx };
     }).filter(function (x) {
-      return x.tank.axolotl && !x.tank.breedingPair && x.tank.axolotl.age >= 12 && x.tank.axolotl.health >= 50 && !x.tank.axolotl.injured && !x.tank.axolotl.sick;
+      return x.tank.axolotl && !x.tank.breedingPair && x.tank.axolotl.age >= 12 && x.tank.axolotl.health > 0 && !x.tank.axolotl.injured && !x.tank.axolotl.sick;
     });
   }
 
@@ -3621,6 +3745,10 @@
     var price = bandPrices[sizeBand || 1]; // デフォルトは3-5cm
     if (!price) return;
     
+    // セール適用
+    var discount = state.shopSaleDiscount || 1.0;
+    price = Math.floor(price * discount);
+    
     // 品切れチェック（日によって品切れ中）
     var stockKey = selectedType + '_' + sizeBand + '_' + (sex || 'any');
     if (!state.shopStockDaily) state.shopStockDaily = {};
@@ -3634,10 +3762,11 @@
     btn.type = 'button';
     btn.className = 'ax-buy-type-btn';
     var sizeLabel = sizeBand === 7 ? '成体' : '3-5cm';
+    var saleLabel = state.shopSale ? '【セール】' : '';
     var sexLabel = sex ? (sex === 'オス' ? ' ♂' : ' ♀') : '';
     var stockStatus = isOutOfStock ? ' <span style="color:#dc2626; font-size:10px;">（品切れ）</span>' : '';
     btn.innerHTML = '<img src="' + typeImagePath(selectedType) + '" alt="" class="ax-buy-type-img">' +
-      '<span class="ax-buy-type-name">' + typeLabel(selectedType) + ' (' + sizeLabel + sexLabel + ')' + stockStatus + '</span>' +
+      '<span class="ax-buy-type-name">' + saleLabel + typeLabel(selectedType) + ' (' + sizeLabel + sexLabel + ')' + stockStatus + '</span>' +
       '<span class="ax-buy-type-price">' + formatMoney(price) + '</span>';
     btn.dataset.type = selectedType;
     btn.dataset.band = String(sizeBand || 1);
@@ -4045,6 +4174,8 @@
     state.feedType = 'artificial';  // デフォルトの餌タイプをリセット
     state.waterChangeType = 'normal';  // デフォルトの水替えタイプをリセット
     state.reputation100Celebrated = false;  // 満足度100達成時のポップアップ表示済みフラグをリセット
+    state.shopSale = false;  // ショップセールをリセット
+    state.shopSaleDiscount = 1.0;  // ショップセール割引率をリセット
     initTanks();
     
     // 初期個体を図鑑に追加
@@ -4114,13 +4245,11 @@
   function openMenu() {
     if (menuOverlay) menuOverlay.classList.add('visible');
     if (menu) menu.classList.add('visible');
-    document.body.classList.add('menu-open');
   }
   
   function closeMenu() {
     if (menuOverlay) menuOverlay.classList.remove('visible');
     if (menu) menu.classList.remove('visible');
-    document.body.classList.remove('menu-open');
   }
   
   if (menuToggle) {
@@ -4201,6 +4330,12 @@
   $('axDetailCancel').addEventListener('click', function () {
     closeDetailModal();
   });
+  
+  // 販売ボタンのイベントリスナー（openDetailModal内で動的に設定されるが、念のため初期化時にも設定）
+  var axDetailSellBtn = document.getElementById('axDetailSell');
+  if (axDetailSellBtn) {
+    // イベントリスナーはopenDetailModal内で設定される
+  }
   $('axJuvenileCancel').addEventListener('click', function () {
     $('axOverlayJuvenile').classList.remove('visible');
   });
@@ -4250,7 +4385,28 @@
       header.style.marginBottom = '8px';
       
       var img = document.createElement('img');
-      img.src = typeImagePath(type);
+      if (type === 'chimera') {
+        // キメラの場合はゴールドとマーブルのキメラ画像を生成
+        var canvas = document.createElement('canvas');
+        canvas.width = 40;
+        canvas.height = 40;
+        var ctx = canvas.getContext('2d');
+        var img1 = new Image();
+        var img2 = new Image();
+        var loaded = 0;
+        var drawChimera = function() {
+          if (loaded < 2) return;
+          ctx.drawImage(img1, 0, 0, 20, 40, 0, 0, 20, 40);
+          ctx.drawImage(img2, 0, 0, 20, 40, 20, 0, 20, 40);
+          img.src = canvas.toDataURL();
+        };
+        img1.onload = function() { loaded++; drawChimera(); };
+        img2.onload = function() { loaded++; drawChimera(); };
+        img1.src = typeImagePath('gold');
+        img2.src = typeImagePath('marble');
+      } else {
+        img.src = typeImagePath(type);
+      }
       img.style.width = '40px';
       img.style.height = '40px';
       img.style.imageRendering = 'pixelated';

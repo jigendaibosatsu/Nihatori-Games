@@ -47,7 +47,7 @@
       <h3>メニュー</h3>
       <button type="button" class="ax-menu-close" id="axMenuClose">×</button>
     </div>
-    <div class="ax-menu-items">
+    <div class="ax-menu-items ax-menu-items-bottom">
       <button type="button" class="ax-menu-item breed" id="btnBreed">
         <span class="ax-menu-icon">💕</span>
         <span class="ax-menu-label">繁殖</span>
@@ -150,7 +150,10 @@
       <h2 id="axDetailName">個体詳細</h2>
       <div id="axDetailBody" style="text-align:left; font-size:12px; white-space:pre-line; margin-bottom:8px;"></div>
       <div id="axDetailFamily" class="ax-detail-family"></div>
-      <button type="button" class="btn" id="axDetailCancel" style="background:#64748b; border-color:#64748b;">閉じる</button>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button type="button" class="btn" id="axDetailSell" style="background:#dc2626; border-color:#dc2626; flex:1;">販売</button>
+        <button type="button" class="btn" id="axDetailCancel" style="background:#64748b; border-color:#64748b; flex:1;">閉じる</button>
+      </div>
     </div>
   </div>
 
