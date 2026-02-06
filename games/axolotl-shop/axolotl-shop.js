@@ -166,47 +166,58 @@
           return;
         }
         
-        // 画像が完全に読み込まれているか確認
-        if (!img1.complete || !img2.complete || 
-            !img1.naturalWidth || !img1.naturalHeight ||
-            !img2.naturalWidth || !img2.naturalHeight ||
-            img1.naturalWidth === 0 || img1.naturalHeight === 0 ||
-            img2.naturalWidth === 0 || img2.naturalHeight === 0) {
-          return;
-        }
-        
-        chimeraDrawn = true; // フラグを設定
-        
-        // 画像の実際のサイズを取得
-        var img1Width = img1.naturalWidth;
-        var img1Height = img1.naturalHeight;
-        var img2Width = img2.naturalWidth;
-        var img2Height = img2.naturalHeight;
-        
-        // Canvasを完全にクリア（透明色で塗りつぶす）
-        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-        ctx.fillRect(0, 0, 40, 40);
-        ctx.clearRect(0, 0, 40, 40);
-        
-        // 左半分：左側の画像の左半分をキャンバスの左半分に描画
-        try {
-          var halfWidth1 = Math.floor(img1Width / 2);
-          ctx.drawImage(img1, 0, 0, halfWidth1, img1Height, 0, 0, 20, 40);
+        // 画像が完全に読み込まれているか確認（複数回チェック）
+        var checkChimeraLoaded = function() {
+          if (!img1.complete || !img2.complete || 
+              !img1.naturalWidth || !img1.naturalHeight ||
+              !img2.naturalWidth || !img2.naturalHeight ||
+              img1.naturalWidth === 0 || img1.naturalHeight === 0 ||
+              img2.naturalWidth === 0 || img2.naturalHeight === 0) {
+            setTimeout(checkChimeraLoaded, 10);
+            return;
+          }
           
-          // 右半分：右側の画像の右半分をキャンバスの右半分に描画
-          var halfWidth2 = Math.floor(img2Width / 2);
-          ctx.drawImage(img2, halfWidth2, 0, halfWidth2, img2Height, 20, 0, 20, 40);
-        } catch (e) {
-          // エラー時は処理を中断
-          chimeraDrawn = false; // フラグをリセット
-          return;
-        }
+          chimeraDrawn = true; // フラグを設定
+          
+          // 画像の実際のサイズを取得
+          var img1Width = img1.naturalWidth;
+          var img1Height = img1.naturalHeight;
+          var img2Width = img2.naturalWidth;
+          var img2Height = img2.naturalHeight;
+          
+          // Canvasを完全にリセット（新しいCanvasを作成）
+          var newCanvas = document.createElement('canvas');
+          newCanvas.width = 40;
+          newCanvas.height = 40;
+          var newCtx = newCanvas.getContext('2d');
+          newCtx.imageSmoothingEnabled = false;
+          
+          // 左半分：左側の画像の左半分をキャンバスの左半分に描画
+          try {
+            var halfWidth1 = Math.floor(img1Width / 2);
+            newCtx.drawImage(img1, 0, 0, halfWidth1, img1Height, 0, 0, 20, 40);
+            
+            // 右半分：右側の画像の右半分をキャンバスの右半分に描画
+            var halfWidth2 = Math.floor(img2Width / 2);
+            newCtx.drawImage(img2, halfWidth2, 0, halfWidth2, img2Height, 20, 0, 20, 40);
+            
+            // 元のCanvasコンテキストを新しいものに置き換え
+            ctx = newCtx;
+            canvas = newCanvas;
+          } catch (e) {
+            // エラー時は処理を中断
+            chimeraDrawn = false; // フラグをリセット
+            return;
+          }
+          
+          imageCache[cacheKey] = canvas.toDataURL('image/png');
+          // UIを更新（画像が生成されたことを通知）
+          if (typeof updateUI === 'function') {
+            setTimeout(updateUI, 100);
+          }
+        };
         
-        imageCache[cacheKey] = canvas.toDataURL();
-        // UIを更新（画像が生成されたことを通知）
-        if (typeof updateUI === 'function') {
-          setTimeout(updateUI, 100);
-        }
+        checkChimeraLoaded();
       };
       img1.onload = function() { 
         loaded++; 
@@ -277,91 +288,111 @@
         return;
       }
       
-      // 画像が完全に読み込まれるまで待つ
-      if (!img.complete || !img.naturalWidth || !img.naturalHeight || 
-          img.naturalWidth === 0 || img.naturalHeight === 0) {
-        return;
-      }
-      
-      imageLoaded = true; // フラグを設定
-      
-      // 画像の実際のサイズを取得
-      var imgWidth = img.naturalWidth;
-      var imgHeight = img.naturalHeight;
-      
-      // Canvasを完全にクリア（透明色で塗りつぶす）
-      ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-      ctx.fillRect(0, 0, 40, 40);
-      ctx.clearRect(0, 0, 40, 40);
-      
-      // 画像を40x40のCanvasに正しく描画
-      try {
-        ctx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, 40, 40);
-      } catch (e) {
-        // エラー時は元の画像パスを使用
-        imageCache[cacheKey] = typeImagePath(ax.type);
-        return;
-      }
-      
-      // スーパーブラックとイエローの場合は画像をそのまま使用（色味の変更なし、固定）
-      if (ax.type === 'superblack' || ax.type === 'yellow') {
-        // 画像をそのまま使用し、色味の変更は行わない
-        imageCache[cacheKey] = canvas.toDataURL();
-        return;
-      }
-      
-      // brightnessとsaturationを適用
-      var imageData = ctx.getImageData(0, 0, 40, 40);
-      var data = imageData.data;
-      var brightness = ax.brightness || 1;
-      var saturation = ax.saturation || 1;
-      
-      for (var i = 0; i < data.length; i += 4) {
-        if (data[i + 3] === 0) continue; // alpha == 0はスキップ
+      // 画像が完全に読み込まれるまで待つ（複数回チェック）
+      var checkLoaded = function() {
+        if (!img.complete || !img.naturalWidth || !img.naturalHeight || 
+            img.naturalWidth === 0 || img.naturalHeight === 0) {
+          setTimeout(checkLoaded, 10);
+          return;
+        }
         
-        var r = data[i];
-        var g = data[i + 1];
-        var b = data[i + 2];
+        imageLoaded = true; // フラグを設定
         
-        // brightness適用
-        r = Math.min(255, r * brightness);
-        g = Math.min(255, g * brightness);
-        b = Math.min(255, b * brightness);
+        // 画像の実際のサイズを取得
+        var imgWidth = img.naturalWidth;
+        var imgHeight = img.naturalHeight;
         
-        // saturation適用
-        var gray = 0.299 * r + 0.587 * g + 0.114 * b;
-        r = gray + (r - gray) * saturation;
-        g = gray + (g - gray) * saturation;
-        b = gray + (b - gray) * saturation;
+        // Canvasを完全にリセット（新しいCanvasを作成）
+        var newCanvas = document.createElement('canvas');
+        newCanvas.width = 40;
+        newCanvas.height = 40;
+        var newCtx = newCanvas.getContext('2d');
+        newCtx.imageSmoothingEnabled = false;
         
-        data[i] = Math.max(0, Math.min(255, r));
-        data[i + 1] = Math.max(0, Math.min(255, g));
-        data[i + 2] = Math.max(0, Math.min(255, b));
-      }
+        // 画像を40x40のCanvasに正しく描画
+        try {
+          newCtx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, 40, 40);
+          
+          // 元のCanvasコンテキストを新しいものに置き換え
+          ctx = newCtx;
+          canvas = newCanvas;
+        } catch (e) {
+          // エラー時は元の画像パスを使用
+          imageCache[cacheKey] = typeImagePath(ax.type);
+          return;
+        }
+        
+        // 以降の処理を続行
+        processImageData();
+      };
       
-      ctx.putImageData(imageData, 0, 0);
+      var processImageData = function() {
       
-      // spotsを追加（marbleのみ）
-      if (ax.spots && ax.type === 'marble') {
-        var spotsCtx = ctx;
-        var density = ax.spotsDensity || 0.1;
-        for (var y = 10; y < 30; y++) {
-          for (var x = 5; x < 35; x++) {
-            // 目の周辺は避ける
-            if (x >= 12 && x <= 28 && y >= 12 && y <= 20) continue;
-            if (Math.random() < density) {
-              spotsCtx.fillStyle = 'rgba(0,0,0,' + (0.3 + Math.random() * 0.4) + ')';
-              spotsCtx.fillRect(x, y, 2, 2);
+        // スーパーブラックとイエローの場合は画像をそのまま使用（色味の変更なし、固定）
+        if (ax.type === 'superblack' || ax.type === 'yellow') {
+          // 画像をそのまま使用し、色味の変更は行わない
+          imageCache[cacheKey] = canvas.toDataURL('image/png');
+          if (typeof updateUI === 'function') {
+            setTimeout(updateUI, 50);
+          }
+          return;
+        }
+        
+        // brightnessとsaturationを適用
+        var imageData = ctx.getImageData(0, 0, 40, 40);
+        var data = imageData.data;
+        var brightness = ax.brightness || 1;
+        var saturation = ax.saturation || 1;
+        
+        for (var i = 0; i < data.length; i += 4) {
+          if (data[i + 3] === 0) continue; // alpha == 0はスキップ
+          
+          var r = data[i];
+          var g = data[i + 1];
+          var b = data[i + 2];
+          
+          // brightness適用
+          r = Math.min(255, r * brightness);
+          g = Math.min(255, g * brightness);
+          b = Math.min(255, b * brightness);
+          
+          // saturation適用
+          var gray = 0.299 * r + 0.587 * g + 0.114 * b;
+          r = gray + (r - gray) * saturation;
+          g = gray + (g - gray) * saturation;
+          b = gray + (b - gray) * saturation;
+          
+          data[i] = Math.max(0, Math.min(255, r));
+          data[i + 1] = Math.max(0, Math.min(255, g));
+          data[i + 2] = Math.max(0, Math.min(255, b));
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        // spotsを追加（marbleのみ）
+        if (ax.spots && ax.type === 'marble') {
+          var spotsCtx = ctx;
+          var density = ax.spotsDensity || 0.1;
+          for (var y = 10; y < 30; y++) {
+            for (var x = 5; x < 35; x++) {
+              // 目の周辺は避ける
+              if (x >= 12 && x <= 28 && y >= 12 && y <= 20) continue;
+              if (Math.random() < density) {
+                spotsCtx.fillStyle = 'rgba(0,0,0,' + (0.3 + Math.random() * 0.4) + ')';
+                spotsCtx.fillRect(x, y, 2, 2);
+              }
             }
           }
         }
-      }
+        
+        imageCache[cacheKey] = canvas.toDataURL('image/png');
+        // UIを更新（画像が生成されたことを通知）
+        if (typeof updateUI === 'function') {
+          setTimeout(updateUI, 50);
+        }
+      };
       
-      imageCache[cacheKey] = canvas.toDataURL();
-      // UIを更新（画像が生成されたことを通知）
-      if (typeof updateUI === 'function') {
-        setTimeout(updateUI, 50);
-      }
+      checkLoaded();
     };
     
     img.onerror = function() {
