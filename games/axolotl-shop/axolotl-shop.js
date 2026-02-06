@@ -15,7 +15,7 @@
     albino: 'アルビノ',
     gold: 'ゴールド',
     marble: 'マーブル',
-    copper: '銅',
+    copper: 'コッパー',
     black: 'ブラック',
     superblack: 'スーパーブラック',
     goldblackeye: 'ゴールド黒目',
@@ -158,13 +158,25 @@
       var loaded = 0;
       var drawChimera = function() {
         if (loaded < 2) return;
-        // 画像の実際のサイズを取得
-        var img1Width = img1.naturalWidth || img1.width || 40;
-        var img1Height = img1.naturalHeight || img1.height || 40;
-        var img2Width = img2.naturalWidth || img2.width || 40;
-        var img2Height = img2.naturalHeight || img2.height || 40;
+        // 画像の実際のサイズを取得（確実に取得する）
+        var img1Width = img1.naturalWidth;
+        var img1Height = img1.naturalHeight;
+        var img2Width = img2.naturalWidth;
+        var img2Height = img2.naturalHeight;
         
-        // Canvasをクリア
+        // 画像が読み込まれていない場合はスキップ
+        if (!img1Width || !img1Height || img1Width === 0 || img1Height === 0) {
+          img1Width = 40;
+          img1Height = 40;
+        }
+        if (!img2Width || !img2Height || img2Width === 0 || img2Height === 0) {
+          img2Width = 40;
+          img2Height = 40;
+        }
+        
+        // Canvasを完全にクリア（白で塗りつぶす）
+        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+        ctx.fillRect(0, 0, 40, 40);
         ctx.clearRect(0, 0, 40, 40);
         
         // 左半分：左側の画像の左半分をキャンバスの左半分に描画
@@ -234,15 +246,23 @@
     ctx.imageSmoothingEnabled = false;
     
     img.onload = function() {
-      // 画像の実際のサイズを取得
-      var imgWidth = img.naturalWidth || img.width || 40;
-      var imgHeight = img.naturalHeight || img.height || 40;
+      // 画像の実際のサイズを取得（確実に取得する）
+      var imgWidth = img.naturalWidth;
+      var imgHeight = img.naturalHeight;
       
-      // Canvasをクリア
+      // 画像が読み込まれていない場合はスキップ
+      if (!imgWidth || !imgHeight || imgWidth === 0 || imgHeight === 0) {
+        imgWidth = 40;
+        imgHeight = 40;
+      }
+      
+      // Canvasを完全にクリア（白で塗りつぶす）
+      ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+      ctx.fillRect(0, 0, 40, 40);
       ctx.clearRect(0, 0, 40, 40);
       
-      // 画像の実際のサイズを40x40のCanvasに正しく描画
-      // ソース画像全体を、Canvas全体に描画
+      // 画像を40x40のCanvasに正しく描画
+      // ソース画像の全体を、Canvasの全体に描画（アスペクト比を維持）
       ctx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, 40, 40);
       
       // スーパーブラックとイエローの場合は画像をそのまま使用（色味の変更なし、固定）
@@ -2064,28 +2084,31 @@
           } else {
             cacheKey = ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
           }
-          var imgSrc = imageCache[cacheKey] || generateAxolotlImage(ax);
+          
+          // 画像を生成（キャッシュがあればそれを使用）
+          var imgSrc = imageCache[cacheKey];
+          if (!imgSrc) {
+            imgSrc = generateAxolotlImage(ax);
+            // 生成された画像がDataURLでない場合（元の画像パスの場合）、画像が生成されるまで待つ
+            if (imgSrc && !imgSrc.startsWith('data:')) {
+              var checkImage = setInterval(function() {
+                if (imageCache[cacheKey] && imageCache[cacheKey].startsWith('data:')) {
+                  sprite.src = imageCache[cacheKey];
+                  sprite.style.imageRendering = 'pixelated';
+                  clearInterval(checkImage);
+                }
+              }, 50);
+              setTimeout(function() { clearInterval(checkImage); }, 5000);
+            }
+          }
+          
           sprite.src = imgSrc;
           sprite.alt = typeLabel(ax.type);
           sprite.dataset.axolotlId = String(ax.id);
           // ピクセルアートをシャープに保つため、image-renderingを明示的に設定
           sprite.style.imageRendering = 'pixelated';
-          // キメラの場合は画像が生成されるまで待つ
-          if (ax.type === 'chimera') {
-            if (!imageCache[cacheKey]) {
-              var checkChimera = setInterval(function() {
-                if (imageCache[cacheKey]) {
-                  sprite.src = imageCache[cacheKey];
-                  sprite.style.imageRendering = 'pixelated';
-                  clearInterval(checkChimera);
-                }
-              }, 100);
-              setTimeout(function() { clearInterval(checkChimera); }, 3000);
-            } else {
-              sprite.src = imageCache[cacheKey];
-              sprite.style.imageRendering = 'pixelated';
-            }
-          }
+          sprite.style.imageRendering = '-webkit-optimize-contrast';
+          sprite.style.imageRendering = 'crisp-edges';
         // Canvasで色味を適用済みなので、CSSのfilterは適用しない（ピクセルアートの品質を保つため）
         // キメラ、イエロー、スーパーブラックも同様にfilterは適用しない
           // サイズに応じたアイコンサイズを設定
@@ -2162,28 +2185,33 @@
         } else {
           cacheKey = ax.id + '_' + ax.type + '_' + (ax.brightness || 1) + '_' + (ax.saturation || 1) + '_' + (ax.spots ? '1' : '0');
         }
-        var imgSrc = imageCache[cacheKey] || generateAxolotlImage(ax);
+        
+        // 画像を生成（キャッシュがあればそれを使用）
+        var imgSrc = imageCache[cacheKey];
+        if (!imgSrc) {
+          imgSrc = generateAxolotlImage(ax);
+          // 生成された画像がDataURLでない場合（元の画像パスの場合）、画像が生成されるまで待つ
+          if (imgSrc && !imgSrc.startsWith('data:')) {
+            var checkImage = setInterval(function() {
+              if (imageCache[cacheKey] && imageCache[cacheKey].startsWith('data:')) {
+                sprite.src = imageCache[cacheKey];
+                sprite.style.imageRendering = 'pixelated';
+                sprite.style.imageRendering = '-webkit-optimize-contrast';
+                sprite.style.imageRendering = 'crisp-edges';
+                clearInterval(checkImage);
+              }
+            }, 50);
+            setTimeout(function() { clearInterval(checkImage); }, 5000);
+          }
+        }
+        
         sprite.src = imgSrc;
         sprite.alt = typeLabel(ax.type);
         sprite.dataset.axolotlId = String(ax.id);
         // ピクセルアートをシャープに保つため、image-renderingを明示的に設定
         sprite.style.imageRendering = 'pixelated';
-        // キメラの場合は画像が生成されるまで待つ
-        if (ax.type === 'chimera') {
-          if (!imageCache[cacheKey]) {
-            var checkChimera = setInterval(function() {
-              if (imageCache[cacheKey]) {
-                sprite.src = imageCache[cacheKey];
-                sprite.style.imageRendering = 'pixelated';
-                clearInterval(checkChimera);
-              }
-            }, 100);
-            setTimeout(function() { clearInterval(checkChimera); }, 3000);
-          } else {
-            sprite.src = imageCache[cacheKey];
-            sprite.style.imageRendering = 'pixelated';
-          }
-        }
+        sprite.style.imageRendering = '-webkit-optimize-contrast';
+        sprite.style.imageRendering = 'crisp-edges';
         // Canvasで色味を適用済みなので、CSSのfilterは適用しない（ピクセルアートの品質を保つため）
         // キメラ、イエロー、スーパーブラックも同様にfilterは適用しない
         // サイズに応じたアイコンサイズを設定
