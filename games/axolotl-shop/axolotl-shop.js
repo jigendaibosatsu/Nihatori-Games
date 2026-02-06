@@ -166,58 +166,66 @@
           return;
         }
         
-        // 画像が完全に読み込まれているか確認（複数回チェック）
-        var checkChimeraLoaded = function() {
-          if (!img1.complete || !img2.complete || 
-              !img1.naturalWidth || !img1.naturalHeight ||
-              !img2.naturalWidth || !img2.naturalHeight ||
-              img1.naturalWidth === 0 || img1.naturalHeight === 0 ||
-              img2.naturalWidth === 0 || img2.naturalHeight === 0) {
-            setTimeout(checkChimeraLoaded, 10);
-            return;
-          }
-          
-          chimeraDrawn = true; // フラグを設定
-          
-          // 画像の実際のサイズを取得
-          var img1Width = img1.naturalWidth;
-          var img1Height = img1.naturalHeight;
-          var img2Width = img2.naturalWidth;
-          var img2Height = img2.naturalHeight;
-          
-          // Canvasを完全にリセット（新しいCanvasを作成）
-          var newCanvas = document.createElement('canvas');
-          newCanvas.width = 40;
-          newCanvas.height = 40;
-          var newCtx = newCanvas.getContext('2d');
-          newCtx.imageSmoothingEnabled = false;
-          
-          // 左半分：左側の画像の左半分をキャンバスの左半分に描画
-          try {
-            var halfWidth1 = Math.floor(img1Width / 2);
-            newCtx.drawImage(img1, 0, 0, halfWidth1, img1Height, 0, 0, 20, 40);
-            
-            // 右半分：右側の画像の右半分をキャンバスの右半分に描画
-            var halfWidth2 = Math.floor(img2Width / 2);
-            newCtx.drawImage(img2, halfWidth2, 0, halfWidth2, img2Height, 20, 0, 20, 40);
-            
-            // 元のCanvasコンテキストを新しいものに置き換え
-            ctx = newCtx;
-            canvas = newCanvas;
-          } catch (e) {
-            // エラー時は処理を中断
-            chimeraDrawn = false; // フラグをリセット
-            return;
-          }
-          
-          imageCache[cacheKey] = canvas.toDataURL('image/png');
-          // UIを更新（画像が生成されたことを通知）
-          if (typeof updateUI === 'function') {
-            setTimeout(updateUI, 100);
-          }
-        };
+        // 画像が完全に読み込まれているか確認
+        if (!img1.complete || !img2.complete || 
+            !img1.naturalWidth || !img1.naturalHeight ||
+            !img2.naturalWidth || !img2.naturalHeight ||
+            img1.naturalWidth === 0 || img1.naturalHeight === 0 ||
+            img2.naturalWidth === 0 || img2.naturalHeight === 0) {
+          // まだ読み込まれていない場合は少し待ってから再試行
+          setTimeout(function() {
+            if (!imageCache[cacheKey]) {
+              drawChimera();
+            }
+          }, 50);
+          return;
+        }
         
-        checkChimeraLoaded();
+        chimeraDrawn = true; // フラグを設定
+        
+        // 画像の実際のサイズを取得
+        var img1Width = img1.naturalWidth;
+        var img1Height = img1.naturalHeight;
+        var img2Width = img2.naturalWidth;
+        var img2Height = img2.naturalHeight;
+        
+        // Canvasを完全にリセット（新しいCanvasを作成）
+        var newCanvas = document.createElement('canvas');
+        newCanvas.width = 40;
+        newCanvas.height = 40;
+        var newCtx = newCanvas.getContext('2d');
+        newCtx.imageSmoothingEnabled = false;
+        
+        // 左半分：左側の画像の左半分をキャンバスの左半分に描画
+        try {
+          // 左側の画像を20x40に描画
+          var tempCanvas1 = document.createElement('canvas');
+          tempCanvas1.width = 20;
+          tempCanvas1.height = 40;
+          var tempCtx1 = tempCanvas1.getContext('2d');
+          tempCtx1.imageSmoothingEnabled = false;
+          tempCtx1.drawImage(img1, 0, 0, 20, 40);
+          newCtx.drawImage(tempCanvas1, 0, 0);
+          
+          // 右半分：右側の画像の右半分をキャンバスの右半分に描画
+          var tempCanvas2 = document.createElement('canvas');
+          tempCanvas2.width = 20;
+          tempCanvas2.height = 40;
+          var tempCtx2 = tempCanvas2.getContext('2d');
+          tempCtx2.imageSmoothingEnabled = false;
+          tempCtx2.drawImage(img2, img2Width - 20, 0, 20, 40, 0, 0, 20, 40);
+          newCtx.drawImage(tempCanvas2, 20, 0);
+        } catch (e) {
+          // エラー時は処理を中断
+          chimeraDrawn = false; // フラグをリセット
+          return;
+        }
+        
+        imageCache[cacheKey] = newCanvas.toDataURL('image/png');
+        // UIを更新（画像が生成されたことを通知）
+        if (typeof updateUI === 'function') {
+          setTimeout(updateUI, 100);
+        }
       };
       img1.onload = function() { 
         loaded++; 
@@ -288,11 +296,11 @@
         return;
       }
       
-      // 画像が完全に読み込まれるまで待つ（複数回チェック）
-      var checkLoaded = function() {
+      // 画像が完全に読み込まれるまで確実に待つ
+      var ensureLoaded = function() {
         if (!img.complete || !img.naturalWidth || !img.naturalHeight || 
             img.naturalWidth === 0 || img.naturalHeight === 0) {
-          setTimeout(checkLoaded, 10);
+          setTimeout(ensureLoaded, 10);
           return;
         }
         
@@ -302,7 +310,7 @@
         var imgWidth = img.naturalWidth;
         var imgHeight = img.naturalHeight;
         
-        // Canvasを完全にリセット（新しいCanvasを作成）
+        // 新しいCanvasを作成（毎回新しく作成して確実にクリア）
         var newCanvas = document.createElement('canvas');
         newCanvas.width = 40;
         newCanvas.height = 40;
@@ -311,20 +319,23 @@
         
         // 画像を40x40のCanvasに正しく描画
         try {
+          // ソース画像全体を、Canvas全体（40x40）に描画
           newCtx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, 40, 40);
-          
-          // 元のCanvasコンテキストを新しいものに置き換え
-          ctx = newCtx;
-          canvas = newCanvas;
         } catch (e) {
           // エラー時は元の画像パスを使用
           imageCache[cacheKey] = typeImagePath(ax.type);
           return;
         }
         
+        // 元のCanvasコンテキストを新しいものに置き換え
+        ctx = newCtx;
+        canvas = newCanvas;
+        
         // 以降の処理を続行
         processImageData();
       };
+      
+      ensureLoaded();
       
       var processImageData = function() {
       
@@ -2138,15 +2149,8 @@
         [pair[0], pair[1]].forEach(function (ax, idx) {
           var sprite = document.createElement('img');
           var healthLevel = ax.health || 100;
-          var animClass = '';
-          // 病気でない、または治療中で健康度が高い場合はアニメーションを表示
-          // 健康度が0より大きく、欠損していない、病気でない（または治療中で健康度が50以上）場合
-          if (healthLevel > 0 && !ax.injured && (!ax.sick || (ax.underTreatment && healthLevel > 50))) {
-            if (healthLevel < 50) animClass = ' slow';
-            else if (healthLevel > 80) animClass = ' fast';
-            else animClass = ' alive';
-          }
-          sprite.className = 'ax-axolotl-img ax-shade-' + (ax.shade || 'normal') + animClass;
+          // アニメーションを無効化
+          sprite.className = 'ax-axolotl-img ax-shade-' + (ax.shade || 'normal');
           var cacheKey;
           if (ax.type === 'superblack' || ax.type === 'yellow') {
             cacheKey = ax.type;
@@ -2243,15 +2247,8 @@
         var ax = tank.axolotl;
         var sprite = document.createElement('img');
         var healthLevel = ax.health || 100;
-        var animClass = '';
-        // 病気でない、または治療中で健康度が高い場合はアニメーションを表示
-        // 健康度が0より大きく、欠損していない、病気でない（または治療中で健康度が50以上）場合
-        if (healthLevel > 0 && !ax.injured && (!ax.sick || (ax.underTreatment && healthLevel > 50))) {
-          if (healthLevel < 50) animClass = ' slow';
-          else if (healthLevel > 80) animClass = ' fast';
-          else animClass = ' alive';
-        }
-        sprite.className = 'ax-axolotl-img ax-shade-' + (ax.shade || 'normal') + animClass;
+        // アニメーションを無効化
+        sprite.className = 'ax-axolotl-img ax-shade-' + (ax.shade || 'normal');
         var cacheKey;
         if (ax.type === 'superblack' || ax.type === 'yellow') {
           cacheKey = ax.type;
