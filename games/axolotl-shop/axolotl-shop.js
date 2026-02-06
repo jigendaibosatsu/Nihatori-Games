@@ -480,8 +480,18 @@
       autoFeeder: false,
       filter: false,
       bottomCleaner: false
-    }
+    },
+    feedType: 'artificial',  // デフォルトの餌タイプ: 'artificial', 'bloodworm', 'earthworm'
+    waterChangeType: 'normal'  // デフォルトの水替えタイプ: 'partial', 'normal', 'full'
   };
+  
+  // マイグレーション: feedTypeとwaterChangeTypeが無い場合は初期化
+  if (state.feedType === undefined) {
+    state.feedType = 'artificial';
+  }
+  if (state.waterChangeType === undefined) {
+    state.waterChangeType = 'normal';
+  }
 
   // 種類ごとの特徴説明
   var typeDescriptions = {
@@ -2945,115 +2955,50 @@
   }
 
   function actClean() {
-    openWaterChangeSelectionModal(0, true);
+    // 即発動：デフォルトの水替え方法で全体水替え
+    var waterChangeType = state.waterChangeType || 'normal';
+    var cost = 500;
+    var bonus = 25;
+    if (waterChangeType === 'partial') {
+      cost = WATER_CHANGE_PARTIAL_COST;
+      bonus = WATER_CHANGE_PARTIAL_BONUS;
+    } else if (waterChangeType === 'full') {
+      cost = WATER_CHANGE_FULL_COST;
+      bonus = WATER_CHANGE_FULL_BONUS;
+    }
+    applyWaterChange(0, true, cost, bonus);
   }
 
   function doCleanTank(tankIdx) {
-    openWaterChangeSelectionModal(tankIdx, false);
+    // 即発動：デフォルトの水替え方法で個別水替え
+    var waterChangeType = state.waterChangeType || 'normal';
+    var cost = 500;
+    var bonus = 25;
+    if (waterChangeType === 'partial') {
+      cost = WATER_CHANGE_PARTIAL_COST;
+      bonus = WATER_CHANGE_PARTIAL_BONUS;
+    } else if (waterChangeType === 'full') {
+      cost = WATER_CHANGE_FULL_COST;
+      bonus = WATER_CHANGE_FULL_BONUS;
+    }
+    applyWaterChange(tankIdx, false, cost, bonus);
   }
 
   function openGlobalFeedModal() {
-    var occupied = countOccupiedTanks();
-    if (occupied === 0) {
-      logLine('エサをあげる対象の水槽がない。');
-      return;
+    // 即発動：デフォルトの餌タイプで全体給餌
+    var feedType = state.feedType || 'artificial';
+    if (feedType === 'artificial') {
+      actFeedArtificial();
+    } else if (feedType === 'bloodworm') {
+      actFeedBloodworm();
+    } else if (feedType === 'earthworm') {
+      actFeedEarthworm();
     }
-    
-    var overlay = document.getElementById('axOverlayFeed');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.className = 'ax-overlay';
-      overlay.id = 'axOverlayFeed';
-      overlay.innerHTML = '<div class="ax-overlay-box"><h2 id="axFeedTitle">全体にエサをあげる</h2><p style="font-size:12px; margin-bottom:8px;" id="axFeedDescription">エサの種類を選択してください。</p><div id="axFeedTankList" style="margin-bottom:12px;"></div><button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axFeedCancel">キャンセル</button></div>';
-      document.body.appendChild(overlay);
-      document.getElementById('axFeedCancel').addEventListener('click', function() {
-        $('axOverlayFeed').classList.remove('visible');
-      });
-    }
-    
-    var list = document.getElementById('axFeedTankList');
-    list.innerHTML = '';
-    
-    var feeds = [
-      { name: '💊 人工餌', func: actFeedArtificial, cost: FEED_ARTIFICIAL_COST * occupied, desc: '汚れ低・成長普通' },
-      { name: 'アカムシ', func: actFeedBloodworm, cost: FEED_BLOODWORM_COST, desc: '汚れ高・成長やや高' },
-      { name: '🪱 みみず', func: actFeedEarthworm, cost: FEED_EARTHWORM_COST * occupied, desc: '汚れ中・成長最高' }
-    ];
-    
-    feeds.forEach(function(feed) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'ax-btn feed';
-      btn.style.width = '100%';
-      btn.style.marginBottom = '8px';
-      btn.style.minHeight = '44px';
-      btn.innerHTML = '<div style="font-size:16px; font-weight:bold;">' + feed.name + '</div><div style="font-size:12px; margin-top:4px;">¥' + feed.cost.toLocaleString('ja-JP') + ' - ' + feed.desc + '</div>';
-      if (state.money < feed.cost) {
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
-      }
-      btn.addEventListener('click', function() {
-        if (!this.disabled) {
-          feed.func();
-          $('axOverlayFeed').classList.remove('visible');
-        }
-      });
-      list.appendChild(btn);
-    });
-    
-    overlay.classList.add('visible');
   }
 
   function openTankFeedModal(tankIdx) {
-    var tank = state.tanks[tankIdx];
-    if (!tank || (!tank.axolotl && !tank.breedingPair)) {
-      logLine('給餌する対象がありません。');
-      return;
-    }
-    
-    var overlay = document.getElementById('axOverlayFeed');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.className = 'ax-overlay';
-      overlay.id = 'axOverlayFeed';
-      overlay.innerHTML = '<div class="ax-overlay-box"><h2 id="axFeedTitle">エサを選ぶ</h2><p style="font-size:12px; margin-bottom:8px;" id="axFeedDescription">エサの種類を選択してください。</p><div id="axFeedTankList" style="margin-bottom:12px;"></div><button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axFeedCancel">キャンセル</button></div>';
-      document.body.appendChild(overlay);
-      document.getElementById('axFeedCancel').addEventListener('click', function() {
-        $('axOverlayFeed').classList.remove('visible');
-      });
-    }
-    
-    var list = document.getElementById('axFeedTankList');
-    list.innerHTML = '';
-    
-    var feeds = [
-      { name: '💊 人工餌', type: 'artificial', cost: FEED_ARTIFICIAL_COST, desc: '汚れ低・成長普通' },
-      { name: '🪱 みみず', type: 'earthworm', cost: FEED_EARTHWORM_COST, desc: '汚れ中・成長最高' }
-    ];
-    
-    feeds.forEach(function(feed) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'ax-btn feed';
-      btn.style.width = '100%';
-      btn.style.marginBottom = '8px';
-      btn.style.minHeight = '44px';
-      btn.innerHTML = '<div style="font-size:16px; font-weight:bold;">' + feed.name + '</div><div style="font-size:12px; margin-top:4px;">¥' + feed.cost.toLocaleString('ja-JP') + ' - ' + feed.desc + '</div>';
-      btn.dataset.feedType = feed.type;
-      if (state.money < feed.cost) {
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
-      }
-      btn.addEventListener('click', function() {
-        if (!this.disabled) {
-          doFeedTank(tankIdx, this.dataset.feedType);
-          $('axOverlayFeed').classList.remove('visible');
-        }
-      });
-      list.appendChild(btn);
-    });
-    
-    overlay.classList.add('visible');
+    // 即発動：デフォルトの餌タイプで給餌
+    doFeedTank(tankIdx, state.feedType || 'artificial');
   }
 
   function openWaterChangeSelectionModal(tankIdx, isGlobal) {
@@ -3697,6 +3642,80 @@
       });
       equipmentDiv.appendChild(bottomCleanerBtn);
       
+      // 餌のアップグレード
+      var feedUpgradeDiv = document.createElement('div');
+      feedUpgradeDiv.style.marginTop = '16px';
+      feedUpgradeDiv.style.paddingTop = '16px';
+      feedUpgradeDiv.style.borderTop = '2px solid #e5e7eb';
+      
+      var feedUpgradeTitle = document.createElement('div');
+      feedUpgradeTitle.style.fontSize = '14px';
+      feedUpgradeTitle.style.fontWeight = 'bold';
+      feedUpgradeTitle.style.marginBottom = '8px';
+      feedUpgradeTitle.style.color = '#0f172a';
+      feedUpgradeTitle.textContent = '餌のアップグレード';
+      feedUpgradeDiv.appendChild(feedUpgradeTitle);
+      
+      var currentFeedLabel = document.createElement('div');
+      currentFeedLabel.style.fontSize = '12px';
+      currentFeedLabel.style.color = '#64748b';
+      currentFeedLabel.style.marginBottom = '8px';
+      var currentFeedName = state.feedType === 'artificial' ? '💊 人工餌' : state.feedType === 'bloodworm' ? 'アカムシ' : '🪱 みみず';
+      currentFeedLabel.textContent = '現在: ' + currentFeedName;
+      feedUpgradeDiv.appendChild(currentFeedLabel);
+      
+      var feedTypes = [
+        { type: 'artificial', name: '💊 人工餌', cost: 0, desc: '基本の餌' },
+        { type: 'bloodworm', name: 'アカムシ', cost: 10000, desc: '汚れ高・成長やや高' },
+        { type: 'earthworm', name: '🪱 みみず', cost: 30000, desc: '汚れ中・成長最高' }
+      ];
+      
+      feedTypes.forEach(function(feed) {
+        var feedBtn = document.createElement('button');
+        feedBtn.type = 'button';
+        feedBtn.className = 'ax-btn';
+        feedBtn.style.width = '100%';
+        feedBtn.style.marginBottom = '8px';
+        feedBtn.style.textAlign = 'left';
+        feedBtn.style.padding = '10px';
+        
+        if (state.feedType === feed.type) {
+          feedBtn.disabled = true;
+          feedBtn.innerHTML = '<span class="label">' + feed.name + '（使用中）</span>';
+          feedBtn.style.opacity = '0.7';
+        } else if (state.feedType === 'artificial' && feed.type === 'bloodworm') {
+          // 人工餌からアカムシへのアップグレード
+          if (state.money < feed.cost) {
+            feedBtn.disabled = true;
+            feedBtn.innerHTML = '<span class="label">' + feed.name + ' ¥' + feed.cost.toLocaleString('ja-JP') + '（資金不足）</span>';
+          } else {
+            feedBtn.disabled = false;
+            feedBtn.innerHTML = '<span class="label">' + feed.name + ' ¥' + feed.cost.toLocaleString('ja-JP') + ' - ' + feed.desc + '</span>';
+          }
+        } else if (state.feedType === 'bloodworm' && feed.type === 'earthworm') {
+          // アカムシからみみずへのアップグレード
+          if (state.money < feed.cost) {
+            feedBtn.disabled = true;
+            feedBtn.innerHTML = '<span class="label">' + feed.name + ' ¥' + feed.cost.toLocaleString('ja-JP') + '（資金不足）</span>';
+          } else {
+            feedBtn.disabled = false;
+            feedBtn.innerHTML = '<span class="label">' + feed.name + ' ¥' + feed.cost.toLocaleString('ja-JP') + ' - ' + feed.desc + '</span>';
+          }
+        } else {
+          feedBtn.disabled = true;
+          feedBtn.innerHTML = '<span class="label">' + feed.name + '（未解放）</span>';
+        }
+        
+        feedBtn.addEventListener('click', function () {
+          if (!state.ended && !this.disabled) {
+            upgradeFeedType(feed.type, feed.cost);
+          }
+        });
+        feedUpgradeDiv.appendChild(feedBtn);
+      });
+      
+      equipmentDiv.appendChild(feedUpgradeDiv);
+      
       // 水槽追加
       var addTankBtn = document.createElement('button');
       addTankBtn.type = 'button';
@@ -3814,6 +3833,36 @@
     updateUI();
   }
 
+  function upgradeFeedType(newFeedType, cost) {
+    if (state.money < cost) {
+      logLine('資金が足りません。');
+      return;
+    }
+    
+    // アップグレード可能かチェック
+    if (state.feedType === 'artificial' && newFeedType === 'bloodworm') {
+      // OK: 人工餌 → アカムシ
+    } else if (state.feedType === 'bloodworm' && newFeedType === 'earthworm') {
+      // OK: アカムシ → みみず
+    } else {
+      logLine('この餌にアップグレードできません。');
+      return;
+    }
+    
+    state.money -= cost;
+    state.feedType = newFeedType;
+    
+    var feedNames = {
+      artificial: '💊 人工餌',
+      bloodworm: 'アカムシ',
+      earthworm: '🪱 みみず'
+    };
+    
+    logLine('餌を' + feedNames[newFeedType] + 'にアップグレードしました。');
+    $('axOverlayBuy').classList.remove('visible');
+    updateUI();
+  }
+
   function actAddTank() {
     if (state.tanks.length >= MAX_TANKS) {
       logLine('これ以上水槽は増やせない。');
@@ -3859,6 +3908,8 @@
     state.shopStockDaily = {};  // 日ごとの在庫状態をリセット
     state.initialNamingMessageShown = false;  // 最初のウパの名前付けメッセージ表示フラグをリセット
     state.equipment = { autoFeeder: false, filter: false, bottomCleaner: false };  // 設備をリセット
+    state.feedType = 'artificial';  // デフォルトの餌タイプをリセット
+    state.waterChangeType = 'normal';  // デフォルトの水替えタイプをリセット
     initTanks();
     
     // 初期個体を図鑑に追加
@@ -3916,6 +3967,15 @@
   var menu = document.getElementById('axMenu');
   var menuClose = document.getElementById('axMenuClose');
   
+  function toggleMenu() {
+    var isVisible = menu && menu.classList.contains('visible');
+    if (isVisible) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  }
+  
   function openMenu() {
     if (menuOverlay) menuOverlay.classList.add('visible');
     if (menu) menu.classList.add('visible');
@@ -3927,7 +3987,7 @@
   }
   
   if (menuToggle) {
-    menuToggle.addEventListener('click', openMenu);
+    menuToggle.addEventListener('click', toggleMenu);
   }
   if (menuOverlay) {
     menuOverlay.addEventListener('click', closeMenu);
