@@ -2815,29 +2815,47 @@
       logLine('エサをあげる対象の水槽がない。');
       return;
     }
-    var totalCost = FEED_ARTIFICIAL_COST * occupied;
+    
+    // 空腹度が100%の水槽を除外
+    var feedableTanks = state.tanks.filter(function(tank) {
+      if (!tank.axolotl && !tank.breedingPair) return false;
+      if (tank.axolotl && (tank.axolotl.hunger || 80) >= MAX_HUNGER) return false;
+      if (tank.breedingPair) {
+        var allFull = true;
+        tank.breedingPair.forEach(function(ax) {
+          if ((ax.hunger || 80) < MAX_HUNGER) allFull = false;
+        });
+        if (allFull) return false;
+      }
+      return true;
+    });
+    
+    if (feedableTanks.length === 0) {
+      logLine('給餌できる水槽がありません（全て満腹です）。');
+      return;
+    }
+    
+    var totalCost = FEED_ARTIFICIAL_COST * feedableTanks.length;
     if (state.money < totalCost) {
       logLine('人工飼料代が足りない…。（¥' + totalCost.toLocaleString('ja-JP') + '）');
       return;
     }
     state.money -= totalCost;
     
-    // 全水槽に人工飼料をあげる
-    state.tanks.forEach(function(tank) {
-      if (tank.axolotl || tank.breedingPair) {
-        if (tank.axolotl) {
-          tank.axolotl.health = clamp(tank.axolotl.health + FEED_ARTIFICIAL_HEALTH, 0, MAX_HEALTH);
-          tank.axolotl.hunger = clamp((tank.axolotl.hunger || 80) + FEED_ARTIFICIAL_HUNGER, 0, MAX_HUNGER);
-        }
-        if (tank.breedingPair) {
-          tank.breedingPair.forEach(function(ax) {
-            ax.health = clamp(ax.health + FEED_ARTIFICIAL_HEALTH, 0, MAX_HEALTH);
-            ax.hunger = clamp((ax.hunger || 80) + FEED_ARTIFICIAL_HUNGER, 0, MAX_HUNGER);
-          });
-        }
-        // 水質を下げる
-        tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - FEED_ARTIFICIAL_DIRT, 0, MAX_CLEAN);
+    // 給餌可能な水槽にのみ人工飼料をあげる
+    feedableTanks.forEach(function(tank) {
+      if (tank.axolotl) {
+        tank.axolotl.health = clamp(tank.axolotl.health + FEED_ARTIFICIAL_HEALTH, 0, MAX_HEALTH);
+        tank.axolotl.hunger = clamp((tank.axolotl.hunger || 80) + FEED_ARTIFICIAL_HUNGER, 0, MAX_HUNGER);
       }
+      if (tank.breedingPair) {
+        tank.breedingPair.forEach(function(ax) {
+          ax.health = clamp(ax.health + FEED_ARTIFICIAL_HEALTH, 0, MAX_HEALTH);
+          ax.hunger = clamp((ax.hunger || 80) + FEED_ARTIFICIAL_HUNGER, 0, MAX_HUNGER);
+        });
+      }
+      // 水質を下げる（重要：給餌は水質を下げる）
+      tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - FEED_ARTIFICIAL_DIRT, 0, MAX_CLEAN);
     });
     
     logLine('人工飼料を全体にあげた。汚れ低・成長普通。');
@@ -2851,12 +2869,48 @@
       logLine('エサをあげる対象の水槽がない。');
       return;
     }
+    
+    // 空腹度が100%の水槽を除外
+    var feedableTanks = state.tanks.filter(function(tank) {
+      if (!tank.axolotl && !tank.breedingPair) return false;
+      if (tank.axolotl && (tank.axolotl.hunger || 80) >= MAX_HUNGER) return false;
+      if (tank.breedingPair) {
+        var allFull = true;
+        tank.breedingPair.forEach(function(ax) {
+          if ((ax.hunger || 80) < MAX_HUNGER) allFull = false;
+        });
+        if (allFull) return false;
+      }
+      return true;
+    });
+    
+    if (feedableTanks.length === 0) {
+      logLine('給餌できる水槽がありません（全て満腹です）。');
+      return;
+    }
+    
     if (state.money < FEED_BLOODWORM_COST) {
       logLine('アカムシ代が足りない…。');
       return;
     }
     state.money -= FEED_BLOODWORM_COST;
-    applyFeedToTanks(FEED_BLOODWORM_HEALTH, FEED_BLOODWORM_HUNGER, FEED_BLOODWORM_DIRT);
+    
+    // 給餌可能な水槽にのみアカムシをあげる
+    feedableTanks.forEach(function(tank) {
+      if (tank.axolotl) {
+        tank.axolotl.health = clamp(tank.axolotl.health + FEED_BLOODWORM_HEALTH, 0, MAX_HEALTH);
+        tank.axolotl.hunger = clamp((tank.axolotl.hunger || 80) + FEED_BLOODWORM_HUNGER, 0, MAX_HUNGER);
+      }
+      if (tank.breedingPair) {
+        tank.breedingPair.forEach(function(ax) {
+          ax.health = clamp(ax.health + FEED_BLOODWORM_HEALTH, 0, MAX_HEALTH);
+          ax.hunger = clamp((ax.hunger || 80) + FEED_BLOODWORM_HUNGER, 0, MAX_HUNGER);
+        });
+      }
+      // 水質を下げる（重要：給餌は水質を下げる）
+      tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - FEED_BLOODWORM_DIRT, 0, MAX_CLEAN);
+    });
+    
     logLine('アカムシを全体にあげた。汚れ高・成長やや高（ブースト）。');
     updateUI();
   }
@@ -2864,6 +2918,31 @@
   function doFeedTank(tankIdx, feedType) {
     var tank = state.tanks[tankIdx];
     if (!tank) {
+      updateUI();
+      return;
+    }
+    
+    // 給餌対象のチェック
+    if (!tank.axolotl && !tank.breedingPair) {
+      logLine('給餌する対象がありません。');
+      updateUI();
+      return;
+    }
+    
+    // 空腹度が100%なら給餌できない
+    var canFeed = false;
+    if (tank.axolotl && (tank.axolotl.hunger || 80) < MAX_HUNGER) {
+      canFeed = true;
+    }
+    if (tank.breedingPair) {
+      tank.breedingPair.forEach(function(ax) {
+        if ((ax.hunger || 80) < MAX_HUNGER) {
+          canFeed = true;
+        }
+      });
+    }
+    if (!canFeed) {
+      logLine('空腹度が満タンなので給餌できません。');
       updateUI();
       return;
     }
@@ -2880,6 +2959,12 @@
       hungerBonus = FEED_ARTIFICIAL_HUNGER;
       cleanPenalty = FEED_ARTIFICIAL_DIRT;
       feedName = '人工飼料';
+    } else if (feedType === 'bloodworm') {
+      cost = FEED_BLOODWORM_COST;
+      healthBonus = FEED_BLOODWORM_HEALTH;
+      hungerBonus = FEED_BLOODWORM_HUNGER;
+      cleanPenalty = FEED_BLOODWORM_DIRT;
+      feedName = 'アカムシ';
     } else if (feedType === 'earthworm') {
       cost = FEED_EARTHWORM_COST;
       healthBonus = FEED_EARTHWORM_HEALTH;
@@ -2911,7 +2996,7 @@
       });
     }
     
-    // 水質を下げる
+    // 水質を下げる（重要：給餌は水質を下げる）
     tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - cleanPenalty, 0, MAX_CLEAN);
     
     logLine('水槽' + (tankIdx + 1) + 'に' + feedName + 'をあげた。');
@@ -2925,29 +3010,47 @@
       logLine('エサをあげる対象の水槽がない。');
       return;
     }
-    var totalCost = FEED_EARTHWORM_COST * occupied;
+    
+    // 空腹度が100%の水槽を除外
+    var feedableTanks = state.tanks.filter(function(tank) {
+      if (!tank.axolotl && !tank.breedingPair) return false;
+      if (tank.axolotl && (tank.axolotl.hunger || 80) >= MAX_HUNGER) return false;
+      if (tank.breedingPair) {
+        var allFull = true;
+        tank.breedingPair.forEach(function(ax) {
+          if ((ax.hunger || 80) < MAX_HUNGER) allFull = false;
+        });
+        if (allFull) return false;
+      }
+      return true;
+    });
+    
+    if (feedableTanks.length === 0) {
+      logLine('給餌できる水槽がありません（全て満腹です）。');
+      return;
+    }
+    
+    var totalCost = FEED_EARTHWORM_COST * feedableTanks.length;
     if (state.money < totalCost) {
       logLine('ミミズ代が足りない…。（¥' + totalCost.toLocaleString('ja-JP') + '）');
       return;
     }
     state.money -= totalCost;
     
-    // 全水槽にミミズをあげる
-    state.tanks.forEach(function(tank) {
-      if (tank.axolotl || tank.breedingPair) {
-        if (tank.axolotl) {
-          tank.axolotl.health = clamp(tank.axolotl.health + FEED_EARTHWORM_HEALTH, 0, MAX_HEALTH);
-          tank.axolotl.hunger = clamp((tank.axolotl.hunger || 80) + FEED_EARTHWORM_HUNGER, 0, MAX_HUNGER);
-        }
-        if (tank.breedingPair) {
-          tank.breedingPair.forEach(function(ax) {
-            ax.health = clamp(ax.health + FEED_EARTHWORM_HEALTH, 0, MAX_HEALTH);
-            ax.hunger = clamp((ax.hunger || 80) + FEED_EARTHWORM_HUNGER, 0, MAX_HUNGER);
-          });
-        }
-        // 水質を下げる
-        tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - FEED_EARTHWORM_DIRT, 0, MAX_CLEAN);
+    // 給餌可能な水槽にのみミミズをあげる
+    feedableTanks.forEach(function(tank) {
+      if (tank.axolotl) {
+        tank.axolotl.health = clamp(tank.axolotl.health + FEED_EARTHWORM_HEALTH, 0, MAX_HEALTH);
+        tank.axolotl.hunger = clamp((tank.axolotl.hunger || 80) + FEED_EARTHWORM_HUNGER, 0, MAX_HUNGER);
       }
+      if (tank.breedingPair) {
+        tank.breedingPair.forEach(function(ax) {
+          ax.health = clamp(ax.health + FEED_EARTHWORM_HEALTH, 0, MAX_HEALTH);
+          ax.hunger = clamp((ax.hunger || 80) + FEED_EARTHWORM_HUNGER, 0, MAX_HUNGER);
+        });
+      }
+      // 水質を下げる（重要：給餌は水質を下げる）
+      tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - FEED_EARTHWORM_DIRT, 0, MAX_CLEAN);
     });
     
     logLine('ミミズを全体にあげた。汚れ中・成長最高（育成特化）。');
@@ -3050,6 +3153,8 @@
   }
 
   function applyWaterChange(tankIdx, isGlobal, cost, bonus) {
+    var overlay = document.getElementById('axOverlayWaterChange');
+    
     if (isGlobal) {
       var occupiedTanks = state.tanks.filter(function(t) {
         return t.axolotl || t.breedingPair || t.juveniles || t.egg;
@@ -3057,14 +3162,14 @@
       
       if (occupiedTanks.length === 0) {
         logLine('水替えする対象の水槽がない。');
-        $('axOverlayWaterChange').classList.remove('visible');
+        if (overlay) overlay.classList.remove('visible');
         return;
       }
       
       var totalCost = cost * occupiedTanks.length;
       if (state.money < totalCost) {
         logLine('水換えの費用が足りない…。（¥' + totalCost.toLocaleString('ja-JP') + '）');
-        $('axOverlayWaterChange').classList.remove('visible');
+        if (overlay) overlay.classList.remove('visible');
         return;
       }
       
@@ -3078,14 +3183,14 @@
     } else {
       var tank = state.tanks[tankIdx];
       if (!tank) {
-        $('axOverlayWaterChange').classList.remove('visible');
+        if (overlay) overlay.classList.remove('visible');
         updateUI();
         return;
       }
       
       if (state.money < cost) {
         logLine('水換えの費用が足りない…。（¥' + cost.toLocaleString('ja-JP') + '）');
-        $('axOverlayWaterChange').classList.remove('visible');
+        if (overlay) overlay.classList.remove('visible');
         updateUI();
         return;
       }
@@ -3095,7 +3200,7 @@
       logLine('水槽' + (tankIdx + 1) + 'の水をかえた。水質が上がった。');
     }
     
-    $('axOverlayWaterChange').classList.remove('visible');
+    if (overlay) overlay.classList.remove('visible');
     updateUI();
   }
 

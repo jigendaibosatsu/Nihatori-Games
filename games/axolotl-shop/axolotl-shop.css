@@ -28,7 +28,7 @@ body.game-page {
   top: 48px;
   left: 0;
   right: 0;
-  z-index: 20;
+  z-index: 30;
   background: rgba(255,255,255,0.98);
   border-bottom: 2px solid #bae6fd;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -83,6 +83,8 @@ body.game-page {
   border: none;
   cursor: pointer;
   padding: 8px;
+  position: relative;
+  z-index: 31;
 }
 .ax-menu-toggle span {
   width: 24px;
@@ -203,7 +205,7 @@ body.game-page {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 .ax-menu-icon {
-  font-size: 32px;
+  font-size: 48px;
   line-height: 1;
 }
 .ax-menu-label {
