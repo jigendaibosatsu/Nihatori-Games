@@ -11,7 +11,7 @@
   <div id="site-header"></div>
 
   <div class="ax-wrap">
-    <h1 class="ax-title">ウーパールーパーショップ</h1>
+    <h1 class="ax-title" id="axShopTitle" style="cursor:pointer;" title="クリックで名前を変更">ウーパールーパーショップ</h1>
     <p class="ax-sub">水質・エサ・繁殖のバランスでお店を続けよう。</p>
 
     <div class="ax-panel">
@@ -20,10 +20,6 @@
         <span class="ax-money" id="axMoney">¥50,000</span>
       </div>
       <div class="ax-bars-row">
-        <div class="ax-bar-wrap">
-          <div class="ax-bar-label">水質</div>
-          <div class="ax-bar"><div class="ax-bar-fill clean" id="axCleanBar"></div></div>
-        </div>
         <div class="ax-bar-wrap">
           <div class="ax-bar-label">評判</div>
           <div class="ax-bar"><div class="ax-bar-fill reputation" id="axRepBar"></div></div>
@@ -39,17 +35,17 @@
         </button>
         <div class="ax-feed-group">
           <button type="button" class="ax-btn feed" id="btnFeedArtificial">
-            <span class="label">人工 ¥1,500</span>
+            <span class="label">💊人工餌(全体x1個¥200)</span>
           </button>
           <button type="button" class="ax-btn feed-bloodworm" id="btnFeedBloodworm">
-            <span class="label">アカムシ ¥500</span>
+            <span class="label">アカムシ（全体）¥500</span>
           </button>
           <button type="button" class="ax-btn feed-earthworm" id="btnFeedEarthworm">
-            <span class="label">ミミズ ¥2,500</span>
+            <span class="label">🪱みみず(全体x1個¥500)</span>
           </button>
         </div>
         <button type="button" class="ax-btn clean" id="btnClean">
-          <span class="label">水かえ ¥1,000</span>
+          <span class="label">🔁水替(全体x1個¥500)</span>
         </button>
         <button type="button" class="ax-btn breed" id="btnBreed">
           <span class="label">繁殖</span>
@@ -57,11 +53,17 @@
         <button type="button" class="ax-btn treat" id="btnTreat">
           <span class="label">治療 ¥5,000</span>
         </button>
-        <button type="button" class="ax-btn" id="btnBuy">
-          <span class="label">仕入れ</span>
+        <button type="button" class="ax-btn shop" id="btnBuy">
+          <span class="label">ショップ</span>
         </button>
-        <button type="button" class="ax-btn" id="btnAddTank">
-          <span class="label">水槽+ ¥20,000</span>
+        <button type="button" class="ax-btn encyclopedia" id="btnEncyclopedia">
+          <span class="label">図鑑</span>
+        </button>
+        <button type="button" class="ax-btn achievements" id="btnAchievements">
+          <span class="label">実績</span>
+        </button>
+        <button type="button" class="ax-btn auction" id="btnAuction">
+          <span class="label">オークション</span>
         </button>
       </div>
     </div>
@@ -74,13 +76,13 @@
   <div class="ax-overlay" id="axOverlayBreed">
     <div class="ax-overlay-box">
       <h2>交配する2匹を選ぶ</h2>
-      <p style="font-size:12px; margin-bottom:8px;">親1・親2に12ヶ月以上の成体を選んでください。選んだ2匹が1つの水槽に入り、1〜3ヶ月後に結果が出ます。</p>
+      <p style="font-size:12px; margin-bottom:8px;">オスとメスを1匹ずつ選んでください。選んだ2匹が1つの水槽に入り、毎月産卵を試みます。</p>
       <div style="margin-bottom:8px;">
-        <label>親1の水槽</label>
+        <label>オス</label>
         <select id="axBreedParent1" style="display:block; width:100%; padding:6px; margin-top:2px;"></select>
       </div>
       <div style="margin-bottom:12px;">
-        <label>親2の水槽</label>
+        <label>メス</label>
         <select id="axBreedParent2" style="display:block; width:100%; padding:6px; margin-top:2px;"></select>
       </div>
       <button type="button" class="btn" id="axBreedConfirm">交配する</button>
@@ -99,8 +101,8 @@
 
   <div class="ax-overlay" id="axOverlayBuy">
     <div class="ax-overlay-box">
-      <h2>ウパを仕入れる（種類・サイズを選ぶ）</h2>
-      <p style="font-size:12px; margin-bottom:8px;">タブで種類を選び、サイズを選んでください。</p>
+      <h2>ショップ</h2>
+      <p style="font-size:12px; margin-bottom:8px;">タブで種類を選んでください。固定化された種類のみ販売しています。</p>
       <div id="axBuyTabs" class="ax-buy-tabs" style="display:flex; gap:4px; margin-bottom:10px; flex-wrap:wrap;"></div>
       <div id="axBuyTypeList" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
       <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axBuyCancel">キャンセル</button>
@@ -134,6 +136,40 @@
       <input type="hidden" id="axJuvenileTankIndex" value="">
       <div id="axJuvenileList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
       <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axJuvenileCancel">キャンセル</button>
+    </div>
+  </div>
+
+  <div class="ax-overlay" id="axOverlayEncyclopedia">
+    <div class="ax-overlay-box" style="max-width:600px;">
+      <h2>図鑑</h2>
+      <div id="axEncyclopediaContent" style="max-height:70vh; overflow-y:auto;"></div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b; margin-top:12px;" id="axEncyclopediaCancel">閉じる</button>
+    </div>
+  </div>
+
+  <div class="ax-overlay" id="axOverlayAchievements">
+    <div class="ax-overlay-box" style="max-width:600px;">
+      <h2>実績</h2>
+      <div id="axAchievementsContent" style="max-height:70vh; overflow-y:auto;"></div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b; margin-top:12px;" id="axAchievementsCancel">閉じる</button>
+    </div>
+  </div>
+
+  <div class="ax-overlay" id="axOverlayClean">
+    <div class="ax-overlay-box">
+      <h2>水替えする水槽を選ぶ</h2>
+      <p style="font-size:12px; margin-bottom:8px;">水槽を選ぶと¥500で水替えします。水質が上がります。</p>
+      <div id="axCleanTankList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axCleanCancel">キャンセル</button>
+    </div>
+  </div>
+
+  <div class="ax-overlay" id="axOverlayFeed">
+    <div class="ax-overlay-box">
+      <h2 id="axFeedTitle">エサをあげる水槽を選ぶ</h2>
+      <p style="font-size:12px; margin-bottom:8px;" id="axFeedDescription"></p>
+      <div id="axFeedTankList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axFeedCancel">キャンセル</button>
     </div>
   </div>
 
