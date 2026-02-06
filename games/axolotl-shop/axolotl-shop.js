@@ -153,6 +153,8 @@
       // 左半分と右半分を描画
       var img1 = new Image();
       var img2 = new Image();
+      img1.crossOrigin = 'anonymous'; // CORS対応
+      img2.crossOrigin = 'anonymous'; // CORS対応
       var loaded = 0;
       var drawChimera = function() {
         if (loaded < 2) return;
@@ -161,6 +163,9 @@
         var img1Height = img1.naturalHeight || img1.height || 40;
         var img2Width = img2.naturalWidth || img2.width || 40;
         var img2Height = img2.naturalHeight || img2.height || 40;
+        
+        // Canvasをクリア
+        ctx.clearRect(0, 0, 40, 40);
         
         // 左半分：左側の画像の左半分をキャンバスの左半分に描画
         var halfWidth1 = Math.floor(img1Width / 2);
@@ -176,12 +181,43 @@
           setTimeout(updateUI, 100);
         }
       };
-      img1.onload = function() { loaded++; drawChimera(); };
-      img2.onload = function() { loaded++; drawChimera(); };
-      img1.onerror = function() { loaded++; drawChimera(); }; // エラー時もカウント
-      img2.onerror = function() { loaded++; drawChimera(); };
+      img1.onload = function() { 
+        loaded++; 
+        if (loaded >= 2) {
+          drawChimera();
+        }
+      };
+      img2.onload = function() { 
+        loaded++; 
+        if (loaded >= 2) {
+          drawChimera();
+        }
+      };
+      img1.onerror = function() { 
+        loaded++; 
+        // エラー時も描画を試みる（不完全な画像になる可能性がある）
+        if (loaded >= 2) {
+          drawChimera();
+        }
+      };
+      img2.onerror = function() { 
+        loaded++; 
+        // エラー時も描画を試みる（不完全な画像になる可能性がある）
+        if (loaded >= 2) {
+          drawChimera();
+        }
+      };
+      
       img1.src = typeImagePath(chimeraTypes[0]);
       img2.src = typeImagePath(chimeraTypes[1]);
+      
+      // 画像が既に読み込まれている場合（キャッシュされている場合）
+      if (img1.complete && img1.naturalWidth > 0) {
+        img1.onload();
+      }
+      if (img2.complete && img2.naturalWidth > 0) {
+        img2.onload();
+      }
       
       // 一時的に左側の画像を返す（後で更新される）
       return typeImagePath(chimeraTypes[0]);
@@ -189,7 +225,7 @@
     
     // 通常の個体差適用
     var img = new Image();
-    img.src = typeImagePath(ax.type);
+    img.crossOrigin = 'anonymous'; // CORS対応
     var canvas = document.createElement('canvas');
     canvas.width = 40;
     canvas.height = 40;
@@ -198,7 +234,16 @@
     ctx.imageSmoothingEnabled = false;
     
     img.onload = function() {
-      ctx.drawImage(img, 0, 0, 40, 40);
+      // 画像の実際のサイズを取得
+      var imgWidth = img.naturalWidth || img.width || 40;
+      var imgHeight = img.naturalHeight || img.height || 40;
+      
+      // Canvasをクリア
+      ctx.clearRect(0, 0, 40, 40);
+      
+      // 画像の実際のサイズを40x40のCanvasに正しく描画
+      // ソース画像全体を、Canvas全体に描画
+      ctx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, 40, 40);
       
       // スーパーブラックとイエローの場合は画像をそのまま使用（色味の変更なし、固定）
       if (ax.type === 'superblack' || ax.type === 'yellow') {
@@ -255,7 +300,27 @@
       }
       
       imageCache[cacheKey] = canvas.toDataURL();
+      // UIを更新（画像が生成されたことを通知）
+      if (typeof updateUI === 'function') {
+        setTimeout(updateUI, 50);
+      }
     };
+    
+    img.onerror = function() {
+      // エラー時は元の画像パスをキャッシュに保存（フォールバック）
+      imageCache[cacheKey] = typeImagePath(ax.type);
+      if (typeof updateUI === 'function') {
+        setTimeout(updateUI, 50);
+      }
+    };
+    
+    img.src = typeImagePath(ax.type);
+    
+    // 画像が既に読み込まれている場合（キャッシュされている場合）
+    if (img.complete && img.naturalWidth > 0) {
+      // すぐに描画処理を実行
+      img.onload();
+    }
     
     return typeImagePath(ax.type); // 一時的に返す
   }
