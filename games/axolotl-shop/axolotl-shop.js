@@ -290,7 +290,7 @@
 
   // Idle Bob: 2コマのみ [0, AMPLITUDE]。時間ベースでMac/スマホで同じテンポに。
   var BOB_AMPLITUDE = 8;        // 6〜12で調整可
-  var BOB_STEP_EVERY_MS = 1000; // 1秒ごと（ミリ秒で指定＝デバイス問わず同じ速さ）
+  var BOB_STEP_EVERY_MS = 500; // 0.5秒ごと（ミリ秒で指定＝デバイス問わず同じ速さ）
   var _bob = [0, -BOB_AMPLITUDE];
   var _bobIndex = 0;
   var _bobLastStepTime = 0;
