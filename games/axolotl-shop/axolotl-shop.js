@@ -288,16 +288,19 @@
     return canvas;
   }
 
-  // Idle Bob: 2コマのみ [0, AMPLITUDE]。下に沈めず上に弾むだけ。整数px・sin禁止。
-  // requestAnimationFrame(60fps想定)で stepEvery フレームごとに切り替え。「タッ……タッ……」遅めテンポ。
-  var BOB_AMPLITUDE = 8;   // 6〜12で調整可
-  var BOB_STEP_EVERY = 60; // 約1秒ごと（60fps×1秒）
+  // Idle Bob: 2コマのみ [0, AMPLITUDE]。時間ベースでMac/スマホで同じテンポに。
+  var BOB_AMPLITUDE = 8;        // 6〜12で調整可
+  var BOB_STEP_EVERY_MS = 1000; // 1秒ごと（ミリ秒で指定＝デバイス問わず同じ速さ）
   var _bob = [0, -BOB_AMPLITUDE];
   var _bobIndex = 0;
-  var _bobTick = 0;
-  function idleBobUpdate() {
-    _bobTick++;
-    if (_bobTick % BOB_STEP_EVERY === 0) _bobIndex ^= 1;
+  var _bobLastStepTime = 0;
+  function idleBobUpdate(now) {
+    now = now || (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    if (_bobLastStepTime === 0) _bobLastStepTime = now;
+    if (now - _bobLastStepTime >= BOB_STEP_EVERY_MS) {
+      _bobIndex ^= 1;
+      _bobLastStepTime = now;
+    }
     var y = _bob[_bobIndex];
     var list = document.querySelectorAll('.ax-axolotl-img.ax-idle');
     for (var i = 0; i < list.length; i++) {
