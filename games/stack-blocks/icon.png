@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>装備強化ダンジョン – Nihatori Games</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      background: #1a1a2e;
+      color: #fff;
+      padding: 8px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      margin: 16px 0;
+      color: #60a5fa;
+      font-size: 1.5rem;
+    }
+    .phase-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      justify-content: center;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: 2px solid #3b82f6;
+      background: linear-gradient(180deg, #3b82f6, #2563eb);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .btn:active { transform: scale(0.95); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-danger {
+      background: linear-gradient(180deg, #ef4444, #dc2626);
+      border-color: #ef4444;
+    }
+    .btn-success {
+      background: linear-gradient(180deg, #22c55e, #16a34a);
+      border-color: #22c55e;
+    }
+    .stats-panel {
+      background: rgba(0,0,0,0.5);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      text-align: center;
+    }
+    .stat-item {
+      padding: 8px;
+      background: rgba(59,130,246,0.2);
+      border-radius: 6px;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #aaa;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: bold;
+      color: #60a5fa;
+    }
+    .equipment-grid {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .equipment-card {
+      background: rgba(0,0,0,0.5);
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .equipment-card.destroyed {
+      border-color: #666;
+      background: rgba(0,0,0,0.7);
+      opacity: 0.6;
+    }
+    .equipment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .equipment-name {
+      font-weight: bold;
+      font-size: 16px;
+      color: #93c5fd;
+    }
+    .equipment-level {
+      font-size: 14px;
+      color: #fbbf24;
+    }
+    .equipment-status {
+      font-size: 12px;
+      color: #ef4444;
+      margin-bottom: 8px;
+    }
+    .equipment-bonuses {
+      font-size: 11px;
+      color: #d1d5db;
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+    .equipment-success-rate {
+      font-size: 11px;
+      color: #34d399;
+      margin-bottom: 8px;
+    }
+    .equipment-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .log-panel {
+      background: rgba(0,0,0,0.5);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .log-entry {
+      margin-bottom: 4px;
+      padding: 4px;
+      border-left: 3px solid #3b82f6;
+      padding-left: 8px;
+    }
+    .log-entry.success {
+      border-color: #22c55e;
+      color: #86efac;
+    }
+    .log-entry.failure {
+      border-color: #ef4444;
+      color: #fca5a5;
+    }
+    .dungeon-panel {
+      background: rgba(0,0,0,0.5);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .dungeon-info {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .floor-display {
+      font-size: 24px;
+      font-weight: bold;
+      color: #fbbf24;
+      margin-bottom: 8px;
+    }
+    .enemy-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .battle-log {
+      background: rgba(0,0,0,0.3);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+    .battle-turn {
+      margin-bottom: 8px;
+      padding: 8px;
+      background: rgba(59,130,246,0.1);
+      border-radius: 4px;
+    }
+    .save-load-panel {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .hidden {
+      display: none;
+    }
+    @media (max-width: 600px) {
+      .stats-panel {
+        grid-template-columns: 1fr;
+      }
+      .enemy-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>装備強化ダンジョン</h1>
+    
+    <!-- セーブ/ロード -->
+    <div class="save-load-panel">
+      <button class="btn" onclick="saveGame()">保存</button>
+      <button class="btn" onclick="loadGame()">読み込み</button>
+      <button class="btn btn-danger" onclick="resetGame()">リセット</button>
+    </div>
+    
+    <!-- ステータス表示 -->
+    <div class="stats-panel">
+      <div class="stat-item">
+        <div class="stat-label">HP</div>
+        <div class="stat-value" id="totalHp">100</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">ATK</div>
+        <div class="stat-value" id="totalAtk">10</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">DEF</div>
+        <div class="stat-value" id="totalDef">5</div>
+      </div>
+    </div>
+    
+    <!-- フェーズ選択 -->
+    <div class="phase-selector">
+      <button class="btn" onclick="showUpgradePhase()">強化フェーズ</button>
+      <button class="btn btn-success" onclick="startDungeon()">ダンジョン開始</button>
+    </div>
+    
+    <!-- 強化フェーズ -->
+    <div id="upgradePhase">
+      <div class="equipment-grid" id="equipmentGrid"></div>
+      <div class="log-panel" id="upgradeLog"></div>
+    </div>
+    
+    <!-- ダンジョンフェーズ -->
+    <div id="dungeonPhase" class="hidden">
+      <div class="dungeon-panel">
+        <div class="dungeon-info">
+          <div class="floor-display" id="floorDisplay">フロア 1</div>
+          <div id="dungeonStatus">準備完了</div>
+        </div>
+        <div class="enemy-stats" id="enemyStats"></div>
+        <div class="battle-log" id="battleLog"></div>
+        <div style="text-align:center;">
+          <button class="btn" id="nextTurnBtn" onclick="processBattleTurn()">次のターン</button>
+          <button class="btn btn-danger" onclick="endDungeon()">終了</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== 定数定義 =====
+    const BASE_STATS = {
+      hp: 100,
+      atk: 10,
+      def: 5
+    };
+
+    const EQUIPMENT_TYPES = [
+      { id: 'helmet', name: '兜', baseBonuses: { hp: 20, atk: 0, def: 2 }, perLevelBonuses: { hp: 6, atk: 0, def: 1 } },
+      { id: 'armor', name: '鎧', baseBonuses: { hp: 40, atk: 0, def: 4 }, perLevelBonuses: { hp: 10, atk: 0, def: 1 } },
+      { id: 'weapon', name: '武器', baseBonuses: { hp: 0, atk: 8, def: 0 }, perLevelBonuses: { hp: 0, atk: 2, def: 0 } },
+      { id: 'boots', name: 'ブーツ', baseBonuses: { hp: 10, atk: 0, def: 1 }, perLevelBonuses: { hp: 4, atk: 0, def: 1 } },
+      { id: 'accessory', name: 'アクセ', baseBonuses: { hp: 0, atk: 3, def: 1 }, perLevelBonuses: { hp: 0, atk: 1, def: 1 } }
+    ];
+
+    const SUCCESS_RATES = [
+      0.90,  // +0→+1
+      0.80,  // +1→+2
+      0.70,  // +2→+3
+      0.60,  // +3→+4
+      0.50,  // +4→+5
+      0.40,  // +5→+6
+      0.30,  // +6→+7
+      0.20,  // +7→+8
+      0.15,  // +8→+9
+      0.10   // +9→+10
+    ];
+    const MIN_SUCCESS_RATE = 0.03;
+
+    const DUNGEON_ENEMY_BASE = {
+      hp: 60,
+      atk: 8,
+      def: 2
+    };
+    const DUNGEON_ENEMY_SCALE = {
+      hp: 18,
+      atk: 3,
+      def: 1
+    };
+
+    const STORAGE_KEY = 'equipment-dungeon-save';
+
+    // ===== ゲーム状態 =====
+    let gameState = {
+      equipment: [],
+      currentFloor: 1,
+      currentEnemy: null,
+      playerHp: 0,
+      dungeonActive: false,
+      maxFloor: 0
+    };
+
+    // ===== 初期化 =====
+    function initGame() {
+      gameState.equipment = EQUIPMENT_TYPES.map(type => ({
+        id: type.id,
+        name: type.name,
+        level: 0,
+        destroyed: false,
+        baseBonuses: { ...type.baseBonuses },
+        perLevelBonuses: { ...type.perLevelBonuses }
+      }));
+      gameState.currentFloor = 1;
+      gameState.currentEnemy = null;
+      gameState.dungeonActive = false;
+      gameState.maxFloor = 0;
+      updateUI();
+    }
+
+    // ===== ステータス計算 =====
+    function calculateStats() {
+      let total = { hp: BASE_STATS.hp, atk: BASE_STATS.atk, def: BASE_STATS.def };
+      
+      gameState.equipment.forEach(eq => {
+        if (eq.destroyed) return;
+        
+        // 基礎ボーナス
+        total.hp += eq.baseBonuses.hp;
+        total.atk += eq.baseBonuses.atk;
+        total.def += eq.baseBonuses.def;
+        
+        // 強化ボーナス
+        total.hp += eq.perLevelBonuses.hp * eq.level;
+        total.atk += eq.perLevelBonuses.atk * eq.level;
+        total.def += eq.perLevelBonuses.def * eq.level;
+      });
+      
+      return total;
+    }
+
+    function getSuccessRate(level) {
+      if (level < SUCCESS_RATES.length) {
+        return SUCCESS_RATES[level];
+      }
+      return Math.max(MIN_SUCCESS_RATE, 0.10 - (level - SUCCESS_RATES.length) * 0.01);
+    }
+
+    // ===== 強化システム =====
+    function upgradeEquipment(equipmentId) {
+      const eq = gameState.equipment.find(e => e.id === equipmentId);
+      if (!eq || eq.destroyed) return;
+      
+      const successRate = getSuccessRate(eq.level);
+      const success = Math.random() < successRate;
+      
+      if (success) {
+        eq.level++;
+        addLog(`${eq.name} 強化成功！ +${eq.level}`, 'success');
+      } else {
+        eq.destroyed = true;
+        addLog(`${eq.name} 強化失敗... 装備が破壊されました`, 'failure');
+      }
+      
+      updateUI();
+    }
+
+    // ===== ダンジョンシステム =====
+    function startDungeon() {
+      const stats = calculateStats();
+      gameState.dungeonActive = true;
+      gameState.currentFloor = 1;
+      gameState.playerHp = stats.hp;
+      gameState.maxFloor = 0;
+      createEnemy(1);
+      showDungeonPhase();
+      updateUI();
+      addBattleLog('ダンジョン開始！');
+    }
+
+    function createEnemy(floor) {
+      gameState.currentEnemy = {
+        hp: DUNGEON_ENEMY_BASE.hp + floor * DUNGEON_ENEMY_SCALE.hp,
+        maxHp: DUNGEON_ENEMY_BASE.hp + floor * DUNGEON_ENEMY_SCALE.hp,
+        atk: DUNGEON_ENEMY_BASE.atk + floor * DUNGEON_ENEMY_SCALE.atk,
+        def: DUNGEON_ENEMY_BASE.def + floor * DUNGEON_ENEMY_SCALE.def
+      };
+    }
+
+    function processBattleTurn() {
+      if (!gameState.dungeonActive || !gameState.currentEnemy) return;
+      
+      const stats = calculateStats();
+      const enemy = gameState.currentEnemy;
+      
+      // プレイヤー攻撃
+      const playerDamage = Math.max(1, stats.atk - enemy.def);
+      enemy.hp -= playerDamage;
+      addBattleLog(`プレイヤーの攻撃！ ${playerDamage}ダメージ（敵HP: ${Math.max(0, enemy.hp)}/${enemy.maxHp}）`);
+      
+      if (enemy.hp <= 0) {
+        addBattleLog(`フロア ${gameState.currentFloor} クリア！`);
+        gameState.maxFloor = Math.max(gameState.maxFloor, gameState.currentFloor);
+        gameState.currentFloor++;
+        createEnemy(gameState.currentFloor);
+        addBattleLog(`フロア ${gameState.currentFloor} に進みました`);
+        updateUI();
+        return;
+      }
+      
+      // 敵攻撃
+      const enemyDamage = Math.max(1, enemy.atk - stats.def);
+      gameState.playerHp -= enemyDamage;
+      addBattleLog(`敵の攻撃！ ${enemyDamage}ダメージ（プレイヤーHP: ${Math.max(0, gameState.playerHp)}/${stats.hp}）`);
+      
+      if (gameState.playerHp <= 0) {
+        endDungeon();
+        return;
+      }
+      
+      updateUI();
+    }
+
+    function endDungeon() {
+      gameState.dungeonActive = false;
+      const reachedFloor = gameState.maxFloor || gameState.currentFloor - 1;
+      addBattleLog(`ダンジョン終了！ 到達フロア: ${reachedFloor}`);
+      document.getElementById('nextTurnBtn').disabled = true;
+      updateUI();
+    }
+
+    // ===== UI更新 =====
+    function updateUI() {
+      const stats = calculateStats();
+      document.getElementById('totalHp').textContent = stats.hp;
+      document.getElementById('totalAtk').textContent = stats.atk;
+      document.getElementById('totalDef').textContent = stats.def;
+      
+      // 装備グリッド更新
+      const grid = document.getElementById('equipmentGrid');
+      grid.innerHTML = '';
+      
+      gameState.equipment.forEach(eq => {
+        const card = document.createElement('div');
+        card.className = 'equipment-card' + (eq.destroyed ? ' destroyed' : '');
+        
+        const successRate = eq.destroyed ? 0 : getSuccessRate(eq.level);
+        const bonuses = {
+          hp: eq.baseBonuses.hp + eq.perLevelBonuses.hp * eq.level,
+          atk: eq.baseBonuses.atk + eq.perLevelBonuses.atk * eq.level,
+          def: eq.baseBonuses.def + eq.perLevelBonuses.def * eq.level
+        };
+        
+        card.innerHTML = `
+          <div class="equipment-header">
+            <div class="equipment-name">${eq.name}</div>
+            <div class="equipment-level">+${eq.level}</div>
+          </div>
+          ${eq.destroyed ? '<div class="equipment-status">【破壊】</div>' : ''}
+          <div class="equipment-bonuses">
+            HP: +${bonuses.hp} / ATK: +${bonuses.atk} / DEF: +${bonuses.def}
+          </div>
+          ${!eq.destroyed ? `<div class="equipment-success-rate">成功率: ${Math.floor(successRate * 100)}%</div>` : ''}
+          <div class="equipment-actions">
+            ${!eq.destroyed ? `<button class="btn" onclick="upgradeEquipment('${eq.id}')">強化する</button>` : '<span style="color:#666;">使用不可</span>'}
+          </div>
+        `;
+        
+        grid.appendChild(card);
+      });
+      
+      // ダンジョンUI更新
+      if (gameState.dungeonActive && gameState.currentEnemy) {
+        document.getElementById('floorDisplay').textContent = `フロア ${gameState.currentFloor}`;
+        const enemy = gameState.currentEnemy;
+        const stats = calculateStats();
+        
+        document.getElementById('enemyStats').innerHTML = `
+          <div class="stat-item">
+            <div class="stat-label">敵HP</div>
+            <div class="stat-value">${Math.max(0, enemy.hp)}/${enemy.maxHp}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">敵ATK</div>
+            <div class="stat-value">${enemy.atk}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">敵DEF</div>
+            <div class="stat-value">${enemy.def}</div>
+          </div>
+        `;
+        
+        document.getElementById('dungeonStatus').textContent = 
+          `プレイヤーHP: ${Math.max(0, gameState.playerHp)}/${stats.hp}`;
+      }
+    }
+
+    function addLog(message, type = '') {
+      const logPanel = document.getElementById('upgradeLog');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry' + (type ? ' ' + type : '');
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logPanel.appendChild(entry);
+      logPanel.scrollTop = logPanel.scrollHeight;
+    }
+
+    function addBattleLog(message) {
+      const logPanel = document.getElementById('battleLog');
+      const entry = document.createElement('div');
+      entry.className = 'battle-turn';
+      entry.textContent = message;
+      logPanel.appendChild(entry);
+      logPanel.scrollTop = logPanel.scrollHeight;
+    }
+
+    function showUpgradePhase() {
+      document.getElementById('upgradePhase').classList.remove('hidden');
+      document.getElementById('dungeonPhase').classList.add('hidden');
+      gameState.dungeonActive = false;
+      document.getElementById('nextTurnBtn').disabled = false;
+    }
+
+    function showDungeonPhase() {
+      document.getElementById('upgradePhase').classList.add('hidden');
+      document.getElementById('dungeonPhase').classList.remove('hidden');
+    }
+
+    // ===== セーブ/ロード =====
+    function saveGame() {
+      try {
+        const saveData = {
+          equipment: gameState.equipment,
+          maxFloor: gameState.maxFloor
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+        addLog('ゲームを保存しました', 'success');
+      } catch (e) {
+        addLog('保存に失敗しました', 'failure');
+      }
+    }
+
+    function loadGame() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const data = JSON.parse(saved);
+          gameState.equipment = data.equipment;
+          gameState.maxFloor = data.maxFloor || 0;
+          updateUI();
+          addLog('ゲームを読み込みました', 'success');
+        } else {
+          addLog('保存データが見つかりません', 'failure');
+        }
+      } catch (e) {
+        addLog('読み込みに失敗しました', 'failure');
+      }
+    }
+
+    function resetGame() {
+      if (confirm('本当にリセットしますか？')) {
+        initGame();
+        addLog('ゲームをリセットしました');
+      }
+    }
+
+    // ===== 初期化実行 =====
+    initGame();
+  </script>
+</body>
+</html>

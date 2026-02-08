@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>アーマードコア風メカバトル – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="armored-core.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="ac-container">
+    <h1 class="ac-title">メカバトル</h1>
+
+    <!-- フェーズ選択 -->
+    <div class="ac-phase-selector" id="phaseSelector">
+      <button type="button" class="ac-btn ac-btn-phase" data-phase="customize">カスタマイズ</button>
+      <button type="button" class="ac-btn ac-btn-phase" data-phase="battle">戦闘</button>
+    </div>
+
+    <!-- カスタマイズ画面 -->
+    <div class="ac-phase" id="phaseCustomize">
+      <div class="ac-customize-layout">
+        <!-- メカ表示エリア -->
+        <div class="ac-mech-display">
+          <div class="ac-mech-stats" id="mechStats">
+            <div class="ac-stat-item">
+              <span class="ac-stat-label">HP</span>
+              <span class="ac-stat-value" id="statHP">1000</span>
+            </div>
+            <div class="ac-stat-item">
+              <span class="ac-stat-label">防御</span>
+              <span class="ac-stat-value" id="statDefense">100</span>
+            </div>
+            <div class="ac-stat-item">
+              <span class="ac-stat-label">速度</span>
+              <span class="ac-stat-value" id="statSpeed">100</span>
+            </div>
+            <div class="ac-stat-item">
+              <span class="ac-stat-label">射程</span>
+              <span class="ac-stat-value" id="statRange">100</span>
+            </div>
+            <div class="ac-stat-item">
+              <span class="ac-stat-label">火力</span>
+              <span class="ac-stat-value" id="statFirepower">100</span>
+            </div>
+          </div>
+          <div class="ac-mech-visual" id="mechVisual">
+            <div class="ac-mech-parts">
+              <div class="ac-part-slot" data-part="head">頭部</div>
+              <div class="ac-part-slot" data-part="body">胴体</div>
+              <div class="ac-part-slot" data-part="arms">腕</div>
+              <div class="ac-part-slot" data-part="legs">脚</div>
+              <div class="ac-part-slot" data-part="weapon">武器</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- パーツ選択エリア -->
+        <div class="ac-parts-selector">
+          <div class="ac-parts-category" id="partsCategory">
+            <button type="button" class="ac-btn-category active" data-category="head">頭部</button>
+            <button type="button" class="ac-btn-category" data-category="body">胴体</button>
+            <button type="button" class="ac-btn-category" data-category="arms">腕</button>
+            <button type="button" class="ac-btn-category" data-category="legs">脚</button>
+            <button type="button" class="ac-btn-category" data-category="weapon">武器</button>
+          </div>
+          <div class="ac-parts-list" id="partsList">
+            <!-- パーツリストが動的に生成される -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 戦闘画面 -->
+    <div class="ac-phase hidden" id="phaseBattle">
+      <div class="ac-battle-area">
+        <!-- プレイヤーメカ -->
+        <div class="ac-battle-mech ac-player-mech" id="playerMech">
+          <div class="ac-mech-name">プレイヤー</div>
+          <div class="ac-mech-hp">
+            <div class="ac-hp-bar">
+              <div class="ac-hp-fill" id="playerHPBar"></div>
+            </div>
+            <div class="ac-hp-text" id="playerHPText">1000 / 1000</div>
+          </div>
+          <div class="ac-mech-distance" id="playerDistance">距離: 0m</div>
+        </div>
+
+        <!-- 距離表示 -->
+        <div class="ac-distance-indicator" id="distanceIndicator">
+          <div class="ac-distance-bar">
+            <div class="ac-distance-mark" id="distanceMark" style="left: 50%;"></div>
+            <div class="ac-distance-label">近距離</div>
+            <div class="ac-distance-label" style="text-align: right;">遠距離</div>
+          </div>
+          <div class="ac-distance-value" id="distanceValue">100m</div>
+        </div>
+
+        <!-- 敵メカ -->
+        <div class="ac-battle-mech ac-enemy-mech" id="enemyMech">
+          <div class="ac-mech-name" id="enemyName">敵メカ</div>
+          <div class="ac-mech-hp">
+            <div class="ac-hp-bar">
+              <div class="ac-hp-fill" id="enemyHPBar"></div>
+            </div>
+            <div class="ac-hp-text" id="enemyHPText">1000 / 1000</div>
+          </div>
+          <div class="ac-mech-distance" id="enemyDistance">距離: 0m</div>
+        </div>
+      </div>
+
+      <!-- 戦闘コントロール -->
+      <div class="ac-battle-controls">
+        <div class="ac-action-buttons">
+          <button type="button" class="ac-btn ac-btn-action" id="btnMove">移動</button>
+          <button type="button" class="ac-btn ac-btn-action" id="btnAttack">攻撃</button>
+          <button type="button" class="ac-btn ac-btn-action" id="btnBoost">ブースト</button>
+        </div>
+        <div class="ac-battle-log" id="battleLog">
+          <div class="ac-log-entry">戦闘開始！</div>
+        </div>
+      </div>
+    </div>
+
+    <a href="/index.html" class="ac-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="armored-core.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>ブロック積み上げ – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="stack-blocks.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="stack-container">
+    <h1 class="stack-title">ブロック積み上げ</h1>
+
+    <!-- スコア表示 -->
+    <div class="stack-hud">
+      <div class="stack-score">
+        <span class="stack-label">高さ</span>
+        <span class="stack-value" id="heightValue">0</span>
+      </div>
+      <div class="stack-score">
+        <span class="stack-label">ブロック数</span>
+        <span class="stack-value" id="blockCount">0</span>
+      </div>
+      <div class="stack-score">
+        <span class="stack-label">ベスト</span>
+        <span class="stack-value" id="bestHeight">0</span>
+      </div>
+    </div>
+
+    <!-- ゲームエリア -->
+    <div class="stack-game-area">
+      <canvas id="gameCanvas" width="400" height="600"></canvas>
+      
+      <!-- 次のブロック表示 -->
+      <div class="stack-next-block">
+        <div class="stack-next-label">次のブロック</div>
+        <canvas id="nextCanvas" width="80" height="80"></canvas>
+      </div>
+    </div>
+
+    <!-- コントロール -->
+    <div class="stack-controls">
+      <button type="button" class="stack-btn stack-btn-left" id="btnLeft">←</button>
+      <button type="button" class="stack-btn stack-btn-drop" id="btnDrop">落とす</button>
+      <button type="button" class="stack-btn stack-btn-right" id="btnRight">→</button>
+    </div>
+
+    <!-- ゲームオーバー画面 -->
+    <div class="stack-gameover hidden" id="gameOverScreen">
+      <div class="stack-gameover-content">
+        <h2>ゲームオーバー</h2>
+        <div class="stack-final-score">
+          <div>高さ: <span id="finalHeight">0</span></div>
+          <div>ブロック数: <span id="finalBlocks">0</span></div>
+        </div>
+        <button type="button" class="stack-btn stack-btn-restart" id="btnRestart">もう一度</button>
+      </div>
+    </div>
+
+    <!-- スタート画面 -->
+    <div class="stack-start" id="startScreen">
+      <div class="stack-start-content">
+        <h2>ブロック積み上げ</h2>
+        <p>ブロックを積み上げて高く積もう！</p>
+        <p style="font-size: 12px; margin-top: 8px; color: #94a3b8;">
+          左右のボタンで位置を調整<br>
+          「落とす」ボタンでブロックを落とす
+        </p>
+        <button type="button" class="stack-btn stack-btn-start" id="btnStart">スタート</button>
+      </div>
+    </div>
+
+    <a href="/index.html" class="stack-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="stack-blocks.js"></script>
+</body>
+</html>

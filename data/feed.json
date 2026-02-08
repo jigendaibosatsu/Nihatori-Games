@@ -1,25 +1,38 @@
 {
   "items": [
     {
+      "id": "post-stack-blocks-release",
+      "type": "post",
+      "title": "【新作】ブロック積み上げが登場！バランスを取りながら高く積み上げろ",
+      "url": "./games/stack-blocks/",
+      "image": null,
+      "category": "devlog",
+      "publishedAt": "2026-02-08T19:30:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": false,
+      "trendingScore": 88
+    },
+    {
+      "id": "post-armored-core-release",
+      "type": "post",
+      "title": "【新作】アーマードコア風メカバトルが登場！パーツカスタマイズで最強メカを作れ",
+      "url": "./games/armored-core/",
+      "image": null,
+      "category": "devlog",
+      "publishedAt": "2026-02-08T19:21:00+09:00",
+      "commentCount": 0,
+      "isNew": true,
+      "recommended": false,
+      "trendingScore": 95
+    },
+    {
       "id": "post-mine-tap-release",
       "type": "post",
       "title": "【新作】穴掘りタップゲーが登場！地底深く掘り進め無限の富を手に入れろ",
       "url": "./games/mine-tap/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-08T12:25:13+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 92
-    },
-    {
-      "id": "mine-tap",
-      "type": "game",
-      "title": "穴掘りタップゲー",
-      "url": "./games/mine-tap/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-08T12:25:13+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -40,38 +53,12 @@
       "trendingScore": 88
     },
     {
-      "id": "equipment-dungeon",
-      "type": "game",
-      "title": "装備ダンジョン",
-      "url": "./games/equipment-dungeon/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-08T12:20:34+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 88
-    },
-    {
       "id": "post-axolotl-war-release",
       "type": "post",
       "title": "【新作】ウーパーウォーが登場！戦略性の高いバトルで勝利を掴め",
       "url": "./games/axolotl-war/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-08T12:14:56+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 85
-    },
-    {
-      "id": "axolotl-war",
-      "type": "game",
-      "title": "ウーパーウォー",
-      "url": "./games/axolotl-war/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-08T12:14:56+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -92,38 +79,12 @@
       "trendingScore": 87
     },
     {
-      "id": "axolotl-survivor",
-      "type": "game",
-      "title": "ウーパーサバイバー",
-      "url": "./games/axolotl-survivor/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-08T12:13:08+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 87
-    },
-    {
       "id": "post-axolotl-tower-release",
       "type": "post",
       "title": "【新作】ウーパータワーが登場！高層ビルを登り切って頂点を目指せ",
       "url": "./games/axolotl-tower/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-08T09:55:58+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 83
-    },
-    {
-      "id": "axolotl-tower",
-      "type": "game",
-      "title": "ウーパータワー",
-      "url": "./games/axolotl-tower/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-08T09:55:58+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -144,38 +105,12 @@
       "trendingScore": 81
     },
     {
-      "id": "axolotl-escape",
-      "type": "game",
-      "title": "ウーパーエスケープ",
-      "url": "./games/axolotl-escape/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-08T09:52:27+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 81
-    },
-    {
       "id": "post-axolotl-shop-update",
       "type": "post",
       "title": "【アップデート】ウーパールーパーショップが大幅刷新！育成システムが進化",
       "url": "./games/axolotl-shop/",
       "image": "./assets/axolotl-shop-icon.png",
       "category": "devlog",
-      "publishedAt": "2026-02-08T09:48:57+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": true,
-      "trendingScore": 95
-    },
-    {
-      "id": "axolotl-shop",
-      "type": "game",
-      "title": "ウーパールーパーショップ",
-      "url": "./games/axolotl-shop/",
-      "image": "./assets/axolotl-shop-icon.png",
-      "category": "games",
       "publishedAt": "2026-02-08T09:48:57+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -196,38 +131,12 @@
       "trendingScore": 90
     },
     {
-      "id": "axolotl-cafe",
-      "type": "game",
-      "title": "ウーパーカフェ",
-      "url": "./games/axolotl-cafe/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-07T12:37:49+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 90
-    },
-    {
       "id": "post-axolotl-idle-release",
       "type": "post",
       "title": "【新作】ウーパーアイドルが登場！放置で自動成長する新システム",
       "url": "./games/axolotl-idle/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-07T11:45:57+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 88
-    },
-    {
-      "id": "axolotl-idle",
-      "type": "game",
-      "title": "ウーパーアイドル",
-      "url": "./games/axolotl-idle/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-07T11:45:57+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -248,38 +157,12 @@
       "trendingScore": 82
     },
     {
-      "id": "unscrew",
-      "type": "game",
-      "title": "ネジ外し",
-      "url": "./games/unscrew/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-06T12:17:49+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 82
-    },
-    {
       "id": "post-grow-island-release",
       "type": "post",
       "title": "【新作】Grow島が登場！島を育てて発展させよう",
       "url": "./games/grow-island/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-06T09:38:41+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 85
-    },
-    {
-      "id": "grow-island",
-      "type": "game",
-      "title": "Grow 島",
-      "url": "./games/grow-island/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-06T09:38:41+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -300,38 +183,12 @@
       "trendingScore": 89
     },
     {
-      "id": "smash-battle",
-      "type": "game",
-      "title": "スマッシュバトル",
-      "url": "./games/smash-battle/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-05T18:14:56+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 89
-    },
-    {
       "id": "post-art-escape-release",
       "type": "post",
       "title": "【新作】芸大脱出サバイバルが登場！独特の世界観で話題沸騰",
       "url": "./games/art-escape/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-05T17:58:58+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 84
-    },
-    {
-      "id": "art-escape",
-      "type": "game",
-      "title": "芸大脱出サバイバル",
-      "url": "./games/art-escape/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-05T17:58:58+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -352,38 +209,12 @@
       "trendingScore": 87
     },
     {
-      "id": "japan-war-b",
-      "type": "game",
-      "title": "合戦B",
-      "url": "./games/japan-war-b/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-05T17:53:46+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 87
-    },
-    {
       "id": "post-monster-fusion-release",
       "type": "post",
       "title": "【新作】モンスター配合が登場！組み合わせで最強モンスターを作れ",
       "url": "./games/monster-fusion/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-05T17:00:35+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 86
-    },
-    {
-      "id": "monster-fusion",
-      "type": "game",
-      "title": "モンスター配合",
-      "url": "./games/monster-fusion/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-05T17:00:35+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -404,38 +235,12 @@
       "trendingScore": 88
     },
     {
-      "id": "kantai-battle",
-      "type": "game",
-      "title": "艦隊バトル",
-      "url": "./games/kantai-battle/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-05T16:51:06+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 88
-    },
-    {
       "id": "post-typing-release",
       "type": "post",
       "title": "【新作】タイピングゲームが登場！スキルアップしながら楽しめる",
       "url": "./games/typing/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-05T16:38:20+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 85
-    },
-    {
-      "id": "typing",
-      "type": "game",
-      "title": "タイピング",
-      "url": "./games/typing/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-05T16:38:20+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -456,38 +261,12 @@
       "trendingScore": 92
     },
     {
-      "id": "boss-buster",
-      "type": "game",
-      "title": "成敗！ムカつくやつ",
-      "url": "./games/boss-buster/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-05T16:35:09+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 92
-    },
-    {
       "id": "post-friend-collection-release",
       "type": "post",
       "title": "【新作】ともだちコレクションが登場！キャラクターを集めて楽しもう",
       "url": "./games/friend-collection/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-05T16:27:02+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 82
-    },
-    {
-      "id": "friend-collection",
-      "type": "game",
-      "title": "ともだちコレクション",
-      "url": "./games/friend-collection/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-05T16:27:02+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -508,38 +287,12 @@
       "trendingScore": 95
     },
     {
-      "id": "japan-war",
-      "type": "game",
-      "title": "合戦",
-      "url": "./games/japan-war/",
-      "image": "./assets/kassen-icon.png",
-      "category": "games",
-      "publishedAt": "2026-02-05T14:00:07+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": true,
-      "trendingScore": 95
-    },
-    {
       "id": "post-tetris-like-release",
       "type": "post",
       "title": "【新作】ブロック落としが登場！クラシックなパズルゲームの新展開",
       "url": "./games/tetris-like/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-05T06:21:01+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 90
-    },
-    {
-      "id": "tetris-like",
-      "type": "game",
-      "title": "ブロック落とし",
-      "url": "./games/tetris-like/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-05T06:21:01+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -560,38 +313,12 @@
       "trendingScore": 85
     },
     {
-      "id": "table-tennis",
-      "type": "game",
-      "title": "卓球",
-      "url": "./games/table-tennis/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-05T06:18:13+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 85
-    },
-    {
       "id": "post-kart-race-release",
       "type": "post",
       "title": "【新作】カートレースが登場！スピード感あふれるレースゲーム",
       "url": "./games/kart-race/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-05T06:08:53+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 88
-    },
-    {
-      "id": "kart-race",
-      "type": "game",
-      "title": "カートレース",
-      "url": "./games/kart-race/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-05T06:08:53+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -612,38 +339,12 @@
       "trendingScore": 85
     },
     {
-      "id": "card-collection",
-      "type": "game",
-      "title": "カードコレクション",
-      "url": "./games/card-collection/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-03T21:58:38+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 85
-    },
-    {
       "id": "post-monster-collection-release",
       "type": "post",
       "title": "【新作】モンスターコレクションが登場！多様なモンスターを集めよう",
       "url": "./games/monster-collection/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-03T21:55:33+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 78
-    },
-    {
-      "id": "monster-collection",
-      "type": "game",
-      "title": "モンスターコレクション",
-      "url": "./games/monster-collection/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-03T21:55:33+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -664,19 +365,6 @@
       "trendingScore": 80
     },
     {
-      "id": "jinsei",
-      "type": "game",
-      "title": "人生ゲーム",
-      "url": "./games/jinsei/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-03T21:53:42+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 80
-    },
-    {
       "id": "post-sv-like-update",
       "type": "post",
       "title": "【アップデート】シャチクバースが大幅強化！敵AIが進化",
@@ -690,38 +378,12 @@
       "trendingScore": 75
     },
     {
-      "id": "sv-like",
-      "type": "game",
-      "title": "シャチクバース",
-      "url": "./games/sv-like/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-03T21:51:48+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": true,
-      "trendingScore": 75
-    },
-    {
       "id": "post-romance-release",
       "type": "post",
       "title": "【新作】きゅーと恋愛が登場！キュートな恋愛シミュレーション",
       "url": "./games/romance/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-03T21:40:57+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 82
-    },
-    {
-      "id": "romance",
-      "type": "game",
-      "title": "きゅーと恋愛",
-      "url": "./games/romance/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-03T21:40:57+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -742,38 +404,12 @@
       "trendingScore": 85
     },
     {
-      "id": "power-pro",
-      "type": "game",
-      "title": "きゅーと野球",
-      "url": "./games/power-pro/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-03T21:28:33+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 85
-    },
-    {
       "id": "post-election-release",
       "type": "post",
       "title": "【新作】選挙で当選！が登場！政治シミュレーションで勝利を目指せ",
       "url": "./games/election/",
       "image": null,
       "category": "devlog",
-      "publishedAt": "2026-02-03T21:23:28+09:00",
-      "commentCount": 0,
-      "isNew": true,
-      "recommended": false,
-      "trendingScore": 88
-    },
-    {
-      "id": "election",
-      "type": "game",
-      "title": "選挙で当選！",
-      "url": "./games/election/",
-      "image": null,
-      "category": "games",
       "publishedAt": "2026-02-03T21:23:28+09:00",
       "commentCount": 0,
       "isNew": true,
@@ -794,19 +430,6 @@
       "trendingScore": 52
     },
     {
-      "id": "punipuni",
-      "type": "game",
-      "title": "ぷにバトル",
-      "url": "./games/punipuni/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-03T10:03:39+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": true,
-      "trendingScore": 52
-    },
-    {
       "id": "post-mystery-release",
       "type": "post",
       "title": "【新作】推理ゲームが登場！謎解きで頭脳を鍛えろ",
@@ -817,19 +440,6 @@
       "commentCount": 0,
       "isNew": true,
       "recommended": false,
-      "trendingScore": 48
-    },
-    {
-      "id": "mystery",
-      "type": "game",
-      "title": "推理ゲーム",
-      "url": "./games/mystery/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-03T09:21:34+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": true,
       "trendingScore": 48
     },
     {
@@ -846,19 +456,6 @@
       "trendingScore": 55
     },
     {
-      "id": "poke-town",
-      "type": "game",
-      "title": "まちあるき",
-      "url": "./games/poke-town/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-03T08:58:46+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": true,
-      "trendingScore": 55
-    },
-    {
       "id": "post-poke-like-release",
       "type": "post",
       "title": "【新作】ポケもんバトルが登場！ポケモン風バトルゲーム",
@@ -869,19 +466,6 @@
       "commentCount": 0,
       "isNew": true,
       "recommended": false,
-      "trendingScore": 73
-    },
-    {
-      "id": "poke-like",
-      "type": "game",
-      "title": "ポケもんバトル",
-      "url": "./games/poke-like/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-03T08:38:48+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": true,
       "trendingScore": 73
     },
     {
@@ -898,19 +482,6 @@
       "trendingScore": 72
     },
     {
-      "id": "box-maker",
-      "type": "game",
-      "title": "ボックスメーカー",
-      "url": "./games/box-maker/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-02T21:11:53+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": true,
-      "trendingScore": 72
-    },
-    {
       "id": "post-megami-like-release",
       "type": "post",
       "title": "【新作】悪魔契約が登場！悪魔と契約して力を手に入れろ",
@@ -921,19 +492,6 @@
       "commentCount": 0,
       "isNew": true,
       "recommended": false,
-      "trendingScore": 45
-    },
-    {
-      "id": "megami-like",
-      "type": "game",
-      "title": "悪魔契約",
-      "url": "./games/megami-like/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-02T19:43:35+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": true,
       "trendingScore": 45
     },
     {
@@ -950,19 +508,6 @@
       "trendingScore": 42
     },
     {
-      "id": "jump-action",
-      "type": "game",
-      "title": "ジャンプアクション",
-      "url": "./games/jump-action/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-02T09:19:43+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": true,
-      "trendingScore": 42
-    },
-    {
       "id": "post-mini-dq-release",
       "type": "post",
       "title": "【新作】小さな冒険が登場！ミニRPGで冒険の旅へ",
@@ -973,19 +518,6 @@
       "commentCount": 0,
       "isNew": true,
       "recommended": false,
-      "trendingScore": 38
-    },
-    {
-      "id": "mini-dq",
-      "type": "game",
-      "title": "小さな冒険",
-      "url": "./games/mini-dq/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-02T09:16:04+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": true,
       "trendingScore": 38
     },
     {
@@ -1002,19 +534,6 @@
       "trendingScore": 35
     },
     {
-      "id": "omikuji",
-      "type": "game",
-      "title": "おみくじ",
-      "url": "./games/omikuji/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-01T18:36:30+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": true,
-      "trendingScore": 35
-    },
-    {
       "id": "post-baba-nuki-release",
       "type": "post",
       "title": "【新作】ババ抜きが登場！クラシックなトランプゲームを楽しもう",
@@ -1025,19 +544,6 @@
       "commentCount": 0,
       "isNew": true,
       "recommended": false,
-      "trendingScore": 90
-    },
-    {
-      "id": "baba-nuki",
-      "type": "game",
-      "title": "ババ抜き",
-      "url": "./games/baba-nuki/",
-      "image": null,
-      "category": "games",
-      "publishedAt": "2026-02-01T18:31:10+09:00",
-      "commentCount": 0,
-      "isNew": false,
-      "recommended": true,
       "trendingScore": 90
     },
     {

@@ -1,0 +1,412 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body.game-page {
+  padding-top: 48px;
+  padding-bottom: 20px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+  font-family: "MS PGothic", "Yu Gothic", sans-serif;
+  color: #e0e0e0;
+}
+
+.ac-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.ac-title {
+  text-align: center;
+  font-size: 1.8rem;
+  color: #60a5fa;
+  margin-bottom: 16px;
+  text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+}
+
+/* フェーズ選択 */
+.ac-phase-selector {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.ac-btn {
+  padding: 10px 20px;
+  border: 2px solid #3b82f6;
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ac-btn:hover { transform: scale(1.05); }
+.ac-btn:active { transform: scale(0.95); }
+.ac-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ac-btn-phase.active {
+  background: linear-gradient(180deg, #10b981, #059669);
+  border-color: #10b981;
+}
+
+/* フェーズ表示 */
+.ac-phase {
+  display: block;
+}
+.ac-phase.hidden {
+  display: none;
+}
+
+/* カスタマイズ画面 */
+.ac-customize-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .ac-customize-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ac-mech-display {
+  background: rgba(30, 30, 50, 0.8);
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.ac-mech-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ac-stat-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  background: rgba(59, 130, 246, 0.2);
+  border-radius: 6px;
+}
+
+.ac-stat-label {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.ac-stat-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #60a5fa;
+}
+
+.ac-mech-visual {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ac-mech-parts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.ac-part-slot {
+  padding: 16px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px dashed #3b82f6;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ac-part-slot[data-part="head"] { grid-column: 2; }
+.ac-part-slot[data-part="body"] { grid-column: 1 / 4; }
+.ac-part-slot[data-part="arms"] { grid-column: 1 / 4; }
+.ac-part-slot[data-part="legs"] { grid-column: 1 / 4; }
+.ac-part-slot[data-part="weapon"] { grid-column: 1 / 4; }
+
+.ac-part-slot.equipped {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+  color: #10b981;
+}
+
+/* パーツ選択 */
+.ac-parts-selector {
+  background: rgba(30, 30, 50, 0.8);
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.ac-parts-category {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.ac-btn-category {
+  padding: 6px 12px;
+  border: 1px solid #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+  color: #94a3b8;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ac-btn-category:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.ac-btn-category.active {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.ac-parts-list {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ac-part-card {
+  padding: 12px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ac-part-card:hover {
+  background: rgba(59, 130, 246, 0.3);
+  transform: translateX(4px);
+}
+
+.ac-part-card.equipped {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+}
+
+.ac-part-name {
+  font-weight: bold;
+  font-size: 14px;
+  color: #60a5fa;
+  margin-bottom: 4px;
+}
+
+.ac-part-stats {
+  font-size: 11px;
+  color: #94a3b8;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.ac-part-stat {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* 戦闘画面 */
+.ac-battle-area {
+  background: rgba(30, 30, 50, 0.8);
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  min-height: 300px;
+  position: relative;
+}
+
+.ac-battle-mech {
+  padding: 16px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.ac-player-mech {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.ac-enemy-mech {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.ac-mech-name {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #60a5fa;
+}
+
+.ac-player-mech .ac-mech-name {
+  color: #10b981;
+}
+
+.ac-enemy-mech .ac-mech-name {
+  color: #ef4444;
+}
+
+.ac-mech-hp {
+  margin-bottom: 8px;
+}
+
+.ac-hp-bar {
+  width: 100%;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.ac-hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  transition: width 0.3s;
+  width: 100%;
+}
+
+.ac-enemy-mech .ac-hp-fill {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.ac-hp-text {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.ac-mech-distance {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* 距離表示 */
+.ac-distance-indicator {
+  margin: 20px 0;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.ac-distance-bar {
+  position: relative;
+  height: 30px;
+  background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #3b82f6 100%);
+  border-radius: 15px;
+  margin-bottom: 8px;
+}
+
+.ac-distance-mark {
+  position: absolute;
+  top: -5px;
+  width: 4px;
+  height: 40px;
+  background: #fff;
+  transform: translateX(-50%);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+.ac-distance-label {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.ac-distance-value {
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: #60a5fa;
+  margin-top: 8px;
+}
+
+/* 戦闘コントロール */
+.ac-battle-controls {
+  background: rgba(30, 30, 50, 0.8);
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.ac-action-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  justify-content: center;
+}
+
+.ac-btn-action {
+  flex: 1;
+  max-width: 150px;
+}
+
+.ac-battle-log {
+  max-height: 150px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+}
+
+.ac-log-entry {
+  margin-bottom: 4px;
+  color: #94a3b8;
+}
+
+.ac-log-entry.player {
+  color: #10b981;
+}
+
+.ac-log-entry.enemy {
+  color: #ef4444;
+}
+
+.ac-log-entry.damage {
+  color: #f59e0b;
+  font-weight: bold;
+}
+
+/* 戻るリンク */
+.ac-back {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 12px;
+  color: #60a5fa;
+  text-decoration: none;
+  text-align: center;
+  width: 100%;
+}
+
+.ac-back:hover {
+  text-decoration: underline;
+}
