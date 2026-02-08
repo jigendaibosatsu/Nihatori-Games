@@ -1,0 +1,251 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body.game-page {
+  padding-top: 48px;
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
+  min-height: 100vh;
+  background: #1a1a2e;
+  font-family: "MS PGothic", "Yu Gothic", sans-serif;
+  color: #fff;
+  overflow: hidden;
+}
+
+.war-wrap {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 48px);
+}
+
+.war-header {
+  padding: 8px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.war-stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 100px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #aaa;
+  min-width: 50px;
+}
+
+.stat-bar {
+  flex: 1;
+  height: 16px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.stat-bar-fill.enemy {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.stat-value {
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 60px;
+  text-align: right;
+}
+
+.stat-value.coin {
+  color: #fbbf24;
+}
+
+.game-canvas-wrap {
+  flex: 1;
+  width: 100%;
+  background: #0f0f1e;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.war-controls {
+  margin-top: 8px;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.control-hint {
+  font-size: 10px;
+  color: #aaa;
+  text-align: center;
+}
+
+.control-hint div {
+  margin: 2px 0;
+}
+
+.war-back {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #60a5fa;
+  text-decoration: none;
+  text-align: center;
+}
+
+/* モーダル */
+.war-overlay {
+  position: fixed;
+  inset: 0;
+  padding: 48px 16px 16px;
+  background: rgba(0,0,0,0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.war-overlay.visible {
+  display: flex;
+}
+
+.war-overlay-box {
+  background: linear-gradient(180deg, #2d1b4e, #1a1a2e);
+  border-radius: 16px;
+  border: 3px solid #8b5cf6;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(139,92,246,0.5);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.war-overlay-box h2 {
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+  color: #a78bfa;
+}
+
+.upgrade-list,
+.recruit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.upgrade-card,
+.recruit-card {
+  padding: 12px;
+  border: 2px solid #8b5cf6;
+  border-radius: 8px;
+  background: rgba(139,92,246,0.1);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upgrade-card:hover,
+.recruit-card:hover {
+  background: rgba(139,92,246,0.3);
+  transform: scale(1.02);
+}
+
+.upgrade-card:active,
+.recruit-card:active {
+  transform: scale(0.98);
+}
+
+.upgrade-header,
+.recruit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.upgrade-name,
+.recruit-name {
+  font-weight: bold;
+  font-size: 14px;
+  color: #c4b5fd;
+}
+
+.upgrade-cost,
+.recruit-cost {
+  font-size: 12px;
+  color: #fbbf24;
+}
+
+.upgrade-desc,
+.recruit-desc {
+  font-size: 11px;
+  color: #d1d5db;
+  margin-bottom: 4px;
+}
+
+.upgrade-stats {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 2px solid #8b5cf6;
+  background: linear-gradient(180deg, #8b5cf6, #7c3aed);
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  transform: scale(1.05);
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

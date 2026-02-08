@@ -1,0 +1,239 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body.game-page {
+  padding-top: 48px;
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
+  min-height: 100vh;
+  background: #1e3a5f;
+  font-family: "MS PGothic", "Yu Gothic", sans-serif;
+  color: #fff;
+  overflow: hidden;
+}
+
+.tower-wrap {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 48px);
+}
+
+.tower-header {
+  padding: 8px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.tower-stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 100px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #aaa;
+  min-width: 50px;
+}
+
+.stat-bar {
+  flex: 1;
+  height: 16px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.stat-bar-fill.life {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.stat-value {
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 60px;
+  text-align: right;
+}
+
+.stat-value.coin {
+  color: #fbbf24;
+}
+
+.game-canvas-wrap {
+  flex: 1;
+  width: 100%;
+  background: #0f172a;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.tower-controls {
+  margin-top: 8px;
+}
+
+.tower-shop {
+  background: rgba(0,0,0,0.5);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.shop-title {
+  font-size: 11px;
+  color: #aaa;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.shop-items {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.shop-item {
+  flex: 1;
+  padding: 8px;
+  background: rgba(59,130,246,0.2);
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 0;
+}
+
+.shop-item:hover {
+  background: rgba(59,130,246,0.4);
+  transform: scale(1.05);
+}
+
+.shop-item:active {
+  transform: scale(0.95);
+}
+
+.shop-item.selected {
+  background: rgba(59,130,246,0.6);
+  border-color: #60a5fa;
+}
+
+.shop-item-name {
+  font-size: 10px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.shop-item-cost {
+  font-size: 9px;
+  color: #fbbf24;
+}
+
+.control-hint {
+  font-size: 10px;
+  color: #aaa;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.control-hint div {
+  margin: 2px 0;
+}
+
+.tower-back {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #60a5fa;
+  text-decoration: none;
+  text-align: center;
+}
+
+/* モーダル */
+.tower-overlay {
+  position: fixed;
+  inset: 0;
+  padding: 48px 16px 16px;
+  background: rgba(0,0,0,0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.tower-overlay.visible {
+  display: flex;
+}
+
+.tower-overlay-box {
+  background: linear-gradient(180deg, #1e3a5f, #0f172a);
+  border-radius: 16px;
+  border: 3px solid #3b82f6;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(59,130,246,0.5);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.tower-overlay-box h2 {
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+  color: #60a5fa;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 2px solid #3b82f6;
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  transform: scale(1.05);
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

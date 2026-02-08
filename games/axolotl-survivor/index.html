@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1.0" />
+  <title>ウーパーサバイバー – Nihatori Games</title>
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="axolotl-survivor.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <!-- ゲーム画面 -->
+  <div class="survivor-wrap">
+    <div class="survivor-header">
+      <div class="survivor-stats">
+        <div class="stat-item">
+          <span class="stat-label">HP</span>
+          <div class="stat-bar">
+            <div class="stat-bar-fill hp" id="hpBar"></div>
+          </div>
+          <span class="stat-value" id="hpValue">100/100</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">レベル</span>
+          <span class="stat-value" id="levelValue">1</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">経験値</span>
+          <div class="stat-bar">
+            <div class="stat-bar-fill exp" id="expBar"></div>
+          </div>
+          <span class="stat-value" id="expValue">0/10</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">時間</span>
+          <span class="stat-value" id="timeValue">0:00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-canvas-wrap">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="survivor-controls">
+      <div class="control-hint">
+        <div>タップ/マウス: 移動</div>
+        <div>攻撃は自動で行われます</div>
+      </div>
+    </div>
+
+    <a href="/index.html" class="survivor-back">← トップへ戻る</a>
+  </div>
+
+  <!-- レベルアップモーダル -->
+  <div class="survivor-overlay" id="overlayLevelUp">
+    <div class="survivor-overlay-box">
+      <h2>レベルアップ！</h2>
+      <p style="font-size:12px; margin-bottom:12px;">スキルを選択してください</p>
+      <div id="skillList" class="skill-list"></div>
+    </div>
+  </div>
+
+  <!-- ゲームオーバーモーダル -->
+  <div class="survivor-overlay" id="overlayGameOver">
+    <div class="survivor-overlay-box">
+      <h2>ゲームオーバー</h2>
+      <div id="gameOverContent"></div>
+      <div style="display:flex; gap:8px; margin-top:16px;">
+        <button type="button" class="btn" id="btnRestart">リスタート</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="axolotl-survivor.js"></script>
+</body>
+</html>

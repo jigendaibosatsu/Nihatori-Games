@@ -1,0 +1,340 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body.game-page {
+  padding-top: 48px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: radial-gradient(circle at top, #e0f2fe 0%, #e0f7fa 40%, #ecfdf5 100%);
+  font-family: "MS PGothic", "Yu Gothic", sans-serif;
+  color: #064e3b;
+}
+
+/* ヘッダー */
+.cafe-header {
+  position: fixed;
+  top: 48px;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: rgba(255,255,255,0.98);
+  border-bottom: 2px solid #bae6fd;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.cafe-header-content {
+  padding: 8px 12px;
+}
+.cafe-resources {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.cafe-resource-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.cafe-resource-label {
+  font-size: 10px;
+  color: #475569;
+}
+.cafe-resource-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #047857;
+}
+
+/* メインエリア */
+.cafe-wrap {
+  width: 100%;
+  max-width: 440px;
+  padding: 8px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 100px;
+  margin-bottom: 20px;
+}
+.cafe-title {
+  font-size: 1.2rem;
+  text-align: center;
+  font-weight: bold;
+  color: #0ea5e9;
+  margin-bottom: 8px;
+}
+
+/* 水槽エリア（クリック可能） */
+.cafe-tank-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  position: relative;
+}
+.cafe-tank-clickable {
+  width: 100%;
+  max-width: 300px;
+  height: 200px;
+  background: linear-gradient(180deg, #e0f2fe, #f0f9ff);
+  border: 3px solid #bae6fd;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.1s;
+  box-shadow: 0 4px 12px rgba(56,189,248,0.2);
+}
+.cafe-tank-clickable:active {
+  transform: scale(0.95);
+}
+.cafe-tank-visual {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.cafe-click-hint {
+  position: absolute;
+  bottom: 8px;
+  font-size: 10px;
+  color: #64748b;
+}
+
+/* うんこ表示エリア */
+.cafe-poop-area {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+  border: 2px dashed #bae6fd;
+  border-radius: 8px;
+  background: rgba(224,242,254,0.3);
+}
+.cafe-poop {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: #8b4513;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease-out;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.cafe-poop.collecting {
+  opacity: 0;
+  transform: translateY(-50px) scale(0.5);
+}
+
+/* 堆肥化セクション */
+.cafe-compost-section {
+  padding: 8px;
+  background: rgba(255,255,255,0.8);
+  border-radius: 8px;
+  border: 2px solid #bae6fd;
+}
+.cafe-compost-label {
+  font-size: 11px;
+  color: #475569;
+  margin-bottom: 4px;
+  text-align: center;
+}
+.cafe-compost-bar {
+  width: 100%;
+  height: 20px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.cafe-compost-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  transition: width 0.3s;
+  width: 0%;
+}
+.cafe-compost-text {
+  font-size: 10px;
+  text-align: center;
+  color: #475569;
+}
+
+/* 下部メニュー */
+.cafe-menu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px 0;
+}
+.cafe-menu-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-radius: 10px;
+  border: 2px solid #bae6fd;
+  background: linear-gradient(180deg, #e0f2fe, #f0f9ff);
+  cursor: pointer;
+  font-size: 11px;
+  color: #0f172a;
+  transition: all 0.2s;
+}
+.cafe-menu-btn:active {
+  transform: scale(0.95);
+}
+.cafe-menu-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.cafe-menu-icon {
+  font-size: 24px;
+}
+.cafe-menu-label {
+  font-size: 11px;
+  font-weight: bold;
+}
+.cafe-menu-cost {
+  font-size: 9px;
+  color: #64748b;
+}
+
+/* ウーパー表示 */
+.cafe-axolotl-img {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  cursor: pointer;
+}
+
+/* モーダル */
+.cafe-overlay {
+  position: fixed;
+  inset: 0;
+  padding: 48px 16px 16px;
+  background: rgba(15,23,42,0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+.cafe-overlay.visible {
+  display: flex;
+}
+.cafe-overlay-box {
+  background: linear-gradient(180deg, #fdf2f8, #e0f2fe);
+  border-radius: 16px;
+  border: 4px solid #f472b6;
+  padding: 20px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 18px 35px rgba(0,0,0,0.25);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.cafe-overlay-box h2 {
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+  color: #be123c;
+}
+.cafe-overlay-box p {
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: #111827;
+  line-height: 1.6;
+}
+.btn {
+  display: inline-block;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 2px solid #f472b6;
+  background: linear-gradient(180deg, #fb7185, #ec4899);
+  color: #fdf2f8;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ガチャ結果 */
+.gacha-result-card {
+  padding: 16px;
+  border: 2px solid #bae6fd;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.9);
+  margin-bottom: 8px;
+}
+.gacha-result-rarity-C { border-color: #94a3b8; }
+.gacha-result-rarity-R { border-color: #3b82f6; }
+.gacha-result-rarity-UR { border-color: #fbbf24; animation: pulse 1s infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* アップグレードカード */
+.upgrade-card {
+  padding: 12px;
+  border: 2px solid #bae6fd;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.9);
+  margin-bottom: 8px;
+  text-align: left;
+}
+.upgrade-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.upgrade-card-name {
+  font-weight: bold;
+  font-size: 14px;
+}
+.upgrade-card-level {
+  font-size: 11px;
+  color: #64748b;
+}
+.upgrade-card-desc {
+  font-size: 11px;
+  color: #475569;
+  margin-bottom: 8px;
+}
+.upgrade-card-cost {
+  font-size: 12px;
+  color: #047857;
+  font-weight: bold;
+}
+
+/* 戻るリンク */
+.cafe-back {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #0369a1;
+  text-decoration: none;
+  text-align: center;
+}

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1.0" />
+  <title>ウーパーカフェ – Nihatori Games</title>
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="axolotl-cafe.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <!-- ヘッダー（sticky） -->
+  <header class="cafe-header">
+    <div class="cafe-header-content">
+      <div class="cafe-resources">
+        <div class="cafe-resource-item">
+          <span class="cafe-resource-label">コイン</span>
+          <span class="cafe-resource-value" id="cafeCoins">0</span>
+        </div>
+        <div class="cafe-resource-item">
+          <span class="cafe-resource-label">肥料</span>
+          <span class="cafe-resource-value" id="cafeFertilizer">0</span>
+        </div>
+        <div class="cafe-resource-item">
+          <span class="cafe-resource-label">うんこ</span>
+          <span class="cafe-resource-value" id="cafePoop">0</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインゲームエリア -->
+  <div class="cafe-wrap">
+    <h1 class="cafe-title">ウーパーカフェ</h1>
+    
+    <!-- クリック可能な水槽エリア -->
+    <div class="cafe-tank-area" id="cafeTankArea">
+      <div class="cafe-tank-clickable" id="cafeTankClickable">
+        <div class="cafe-tank-visual" id="cafeTankVisual">
+          <!-- ウーパーが表示される -->
+        </div>
+        <div class="cafe-click-hint">タップしてコイン獲得</div>
+      </div>
+    </div>
+
+    <!-- うんこ表示エリア -->
+    <div class="cafe-poop-area" id="cafePoopArea">
+      <!-- うんこが動的に追加される -->
+    </div>
+
+    <!-- 堆肥化ゲージ -->
+    <div class="cafe-compost-section">
+      <div class="cafe-compost-label">堆肥化ゲージ</div>
+      <div class="cafe-compost-bar">
+        <div class="cafe-compost-bar-fill" id="cafeCompostBar"></div>
+      </div>
+      <div class="cafe-compost-text" id="cafeCompostText">0 / 10</div>
+    </div>
+
+    <!-- 下部メニュー -->
+    <div class="cafe-menu">
+      <button type="button" class="cafe-menu-btn" id="btnGacha">
+        <span class="cafe-menu-icon">🎰</span>
+        <span class="cafe-menu-label">ガチャ</span>
+        <span class="cafe-menu-cost" id="gachaCost">¥500</span>
+      </button>
+      <button type="button" class="cafe-menu-btn" id="btnAssign">
+        <span class="cafe-menu-icon">👔</span>
+        <span class="cafe-menu-label">委任</span>
+      </button>
+      <button type="button" class="cafe-menu-btn" id="btnUpgrade">
+        <span class="cafe-menu-icon">⬆️</span>
+        <span class="cafe-menu-label">アップグレード</span>
+      </button>
+      <button type="button" class="cafe-menu-btn" id="btnShop">
+        <span class="cafe-menu-icon">🏪</span>
+        <span class="cafe-menu-label">店舗</span>
+      </button>
+      <button type="button" class="cafe-menu-btn" id="btnEncyclopedia">
+        <span class="cafe-menu-icon">📖</span>
+        <span class="cafe-menu-label">図鑑</span>
+      </button>
+    </div>
+
+    <a href="/index.html" class="cafe-back">← トップへ戻る</a>
+  </div>
+
+  <!-- ガチャモーダル -->
+  <div class="cafe-overlay" id="overlayGacha">
+    <div class="cafe-overlay-box">
+      <h2>ガチャ</h2>
+      <p style="font-size:12px; margin-bottom:8px;">500コインでウーパーを引けます</p>
+      <div id="gachaResult" style="min-height:100px; margin-bottom:12px;"></div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn" id="btnGachaPull">1回引く (¥500)</button>
+        <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="btnGachaClose">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 委任モーダル -->
+  <div class="cafe-overlay" id="overlayAssign">
+    <div class="cafe-overlay-box">
+      <h2>店長に委任</h2>
+      <p style="font-size:12px; margin-bottom:8px;">ウーパーを店長に任命すると、うんこ自動回収がONになります</p>
+      <div id="assignList" style="max-height:50vh; overflow-y:auto; margin-bottom:12px;"></div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="btnAssignClose">閉じる</button>
+    </div>
+  </div>
+
+  <!-- アップグレードモーダル -->
+  <div class="cafe-overlay" id="overlayUpgrade">
+    <div class="cafe-overlay-box">
+      <h2>アップグレード</h2>
+      <div id="upgradeList" style="max-height:60vh; overflow-y:auto; margin-bottom:12px;"></div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="btnUpgradeClose">閉じる</button>
+    </div>
+  </div>
+
+  <!-- 店舗モーダル -->
+  <div class="cafe-overlay" id="overlayShop">
+    <div class="cafe-overlay-box">
+      <h2>店舗情報</h2>
+      <div id="shopInfo" style="margin-bottom:12px;"></div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="btnShopClose">閉じる</button>
+    </div>
+  </div>
+
+  <!-- 図鑑モーダル -->
+  <div class="cafe-overlay" id="overlayEncyclopedia">
+    <div class="cafe-overlay-box">
+      <h2>店長図鑑</h2>
+      <div id="encyclopediaContent" style="max-height:60vh; overflow-y:auto; margin-bottom:12px;"></div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="btnEncyclopediaClose">閉じる</button>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="axolotl-cafe.js"></script>
+</body>
+</html>

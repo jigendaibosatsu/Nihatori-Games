@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1.0" />
+  <title>ウーパーエスケープ – Nihatori Games</title>
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="axolotl-escape.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <!-- ゲーム画面 -->
+  <div class="escape-wrap">
+    <div class="escape-header">
+      <div class="escape-stats">
+        <div class="stat-item">
+          <span class="stat-label">HP</span>
+          <div class="stat-bar">
+            <div class="stat-bar-fill hp" id="hpBar"></div>
+          </div>
+          <span class="stat-value" id="hpValue">100/100</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">階層</span>
+          <span class="stat-value" id="floorValue">1</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">部屋</span>
+          <span class="stat-value" id="roomValue">1/5</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-canvas-wrap">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="escape-controls">
+      <div class="control-hint">
+        <div>タップ: 移動</div>
+        <div>長押し: ダッシュ</div>
+        <div>攻撃: 自動（敵に近づくと自動攻撃）</div>
+      </div>
+    </div>
+
+    <a href="/index.html" class="escape-back">← トップへ戻る</a>
+  </div>
+
+  <!-- ボーナス選択モーダル -->
+  <div class="escape-overlay" id="overlayBonus">
+    <div class="escape-overlay-box">
+      <h2>ボーナスを選択</h2>
+      <div id="bonusList" class="bonus-list"></div>
+    </div>
+  </div>
+
+  <!-- ゲームオーバー/勝利モーダル -->
+  <div class="escape-overlay" id="overlayGameOver">
+    <div class="escape-overlay-box">
+      <h2 id="gameOverTitle">ゲームオーバー</h2>
+      <div id="gameOverContent"></div>
+      <div style="display:flex; gap:8px; margin-top:16px;">
+        <button type="button" class="btn" id="btnRestart">リスタート</button>
+        <button type="button" class="btn" id="btnHouse" style="background:#64748b; border-color:#64748b;">ハウスへ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ハウス（強化画面）モーダル -->
+  <div class="escape-overlay" id="overlayHouse">
+    <div class="escape-overlay-box">
+      <h2>ハウス</h2>
+      <div class="house-stats">
+        <div>ダークネス: <span id="darknessValue">0</span></div>
+      </div>
+      <div id="houseUpgrades" class="house-upgrades"></div>
+      <button type="button" class="btn" id="btnStartRun" style="margin-top:16px;">脱出を開始</button>
+      <button type="button" class="btn" id="btnCloseHouse" style="background:#64748b; border-color:#64748b; margin-top:8px;">閉じる</button>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="axolotl-escape.js"></script>
+</body>
+</html>

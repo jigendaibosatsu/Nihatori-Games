@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1.0" />
+  <title>ウーパー戦争 – Nihatori Games</title>
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="axolotl-war.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <!-- ゲーム画面 -->
+  <div class="war-wrap">
+    <div class="war-header">
+      <div class="war-stats">
+        <div class="stat-item">
+          <span class="stat-label">コイン</span>
+          <span class="stat-value coin" id="coinValue">100</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">ウェーブ</span>
+          <span class="stat-value" id="waveValue">1</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">敵HP</span>
+          <div class="stat-bar">
+            <div class="stat-bar-fill enemy" id="enemyHpBar"></div>
+          </div>
+          <span class="stat-value" id="enemyHpValue">100/100</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-canvas-wrap">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="war-controls">
+      <div class="control-buttons">
+        <button type="button" class="btn" id="btnUpgrade">強化</button>
+        <button type="button" class="btn" id="btnRecruit">新規獲得</button>
+        <button type="button" class="btn" id="btnNextWave" style="display:none;">次のウェーブ</button>
+      </div>
+      <div class="control-hint">
+        <div>自動でバトルが進行します</div>
+        <div>コインでウーパーを強化できます</div>
+      </div>
+    </div>
+
+    <a href="/index.html" class="war-back">← トップへ戻る</a>
+  </div>
+
+  <!-- 強化モーダル -->
+  <div class="war-overlay" id="overlayUpgrade">
+    <div class="war-overlay-box">
+      <h2>ウーパー強化</h2>
+      <div id="upgradeList" class="upgrade-list"></div>
+      <button type="button" class="btn" id="btnCloseUpgrade" style="background:#64748b; border-color:#64748b; margin-top:12px;">閉じる</button>
+    </div>
+  </div>
+
+  <!-- 新規獲得モーダル -->
+  <div class="war-overlay" id="overlayRecruit">
+    <div class="war-overlay-box">
+      <h2>新しいウーパーを獲得</h2>
+      <div id="recruitList" class="recruit-list"></div>
+      <button type="button" class="btn" id="btnCloseRecruit" style="background:#64748b; border-color:#64748b; margin-top:12px;">閉じる</button>
+    </div>
+  </div>
+
+  <!-- ウェーブクリアモーダル -->
+  <div class="war-overlay" id="overlayWaveClear">
+    <div class="war-overlay-box">
+      <h2>ウェーブクリア！</h2>
+      <div id="waveClearContent"></div>
+      <button type="button" class="btn" id="btnContinueWave">続ける</button>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="axolotl-war.js"></script>
+</body>
+</html>

@@ -595,7 +595,7 @@
     obtainedTypes: {},  // 獲得した種類（図鑑用）
     achievements: {},  // 実績 {id: true}
     nameCounts: {},  // 種類ごとの名前カウント {type: count}
-    shopName: 'ウーパールーパーショップ',  // ショップ名
+    shopName: 'ウーパー放置ゲー',  // ゲーム名
     equipment: {  // 自動設備（レベル制）最初から3槽 = tankLevel2
       autoFeeder: false,
       filter: false,
@@ -4714,7 +4714,7 @@
     state.obtainedTypes = {};
     state.achievements = {};
     state.nameCounts = {};  // 名前カウントをリセット
-    state.shopName = 'ウーパールーパーショップ';  // ショップ名をリセット（後で最初のウパの名前で更新される）
+    state.shopName = 'ウーパー放置ゲー';  // ゲーム名をリセット（後で最初のウパの名前で更新される）
     state.shopStockDaily = {};  // 日ごとの在庫状態をリセット
     state.initialNamingMessageShown = false;  // 最初のウパの名前付けメッセージ表示フラグをリセット
     state.equipment = { autoFeeder: false, filter: false, bottomCleanerLevel: 0, tankLevel: 2 };  // 設備をリセット（最初から3槽）
@@ -4732,7 +4732,7 @@
         state.obtainedTypes[tank.axolotl.type] = true;
       }
     });
-    $('axLog').textContent = 'ショップを始めた。最初のウパに名前をつけよう。';
+    $('axLog').textContent = 'ウーパー放置ゲーを始めた。最初のウパに名前をつけよう。';
     $('axOverlayEnd').classList.remove('visible');
     $('axOverlayBreed').classList.remove('visible');
     $('axOverlayBuy').classList.remove('visible');
@@ -4752,7 +4752,7 @@
   var shopTitleEl = document.getElementById('axShopTitle');
   if (shopTitleEl) {
     shopTitleEl.addEventListener('click', function() {
-      var newName = prompt('ショップ名を入力してください:', state.shopName || 'ウーパールーパーショップ');
+      var newName = prompt('ゲーム名を入力してください:', state.shopName || 'ウーパー放置ゲー');
       if (newName !== null && newName.trim() !== '') {
         state.shopName = newName.trim();
         updateUI();
