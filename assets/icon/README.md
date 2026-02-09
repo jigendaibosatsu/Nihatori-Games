@@ -37,9 +37,12 @@ var iconPath = getIconPath('axolotl-shop');
 <!-- ゲームアイコン -->
 <img src="/assets/icon/axolotl-shop.png" alt="ウーパールーパーショップ" />
 
-<!-- Favicon -->
-<link rel="icon" href="/assets/icon/shachikuverse.png" type="image/png" />
+<!-- Favicon（システムのライト/ダークに合わせる） -->
+<link rel="icon" href="/assets/icon/Nihatori_web_icon.png" type="image/png" media="(prefers-color-scheme: light)" />
+<link rel="icon" href="/assets/icon/Nihatori_web_icon_dark.png" type="image/png" media="(prefers-color-scheme: dark)" />
 ```
+
+- ダークモード用に **Nihatori_web_icon_dark.png** を置くと、システムがダークのときそのアイコンが使われます。なければ同じ `Nihatori_web_icon.png` が使われます。
 
 ## 注意事項
 

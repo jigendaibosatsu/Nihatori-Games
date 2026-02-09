@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <title>穴掘りタップゲー – Nihatori Games</title>
+  <link rel="icon" href="/assets/icon/mine-tap.png" type="image/png" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -1478,7 +1479,8 @@
           resources: gameState.resources,
           tool: gameState.tool,
           inventory: gameState.inventory,
-          upgrades: gameState.upgrades
+          upgrades: gameState.upgrades,
+          unlockedWeapons: gameState.unlockedWeapons
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
         gameState.lastSaveTime = Date.now();
