@@ -1146,14 +1146,15 @@
 
   // サイズをcm単位で計算（年齢から）
   function calculateSizeFromAge(age) {
-    if (age <= 2) return 2 + Math.random() * 1; // 2-3cm
-    if (age <= 4) return 2.5 + Math.random() * 4.5; // 2.5-7cm（3ヶ月目はランダム）
-    if (age <= 6) return 5 + Math.random() * 3; // 5-8cm
-    if (age <= 9) return 8 + Math.random() * 4; // 8-12cm
-    if (age <= 12) return 12 + Math.random() * 4; // 12-16cm
-    if (age <= 15) return 16 + Math.random() * 2; // 16-18cm
-    if (age <= 18) return 18 + Math.random() * 3; // 18-21cm
-    return 20 + Math.random() * 2; // 20-22cm（成体）
+    // 月ごとのサイズ目安（平均的飼育、ランダム要素あり）
+    if (age <= 0) return 1 + Math.random() * 0.5; // 孵化直後：1〜1.5cm
+    if (age === 1) return 2 + Math.random() * 1; // 1か月：2〜3cm
+    if (age === 2) return 4 + Math.random() * 2; // 2か月：4〜6cm
+    if (age === 3) return 6 + Math.random() * 2; // 3か月：6〜8cm
+    if (age >= 4 && age <= 6) return 8 + Math.random() * 4; // 4〜6か月：8〜12cm
+    if (age >= 7 && age <= 12) return 12 + Math.random() * 6; // 7〜12か月：12〜18cm
+    // 1年以上（13ヶ月以上）：18〜25cm前後で成長緩やか
+    return 18 + Math.random() * 7; // 18〜25cm
   }
 
   // サイズを表示用の文字列に変換
@@ -1164,23 +1165,24 @@
 
   // サイズに応じたアイコンサイズを計算（px単位、32の整数倍のみ）
   function getIconSizeFromSize(size) {
-    if (size == null) return 96; // デフォルトサイズ（32の倍数）
+    if (size == null) return 80; // デフォルトサイズ（32の倍数）
     // サイズに応じてアイコンサイズを計算（32の整数倍で、CSSでスケール）
-    // 最大サイズを192pxに制限（水槽の状態ゲージを圧迫しないように）
-    // 2-3cm: 64px（32×2）
-    // 3ヶ月目: 96px（32×3）
-    // 5-8cm: 128px（32×4）
-    // 8-12cm: 160px（32×5）
-    // 12-16cm: 192px（32×6）
-    // 16-18cm: 192px（32×6、最大サイズ）
-    // 18-21cm: 192px（32×6、最大サイズ）
-    // 20-22cm: 192px（32×6、最大サイズ）
+    // 最小と最大で2倍の差にする（64px〜128px）
+    // 1-1.5cm（孵化直後）: 64px（32×2）
+    // 2-3cm（1か月）: 64px（32×2）
+    // 4-6cm（2か月）: 72px（32×2.25、32の倍数に丸める）
+    // 6-8cm（3か月）: 80px（32×2.5）
+    // 8-12cm（4-6か月）: 88px（32×2.75、32の倍数に丸める）
+    // 12-18cm（7-12か月）: 96px（32×3）
+    // 18-25cm（1年以上）: 128px（32×4、最大サイズ）
     var iconSize;
-    if (size <= 3) iconSize = 64;
-    else if (size <= 5) iconSize = 96;
-    else if (size <= 8) iconSize = 128;
-    else if (size <= 12) iconSize = 160;
-    else iconSize = 192; // 最大192pxに制限
+    if (size <= 1.5) iconSize = 64; // 孵化直後
+    else if (size <= 3) iconSize = 64; // 1か月
+    else if (size <= 6) iconSize = 64; // 2か月（64pxのまま）
+    else if (size <= 8) iconSize = 80; // 3か月
+    else if (size <= 12) iconSize = 96; // 4-6か月
+    else if (size <= 18) iconSize = 96; // 7-12か月
+    else iconSize = 128; // 1年以上（最大128px）
     
     // 32の整数倍であることを保証
     if (!isValidPixelArtSize(iconSize)) {
@@ -2304,10 +2306,13 @@
         inner.style.gap = '4px';
         inner.style.justifyContent = 'center';
         [pair[0], pair[1]].forEach(function (ax, idx) {
+          var hopAnimations = ['ax-hop-left', 'ax-hop-right', 'ax-hop-center'];
+          var randomHop = hopAnimations[Math.floor(Math.random() * hopAnimations.length)];
           if (ax.type === 'chimera') {
             var iconSize = getIconSizeFromSize(ax.size);
             var sprite = createChimeraCanvasSprite(ax, iconSize);
             sprite.classList.add('ax-idle');
+            sprite.classList.add(randomHop);
             sprite.dataset.bobIntervalMs = String(getBobIntervalMs(ax));
             sprite.dataset.bobIndex = '0';
             sprite.dataset.bobLastStep = '0';
@@ -2316,6 +2321,7 @@
             var iconSize = getIconSizeFromSize(ax.size);
             var sprite = createPixelArtCanvasSprite(ax, iconSize);
             sprite.classList.add('ax-idle');
+            sprite.classList.add(randomHop);
             sprite.dataset.bobIntervalMs = String(getBobIntervalMs(ax));
             sprite.dataset.bobIndex = '0';
             sprite.dataset.bobLastStep = '0';
@@ -2373,10 +2379,13 @@
         var ax = tank.axolotl;
         var spriteWrap = document.createElement('div');
         spriteWrap.className = 'ax-tank-sprite-wrap';
+        var hopAnimations = ['ax-hop-left', 'ax-hop-right', 'ax-hop-center'];
+        var randomHop = hopAnimations[Math.floor(Math.random() * hopAnimations.length)];
         if (ax.type === 'chimera') {
           var iconSize = getIconSizeFromSize(ax.size);
           var sprite = createChimeraCanvasSprite(ax, iconSize);
           sprite.classList.add('ax-idle');
+          sprite.classList.add(randomHop);
           sprite.dataset.bobIntervalMs = String(getBobIntervalMs(ax));
           sprite.dataset.bobIndex = '0';
           sprite.dataset.bobLastStep = '0';
@@ -2385,6 +2394,7 @@
           var iconSize = getIconSizeFromSize(ax.size);
           var sprite = createPixelArtCanvasSprite(ax, iconSize);
           sprite.classList.add('ax-idle');
+          sprite.classList.add(randomHop);
           sprite.dataset.bobIntervalMs = String(getBobIntervalMs(ax));
           sprite.dataset.bobIndex = '0';
           sprite.dataset.bobLastStep = '0';
