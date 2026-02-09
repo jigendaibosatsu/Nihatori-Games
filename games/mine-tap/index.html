@@ -1567,11 +1567,15 @@
 
     // ショップ用のグローバル関数
     function sellEquipmentById(id) {
-      const equipment = gameState.inventory.find(eq => eq.id === id);
+      // idを数値に変換（文字列の場合があるため）
+      const idNum = typeof id === 'string' ? parseFloat(id) : id;
+      const equipment = gameState.inventory.find(eq => eq.id === idNum || eq.id === id);
       if (equipment) {
         if (confirm(`${equipment.name}を${formatNumber(calculateEquipmentPrice(equipment))}Goldで販売しますか？`)) {
           sellEquipment(equipment);
         }
+      } else {
+        console.error('Equipment not found:', id, gameState.inventory);
       }
     }
 
@@ -1586,11 +1590,15 @@
     }
 
     function sellGemById(id) {
-      const gem = gameState.resources.gems.find(g => g.id === id);
+      // idを数値に変換（文字列の場合があるため）
+      const idNum = typeof id === 'string' ? parseFloat(id) : id;
+      const gem = gameState.resources.gems.find(g => g.id === idNum || g.id === id);
       if (gem) {
         if (confirm(`${GEM_SIZES[gem.size].name}サイズの${GEM_TYPES[gem.type].name}を${formatNumber(calculateGemPrice(gem))}Goldで換金しますか？`)) {
           sellGem(gem);
         }
+      } else {
+        console.error('Gem not found:', id, gameState.resources.gems);
       }
     }
 

@@ -154,7 +154,7 @@
     .dungeon-panel {
       background: rgba(0,0,0,0.5);
       border-radius: 8px;
-      padding: 16px;
+      padding: 12px;
       margin-bottom: 16px;
     }
     .dungeon-info {
@@ -176,12 +176,12 @@
     .battle-log {
       background: rgba(0,0,0,0.3);
       border-radius: 6px;
-      padding: 12px;
-      margin-bottom: 16px;
-      max-height: 300px;
+      padding: 8px;
+      margin-bottom: 12px;
+      max-height: 200px;
       overflow-y: auto;
-      font-size: 11px;
-      line-height: 1.8;
+      font-size: 10px;
+      line-height: 1.6;
     }
     .battle-turn {
       margin-bottom: 8px;
@@ -199,11 +199,60 @@
       display: none;
     }
     @media (max-width: 600px) {
+      .container {
+        padding: 4px;
+      }
+      h1 {
+        font-size: 1.2rem;
+        margin: 8px 0;
+      }
       .stats-panel {
         grid-template-columns: 1fr;
+        padding: 8px;
+        gap: 4px;
+      }
+      .stat-value {
+        font-size: 14px;
       }
       .enemy-stats {
         grid-template-columns: 1fr;
+        gap: 4px;
+      }
+      .equipment-card {
+        padding: 8px;
+      }
+      .equipment-name {
+        font-size: 14px;
+      }
+      .dungeon-panel {
+        padding: 8px;
+      }
+      .floor-display {
+        font-size: 18px;
+      }
+      .battle-log {
+        max-height: 150px;
+        font-size: 9px;
+        padding: 6px;
+      }
+      .log-panel {
+        max-height: 150px;
+        padding: 8px;
+        font-size: 10px;
+      }
+      .btn {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+      .save-load-panel {
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .save-load-panel .btn {
+        flex: 1;
+        min-width: 80px;
+        padding: 6px 12px;
+        font-size: 11px;
       }
     }
   </style>
@@ -257,7 +306,6 @@
         <div class="enemy-stats" id="enemyStats"></div>
         <div class="battle-log" id="battleLog"></div>
         <div style="text-align:center;">
-          <button class="btn" id="nextTurnBtn" onclick="processBattleTurn()">次のターン</button>
           <button class="btn btn-danger" onclick="endDungeon()">終了</button>
         </div>
       </div>
@@ -392,6 +440,8 @@
       showDungeonPhase();
       updateUI();
       addBattleLog('ダンジョン開始！');
+      // 自動でバトル開始
+      setTimeout(processBattleTurn, 1000);
     }
 
     function createEnemy(floor) {
@@ -421,6 +471,8 @@
         createEnemy(gameState.currentFloor);
         addBattleLog(`フロア ${gameState.currentFloor} に進みました`);
         updateUI();
+        // 自動で次のターンへ
+        setTimeout(processBattleTurn, 500);
         return;
       }
       
@@ -435,13 +487,14 @@
       }
       
       updateUI();
+      // 自動で次のターンへ（0.8秒後）
+      setTimeout(processBattleTurn, 800);
     }
 
     function endDungeon() {
       gameState.dungeonActive = false;
       const reachedFloor = gameState.maxFloor || gameState.currentFloor - 1;
       addBattleLog(`ダンジョン終了！ 到達フロア: ${reachedFloor}`);
-      document.getElementById('nextTurnBtn').disabled = true;
       updateUI();
     }
 

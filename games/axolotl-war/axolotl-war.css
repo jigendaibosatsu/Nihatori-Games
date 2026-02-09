@@ -39,7 +39,35 @@ body.game-page {
   align-items: center;
   gap: 8px;
   flex: 1;
-  min-width: 100px;
+  min-width: 80px;
+}
+
+@media (max-width: 600px) {
+  .war-stats {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .stat-item {
+    width: 100%;
+    min-width: auto;
+  }
+  .stat-label {
+    font-size: 10px;
+    min-width: 40px;
+  }
+  .stat-value {
+    font-size: 10px;
+  }
+  .war-overlay-box {
+    padding: 16px;
+    max-width: 90%;
+  }
+  .war-overlay-box h2 {
+    font-size: 1.2rem;
+  }
+  .control-hint {
+    font-size: 9px;
+  }
 }
 
 .stat-label {

@@ -4,7 +4,7 @@ body.game-page {
   padding-top: 48px;
   padding-bottom: calc(80px + env(safe-area-inset-bottom));
   min-height: 100vh;
-  background: #0a0a0a;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
   font-family: "MS PGothic", "Yu Gothic", sans-serif;
   color: #fff;
   overflow: hidden;
@@ -23,6 +23,7 @@ body.game-page {
 .survivor-header {
   padding: 8px;
   background: rgba(0,0,0,0.7);
+  border: 2px solid #3b82f6;
   border-radius: 8px;
   margin-bottom: 8px;
 }
@@ -39,7 +40,32 @@ body.game-page {
   align-items: center;
   gap: 6px;
   flex: 1;
-  min-width: 100px;
+  min-width: 80px;
+}
+
+@media (max-width: 600px) {
+  .survivor-stats {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .stat-item {
+    width: 100%;
+    min-width: auto;
+  }
+  .stat-label {
+    font-size: 10px;
+    min-width: 40px;
+  }
+  .stat-value {
+    font-size: 10px;
+  }
+  .survivor-overlay-box {
+    padding: 16px;
+    max-width: 90%;
+  }
+  .survivor-overlay-box h2 {
+    font-size: 1.2rem;
+  }
 }
 
 .stat-label {
@@ -80,11 +106,13 @@ body.game-page {
 .game-canvas-wrap {
   flex: 1;
   width: 100%;
-  background: #000;
+  background: #1a1a2e;
+  border: 3px solid #3b82f6;
   border-radius: 8px;
   overflow: hidden;
   position: relative;
   min-height: 0;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
 }
 
 #gameCanvas {

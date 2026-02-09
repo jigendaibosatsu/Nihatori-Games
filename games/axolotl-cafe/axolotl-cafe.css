@@ -48,6 +48,48 @@ body.game-page {
   font-size: 16px;
   font-weight: bold;
   color: #047857;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 600px) {
+  .cafe-wrap {
+    max-width: 100%;
+    padding: 4px;
+  }
+  .cafe-title {
+    font-size: 1rem;
+  }
+  .cafe-resources {
+    gap: 8px;
+  }
+  .cafe-resource-label {
+    font-size: 9px;
+  }
+  .cafe-resource-value {
+    font-size: 14px;
+  }
+  .cafe-menu {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+  .cafe-menu-btn {
+    padding: 8px 4px;
+  }
+  .cafe-menu-icon {
+    font-size: 20px;
+  }
+  .cafe-menu-label {
+    font-size: 10px;
+  }
+  .cafe-overlay-box {
+    padding: 16px;
+    max-width: 95%;
+  }
+  .cafe-overlay-box h2 {
+    font-size: 1.1rem;
+  }
 }
 
 /* メインエリア */

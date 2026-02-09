@@ -119,6 +119,14 @@
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
 
+  // ===== 画像読み込み =====
+  var playerImage = new Image();
+  playerImage.src = '/assets/characters/axolotl/axo_nomal.png';
+  var playerImageLoaded = false;
+  playerImage.onload = function() {
+    playerImageLoaded = true;
+  };
+
   // ===== ユーティリティ =====
   function $(id) { return document.getElementById(id); }
 
@@ -491,10 +499,20 @@
     });
     
     // プレイヤー
-    ctx.fillStyle = p.invulnerable > 0 && p.invulnerable % 10 < 5 ? '#888' : '#60a5fa';
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-    ctx.fill();
+    if (playerImageLoaded && playerImage.complete) {
+      ctx.save();
+      if (p.invulnerable > 0 && p.invulnerable % 10 < 5) {
+        ctx.globalAlpha = 0.5;
+      }
+      var size = p.radius * 2;
+      ctx.drawImage(playerImage, p.x - size / 2, p.y - size / 2, size, size);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = p.invulnerable > 0 && p.invulnerable % 10 < 5 ? '#888' : '#60a5fa';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   // ===== UI更新 =====

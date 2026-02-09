@@ -38,7 +38,7 @@
       baseHp: 100,
       baseAttack: 20,
       baseDefense: 5,
-      imagePath: '/assets/axolotl/axo_nomal.png'
+      imagePath: '/assets/characters/axolotl/axo_nomal.png'
     },
     albino: {
       name: 'アルビノ',
@@ -46,7 +46,7 @@
       baseHp: 80,
       baseAttack: 25,
       baseDefense: 3,
-      imagePath: '/assets/axolotl/axo_albino.png'
+      imagePath: '/assets/characters/axolotl/axo_albino.png'
     },
     gold: {
       name: 'ゴールド',
@@ -54,7 +54,7 @@
       baseHp: 120,
       baseAttack: 30,
       baseDefense: 8,
-      imagePath: '/assets/axolotl/axo_gold.png'
+      imagePath: '/assets/characters/axolotl/axo_gold.png'
     },
     marble: {
       name: 'マーブル',
@@ -62,7 +62,7 @@
       baseHp: 110,
       baseAttack: 22,
       baseDefense: 7,
-      imagePath: '/assets/axolotl/axo_marble.png'
+      imagePath: '/assets/characters/axolotl/axo_marble.png'
     },
     black: {
       name: 'ブラック',
@@ -70,9 +70,18 @@
       baseHp: 150,
       baseAttack: 35,
       baseDefense: 10,
-      imagePath: '/assets/axolotl/axo_black.png'
+      imagePath: '/assets/characters/axolotl/axo_black.png'
     }
   };
+
+  // 敵の画像パス（ウェーブに応じて変化）
+  var ENEMY_IMAGES = [
+    '/assets/characters/slime.png',
+    '/assets/characters/ork_128.png',
+    '/assets/characters/boon_128.png',
+    '/assets/characters/phenix_32.png',
+    '/assets/characters/shiba.png'
+  ];
 
   // ===== Canvas設定 =====
   var canvas = document.getElementById('gameCanvas');
@@ -164,10 +173,25 @@
   }
 
   // ===== 敵システム =====
+  var enemyImages = {};
+  
+  function loadEnemyImage(path) {
+    if (!enemyImages[path]) {
+      var img = new Image();
+      img.src = path;
+      enemyImages[path] = img;
+    }
+    return enemyImages[path];
+  }
+  
   function createEnemy(wave) {
     var baseHp = 100 + wave * 50;
     var baseAttack = 15 + wave * 5;
     var baseDefense = 3 + wave * 2;
+    
+    // ウェーブに応じて敵の画像を選択
+    var enemyImageIndex = Math.min(Math.floor((wave - 1) / 5), ENEMY_IMAGES.length - 1);
+    var enemyImagePath = ENEMY_IMAGES[enemyImageIndex];
     
     return {
       hp: baseHp,
@@ -176,7 +200,8 @@
       defense: baseDefense,
       x: CANVAS_WIDTH - 150,
       y: CANVAS_HEIGHT / 2,
-      name: '敵 ' + wave
+      name: '敵 ' + wave,
+      imagePath: enemyImagePath
     };
   }
 
@@ -285,6 +310,18 @@
     updateUI();
   }
 
+  // ===== 画像読み込み =====
+  var axolotlImages = {};
+  
+  function loadAxolotlImage(path) {
+    if (!axolotlImages[path]) {
+      var img = new Image();
+      img.src = path;
+      axolotlImages[path] = img;
+    }
+    return axolotlImages[path];
+  }
+
   // ===== 描画 =====
   function draw() {
     // クリア
@@ -304,17 +341,28 @@
       var x = axolotl.x;
       var y = axolotl.y;
       
-      // ウーパー画像（プレースホルダー）
-      ctx.fillStyle = axolotl.hp > 0 ? '#60a5fa' : '#666';
-      ctx.beginPath();
-      ctx.arc(x, y, 30, 0, Math.PI * 2);
-      ctx.fill();
+      // ウーパー画像
+      var img = loadAxolotlImage(axolotl.imagePath);
+      if (img.complete && img.naturalWidth > 0) {
+        var size = axolotl.hp > 0 ? 60 : 40;
+        var alpha = axolotl.hp > 0 ? 1.0 : 0.5;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.drawImage(img, x - size / 2, y - size / 2, size, size);
+        ctx.restore();
+      } else {
+        // 画像が読み込まれていない場合は円で表示
+        ctx.fillStyle = axolotl.hp > 0 ? '#60a5fa' : '#666';
+        ctx.beginPath();
+        ctx.arc(x, y, 30, 0, Math.PI * 2);
+        ctx.fill();
+      }
       
       // 名前
       ctx.fillStyle = '#fff';
       ctx.font = '12px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(axolotl.name, x, y - 40);
+      ctx.fillText(axolotl.name, x, y - 50);
       
       // HPバー
       var barWidth = 60;
@@ -338,16 +386,24 @@
       var x = enemy.x;
       var y = enemy.y;
       
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath();
-      ctx.arc(x, y, 40, 0, Math.PI * 2);
-      ctx.fill();
+      // 敵画像
+      var enemyImg = loadEnemyImage(enemy.imagePath);
+      if (enemyImg.complete && enemyImg.naturalWidth > 0) {
+        var size = 80;
+        ctx.drawImage(enemyImg, x - size / 2, y - size / 2, size, size);
+      } else {
+        // 画像が読み込まれていない場合は円で表示
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(x, y, 40, 0, Math.PI * 2);
+        ctx.fill();
+      }
       
       // 名前
       ctx.fillStyle = '#fff';
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(enemy.name, x, y - 50);
+      ctx.fillText(enemy.name, x, y - 60);
       
       // HPバー
       var barWidth = 80;

@@ -14,6 +14,7 @@ assets/
 ├── materials/        # 粘土・石などの素材アセット
 ├── weapons/          # 武器アセット
 ├── items/            # その他アイテム（うんこなど）
+├── icon/             # アイコンアセット
 ├── logo.png          # ロゴ
 └── [その他の共通アセット]
 
@@ -40,7 +41,8 @@ games/[game-name]/
 - **素材**: `/assets/materials/` - 粘土、石、木材など（将来の拡張用）
 - **武器**: `/assets/weapons/` - ツルハシ、剣、斧など
 - **アイテム**: `/assets/items/` - うんこなどその他のアイテム
-- **ロゴ・アイコン**: `/assets/logo.png` など
+- **アイコン**: `/assets/icon/` - ゲームアイコンなど
+- **ロゴ**: `/assets/logo.png` - サイトロゴ（特別扱い）
 
 各フォルダには `README.md` があり、詳細な説明と使用方法が記載されています。
 
@@ -62,6 +64,7 @@ var unkoPath = '/assets/items/unko.png';
 var orePath = '/assets/ores/iron_ore.png';
 var gemPath = '/assets/ores/ruby.png';
 var coinPath = '/assets/money/coin_32.png';
+var iconPath = '/assets/icon/axolotl-shop.png';
 ```
 
 ### HTMLから使用
@@ -72,6 +75,7 @@ var coinPath = '/assets/money/coin_32.png';
 <img src="/assets/items/unko.png" alt="うんこ" />
 <img src="/assets/ores/iron_ore.png" alt="鉄鉱石" />
 <img src="/assets/money/coin_32.png" alt="硬貨" />
+<img src="/assets/icon/axolotl-shop.png" alt="ゲームアイコン" />
 
 <!-- ゲーム固有アセット -->
 <img src="./assets/game-specific.png" alt="ゲーム固有" />

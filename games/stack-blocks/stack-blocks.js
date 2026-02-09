@@ -8,6 +8,13 @@
   var BASE_WIDTH = 200;
   var GRAVITY = 0.5;
   var BLOCK_SPEED = 3;
+  
+  // スマホ対応: 画面サイズに応じて調整
+  var isMobile = window.innerWidth <= 600;
+  if (isMobile) {
+    CANVAS_WIDTH = Math.min(400, window.innerWidth - 32);
+    CANVAS_HEIGHT = Math.min(600, window.innerHeight * 0.6);
+  }
 
   // ===== ゲーム状態 =====
   var state = {
@@ -29,6 +36,23 @@
   var ctx = canvas.getContext('2d');
   var nextCanvas = document.getElementById('nextCanvas');
   var nextCtx = nextCanvas.getContext('2d');
+  
+  // Canvasサイズを設定
+  canvas.width = CANVAS_WIDTH;
+  canvas.height = CANVAS_HEIGHT;
+  
+  // スマホ対応: レスポンシブサイズ調整
+  function resizeCanvas() {
+    if (isMobile) {
+      var container = canvas.parentElement;
+      var maxWidth = container.clientWidth - 32;
+      var scale = Math.min(1, maxWidth / CANVAS_WIDTH);
+      canvas.style.width = (CANVAS_WIDTH * scale) + 'px';
+      canvas.style.height = (CANVAS_HEIGHT * scale) + 'px';
+    }
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
 
   // ベストスコア読み込み
   function loadBestScore() {
@@ -176,12 +200,15 @@
 
     var block = state.currentBlock;
 
-    // 左右移動
-    if (state.movingLeft) {
-      block.x = Math.max(0, block.x - BLOCK_SPEED);
-    }
-    if (state.movingRight) {
-      block.x = Math.min(CANVAS_WIDTH - block.width, block.x + BLOCK_SPEED);
+    // ドラッグ中は自動移動を無効化
+    if (!dragState.isDragging) {
+      // 左右移動
+      if (state.movingLeft) {
+        block.x = Math.max(0, block.x - BLOCK_SPEED);
+      }
+      if (state.movingRight) {
+        block.x = Math.min(CANVAS_WIDTH - block.width, block.x + BLOCK_SPEED);
+      }
     }
 
     // 落下
@@ -326,6 +353,42 @@
     landBlock();
   }
 
+  // ===== ドラッグ操作 =====
+  var dragState = {
+    isDragging: false,
+    startX: 0,
+    currentX: 0
+  };
+
+  function handleDragStart(e) {
+    if (!state.gameStarted || state.gameOver) return;
+    dragState.isDragging = true;
+    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    dragState.startX = clientX;
+    dragState.currentX = clientX;
+    e.preventDefault();
+  }
+
+  function handleDragMove(e) {
+    if (!dragState.isDragging || !state.currentBlock) return;
+    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    var rect = canvas.getBoundingClientRect();
+    var canvasX = clientX - rect.left;
+    var scale = canvas.width / rect.width;
+    var gameX = canvasX * scale;
+    
+    // ブロックの中心をマウス位置に合わせる
+    state.currentBlock.x = Math.max(0, Math.min(CANVAS_WIDTH - state.currentBlock.width, gameX - state.currentBlock.width / 2));
+    dragState.currentX = clientX;
+    e.preventDefault();
+  }
+
+  function handleDragEnd(e) {
+    if (!dragState.isDragging) return;
+    dragState.isDragging = false;
+    e.preventDefault();
+  }
+
   // ===== イベントリスナー =====
   function initEventListeners() {
     // スタート
@@ -336,6 +399,16 @@
     var btnLeft = document.getElementById('btnLeft');
     var btnRight = document.getElementById('btnRight');
     var btnDrop = document.getElementById('btnDrop');
+    
+    // Canvasドラッグ操作
+    canvas.addEventListener('mousedown', handleDragStart);
+    canvas.addEventListener('mousemove', handleDragMove);
+    canvas.addEventListener('mouseup', handleDragEnd);
+    canvas.addEventListener('mouseleave', handleDragEnd);
+    canvas.addEventListener('touchstart', handleDragStart, { passive: false });
+    canvas.addEventListener('touchmove', handleDragMove, { passive: false });
+    canvas.addEventListener('touchend', handleDragEnd, { passive: false });
+    canvas.addEventListener('touchcancel', handleDragEnd, { passive: false });
 
     btnLeft.addEventListener('mousedown', function() {
       state.movingLeft = true;

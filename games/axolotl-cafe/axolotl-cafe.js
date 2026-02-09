@@ -506,7 +506,10 @@
   // ===== UI更新 =====
   function updateUI() {
     // リソース表示
-    $('cafeCoins').textContent = formatNumber(state.coins);
+    var coinsEl = $('cafeCoins');
+    if (coinsEl) {
+      coinsEl.innerHTML = '<img src="/assets/money/coin_32.png" style="width:16px;height:16px;vertical-align:middle;margin-right:2px;" />' + formatNumber(state.coins);
+    }
     $('cafeFertilizer').textContent = formatNumber(state.fertilizer);
     $('cafePoop').textContent = formatNumber(state.poopStorage);
     

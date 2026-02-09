@@ -595,6 +595,7 @@
     achievements: {},  // 実績 {id: true}
     nameCounts: {},  // 種類ごとの名前カウント {type: count}
     usedNames: {},  // 使用済みの名前 {fullName: true} 重複チェック用
+    deadAxolotls: [],  // 死んだウパの記録 [{id, type, name, age, deathReason, ...}]
     shopName: 'ウーパールーパーショップ',  // ショップ名
     equipment: {  // 自動設備（レベル制）最初から3槽 = tankLevel2
       autoFeeder: false,
@@ -702,6 +703,9 @@
       if (!saveData.state.mutationShopAvailable) {
         saveData.state.mutationShopAvailable = false;
         saveData.state.mutationShopItems = [];
+      }
+      if (!saveData.state.deadAxolotls) {
+        saveData.state.deadAxolotls = [];
       }
       
       // axolotlのマイグレーション
@@ -1750,19 +1754,25 @@
     var nameEditDiv = document.createElement('div');
     nameEditDiv.style.marginBottom = '8px';
     
+    // 要素AとBを横並びにするコンテナ
+    var nameElementsContainer = document.createElement('div');
+    nameElementsContainer.style.display = 'flex';
+    nameElementsContainer.style.gap = '8px';
+    nameElementsContainer.style.marginBottom = '8px';
+    
     // 要素A
     var elementADiv = document.createElement('div');
-    elementADiv.style.marginBottom = '4px';
+    elementADiv.style.flex = '1';
     elementADiv.innerHTML = '<label style="font-size:11px;">要素A：</label>';
     var elementAInput = document.createElement('input');
     elementAInput.type = 'text';
     elementAInput.value = displayAx.nameElementA || '';
     elementAInput.placeholder = '要素A（例：斑）';
-    elementAInput.style.width = 'calc(100% - 100px)';
+    elementAInput.style.width = '100%';
     elementAInput.style.padding = '4px';
     elementAInput.style.marginTop = '2px';
     elementAInput.style.fontSize = '12px';
-    elementAInput.style.marginRight = '4px';
+    elementAInput.style.marginBottom = '4px';
     var hereditaryACheckbox = document.createElement('input');
     hereditaryACheckbox.type = 'checkbox';
     hereditaryACheckbox.checked = displayAx.isHereditaryA || false;
@@ -1778,17 +1788,17 @@
     
     // 要素B
     var elementBDiv = document.createElement('div');
-    elementBDiv.style.marginBottom = '4px';
+    elementBDiv.style.flex = '1';
     elementBDiv.innerHTML = '<label style="font-size:11px;">要素B：</label>';
     var elementBInput = document.createElement('input');
     elementBInput.type = 'text';
     elementBInput.value = displayAx.nameElementB || '';
     elementBInput.placeholder = '要素B（例：尾）';
-    elementBInput.style.width = 'calc(100% - 100px)';
+    elementBInput.style.width = '100%';
     elementBInput.style.padding = '4px';
     elementBInput.style.marginTop = '2px';
     elementBInput.style.fontSize = '12px';
-    elementBInput.style.marginRight = '4px';
+    elementBInput.style.marginBottom = '4px';
     var hereditaryBCheckbox = document.createElement('input');
     hereditaryBCheckbox.type = 'checkbox';
     hereditaryBCheckbox.checked = displayAx.isHereditaryB || false;
@@ -1801,6 +1811,9 @@
     elementBDiv.appendChild(elementBInput);
     elementBDiv.appendChild(hereditaryBCheckbox);
     elementBDiv.appendChild(hereditaryBLabel);
+    
+    nameElementsContainer.appendChild(elementADiv);
+    nameElementsContainer.appendChild(elementBDiv);
     
     // 名前の更新処理
     function updateNameFromElements() {
@@ -1857,8 +1870,7 @@
     hereditaryACheckbox.addEventListener('change', updateNameFromElements);
     hereditaryBCheckbox.addEventListener('change', updateNameFromElements);
     
-    nameEditDiv.appendChild(elementADiv);
-    nameEditDiv.appendChild(elementBDiv);
+    nameEditDiv.appendChild(nameElementsContainer);
     bodyEl.appendChild(nameEditDiv);
     
     // 既存の名前がある場合は要素A/Bに分割
@@ -3237,6 +3249,19 @@
               logLine(typeLabel(a.type) + 'のウパが治療で回復した。');
             } else if (!a.underTreatment) {
               if (Math.random() < SICK_DEATH_CHANCE) {
+                // 死んだウパの記録を保存
+                var deadRecord = {
+                  id: a.id,
+                  type: a.type,
+                  name: a.name || typeLabel(a.type),
+                  age: a.age,
+                  deathReason: '病気',
+                  deathMonth: state.month,
+                  chimeraTypes: a.chimeraTypes || null,
+                  sex: a.sex || null
+                };
+                state.deadAxolotls.push(deadRecord);
+                
                 if (axolotlRegistry[a.id]) {
                   axolotlRegistry[a.id].removed = true;
                 }
@@ -3582,6 +3607,19 @@
       var suddenDeathChance = 0.005; // 0.5%
       
       if (Math.random() < ageDeathChance) {
+        // 死んだウパの記録を保存
+        var deadRecord = {
+          id: ax.id,
+          type: ax.type,
+          name: ax.name || typeLabel(ax.type),
+          age: ax.age,
+          deathReason: '寿命',
+          deathMonth: state.month,
+          chimeraTypes: ax.chimeraTypes || null,
+          sex: ax.sex || null
+        };
+        state.deadAxolotls.push(deadRecord);
+        
         if (axolotlRegistry[ax.id]) {
           axolotlRegistry[ax.id].removed = true;
         }
@@ -3593,6 +3631,19 @@
       }
       
       if (Math.random() < suddenDeathChance) {
+        // 死んだウパの記録を保存
+        var deadRecord = {
+          id: ax.id,
+          type: ax.type,
+          name: ax.name || typeLabel(ax.type),
+          age: ax.age,
+          deathReason: '急死',
+          deathMonth: state.month,
+          chimeraTypes: ax.chimeraTypes || null,
+          sex: ax.sex || null
+        };
+        state.deadAxolotls.push(deadRecord);
+        
         if (axolotlRegistry[ax.id]) {
           axolotlRegistry[ax.id].removed = true;
         }
@@ -3603,6 +3654,19 @@
         return;
       }
       if (ax.health <= 0) {
+        // 死んだウパの記録を保存
+        var deadRecord = {
+          id: ax.id,
+          type: ax.type,
+          name: ax.name || typeLabel(ax.type),
+          age: ax.age,
+          deathReason: '体調不良',
+          deathMonth: state.month,
+          chimeraTypes: ax.chimeraTypes || null,
+          sex: ax.sex || null
+        };
+        state.deadAxolotls.push(deadRecord);
+        
         if (axolotlRegistry[ax.id]) {
           axolotlRegistry[ax.id].removed = true;
         }
@@ -4917,7 +4981,7 @@
     var tabsEl = $('axBuyTabs');
     tabsEl.innerHTML = '';
     
-    // ミューテーションショップが利用可能な場合はそれを表示
+    // ミューテーションショップが利用可能な場合はタブを追加
     if (state.mutationShopAvailable && state.mutationShopItems && state.mutationShopItems.length > 0) {
       var mutationTab = document.createElement('button');
       mutationTab.type = 'button';
@@ -4925,20 +4989,42 @@
       mutationTab.textContent = 'ミューテーション !';
       mutationTab.dataset.tab = 'mutation';
       mutationTab.classList.add('active');
+      mutationTab.addEventListener('click', function () {
+        tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
+        mutationTab.classList.add('active');
+        showBuyTypeList('mutation');
+      });
       tabsEl.appendChild(mutationTab);
       showBuyTypeList('mutation');
-      $('axOverlayBuy').classList.add('visible');
-      return;
+    } else {
+      // ミューテーションショップが利用可能でない場合は、強制的にチェックして生成
+      checkMutationShop();
+      if (state.mutationShopAvailable && state.mutationShopItems && state.mutationShopItems.length > 0) {
+        var mutationTab = document.createElement('button');
+        mutationTab.type = 'button';
+        mutationTab.className = 'ax-buy-tab';
+        mutationTab.textContent = 'ミューテーション !';
+        mutationTab.dataset.tab = 'mutation';
+        mutationTab.classList.add('active');
+        mutationTab.addEventListener('click', function () {
+          tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
+          mutationTab.classList.add('active');
+          showBuyTypeList('mutation');
+        });
+        tabsEl.appendChild(mutationTab);
+        showBuyTypeList('mutation');
+      }
     }
     
-    // 通常のショップは削除（固定化済みの販売を削除）
-    // 設備タブのみ表示
+    // 設備タブを追加
     var equipmentTab = document.createElement('button');
     equipmentTab.type = 'button';
     equipmentTab.className = 'ax-buy-tab';
     equipmentTab.textContent = '設備';
     equipmentTab.dataset.tab = 'equipment';
-    equipmentTab.classList.add('active');
+    if (!state.mutationShopAvailable || !state.mutationShopItems || state.mutationShopItems.length === 0) {
+      equipmentTab.classList.add('active');
+    }
     equipmentTab.addEventListener('click', function () {
       tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
       equipmentTab.classList.add('active');
@@ -4946,7 +5032,11 @@
     });
     tabsEl.appendChild(equipmentTab);
     
-    showBuyTypeList('equipment');
+    // アクティブなタブがない場合は設備タブを表示
+    if (!tabsEl.querySelector('.ax-buy-tab.active')) {
+      equipmentTab.classList.add('active');
+      showBuyTypeList('equipment');
+    }
     
     $('axOverlayBuy').classList.add('visible');
   }
@@ -5907,6 +5997,10 @@
       div.style.border = '1px solid #bfdbfe';
       div.style.borderRadius = '6px';
       div.style.background = state.obtainedTypes[type] ? '#f0f9ff' : '#f9fafb';
+      div.style.cursor = 'pointer';
+      div.addEventListener('click', function() {
+        showDeadAxolotls(type);
+      });
       
       var header = document.createElement('div');
       header.style.display = 'flex';
@@ -5960,10 +6054,127 @@
         div.appendChild(fixedBadge);
       }
       
+      // 死んだウパの数を表示
+      var deadCount = state.deadAxolotls ? state.deadAxolotls.filter(function(dead) {
+        return dead.type === type || (type === 'chimera' && dead.chimeraTypes);
+      }).length : 0;
+      if (deadCount > 0) {
+        var deadBadge = document.createElement('div');
+        deadBadge.style.marginTop = '4px';
+        deadBadge.style.fontSize = '11px';
+        deadBadge.style.color = '#dc2626';
+        deadBadge.textContent = '★ ' + deadCount + '匹が★になりました（タップで詳細）';
+        div.appendChild(deadBadge);
+      }
+      
       content.appendChild(div);
     });
     
     $('axOverlayEncyclopedia').classList.add('visible');
+  }
+
+  function showDeadAxolotls(type) {
+    var deadList = state.deadAxolotls ? state.deadAxolotls.filter(function(dead) {
+      return dead.type === type || (type === 'chimera' && dead.chimeraTypes);
+    }) : [];
+    
+    if (deadList.length === 0) {
+      alert(typeLabel(type) + 'で★になったウパはいません。');
+      return;
+    }
+    
+    var modal = document.createElement('div');
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.right = '0';
+    modal.style.bottom = '0';
+    modal.style.background = 'rgba(0,0,0,0.7)';
+    modal.style.zIndex = '1000';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.padding = '20px';
+    
+    var content = document.createElement('div');
+    content.style.background = '#fff';
+    content.style.borderRadius = '12px';
+    content.style.padding = '20px';
+    content.style.maxWidth = '500px';
+    content.style.maxHeight = '80vh';
+    content.style.overflowY = 'auto';
+    content.style.color = '#064e3b';
+    
+    var title = document.createElement('h2');
+    title.textContent = typeLabel(type) + 'で★になったウパたち';
+    title.style.marginBottom = '16px';
+    title.style.fontSize = '18px';
+    content.appendChild(title);
+    
+    deadList.forEach(function(dead) {
+      var item = document.createElement('div');
+      item.style.marginBottom = '12px';
+      item.style.padding = '12px';
+      item.style.border = '1px solid #bfdbfe';
+      item.style.borderRadius = '6px';
+      item.style.background = '#f0f9ff';
+      
+      var itemHeader = document.createElement('div');
+      itemHeader.style.display = 'flex';
+      itemHeader.style.alignItems = 'center';
+      itemHeader.style.gap = '12px';
+      itemHeader.style.marginBottom = '8px';
+      
+      // スプライト表示
+      var spriteDiv = document.createElement('div');
+      if (dead.chimeraTypes) {
+        var fakeAx = { id: 0, type: 'chimera', chimeraTypes: dead.chimeraTypes };
+        var sprite = createChimeraCanvasSprite(fakeAx, 48);
+        spriteDiv.appendChild(sprite);
+      } else {
+        var fakeAx = { id: 0, type: dead.type };
+        var sprite = createPixelArtCanvasSprite(fakeAx, 48);
+        spriteDiv.appendChild(sprite);
+      }
+      itemHeader.appendChild(spriteDiv);
+      
+      var info = document.createElement('div');
+      info.style.flex = '1';
+      var nameText = dead.name || typeLabel(dead.type);
+      info.innerHTML = '<div style="font-weight:bold; font-size:14px;">' + nameText + '</div>';
+      info.innerHTML += '<div style="font-size:12px; color:#64748b; margin-top:4px;">';
+      info.innerHTML += '年齢: ' + dead.age + 'ヶ月';
+      if (dead.sex) info.innerHTML += ' / ' + dead.sex;
+      info.innerHTML += '</div>';
+      info.innerHTML += '<div style="font-size:12px; color:#dc2626; margin-top:4px;">★ ' + dead.deathReason + '（' + dead.deathMonth + 'ヶ月目）</div>';
+      itemHeader.appendChild(info);
+      
+      item.appendChild(itemHeader);
+      content.appendChild(item);
+    });
+    
+    var closeBtn = document.createElement('button');
+    closeBtn.textContent = '閉じる';
+    closeBtn.style.width = '100%';
+    closeBtn.style.padding = '10px';
+    closeBtn.style.marginTop = '16px';
+    closeBtn.style.background = '#64748b';
+    closeBtn.style.color = '#fff';
+    closeBtn.style.border = 'none';
+    closeBtn.style.borderRadius = '6px';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.addEventListener('click', function() {
+      document.body.removeChild(modal);
+    });
+    content.appendChild(closeBtn);
+    
+    modal.appendChild(content);
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+    document.body.appendChild(modal);
   }
 
   function openAchievements() {

@@ -62,7 +62,7 @@ body.game-page {
 .stack-game-area {
   position: relative;
   width: 100%;
-  max-width: 400px;
+  max-width: 100%;
   margin-bottom: 16px;
   background: rgba(0, 0, 0, 0.3);
   border: 3px solid #3b82f6;
@@ -71,6 +71,7 @@ body.game-page {
   display: flex;
   flex-direction: column;
   align-items: center;
+  touch-action: none;
 }
 
 #gameCanvas {
@@ -79,6 +80,10 @@ body.game-page {
   border-radius: 8px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  touch-action: none;
 }
 
 .stack-next-block {

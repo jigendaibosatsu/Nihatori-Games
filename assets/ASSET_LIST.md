@@ -152,12 +152,24 @@
 
 詳細は `/assets/items/README.md` を参照
 
+## アイコンアセット (`/assets/icon/`)
+
+ゲームアイコンを配置しています。
+
+| ファイル名 | 説明 | 使用ゲーム |
+|-----------|------|-----------|
+| `axolotl-shop.png` | ウーパールーパーショップのアイコン | トップページ、feed.json |
+| `mine-tap.png` | 穴掘りタップゲーのアイコン | トップページ |
+| `kassen.png` | 合戦ゲームのアイコン | 合戦、合戦B、feed.json |
+| `shachikuverse.png` | シャチクバースのアイコン | シャチクバース（favicon） |
+
+詳細は `/assets/icon/README.md` を参照
+
 ## その他の共通アセット
 
 | ファイル名 | 説明 | 使用ゲーム |
 |-----------|------|-----------|
 | `logo.png` | サイトロゴ | 全ゲーム |
-| `axolotl-shop-icon.png` | ゲームアイコン | トップページ |
 | `noboku-kun.png` | のぼくくん | 全ゲーム |
 | `slime-kun.png` | スライムくん | 全ゲーム |
 
