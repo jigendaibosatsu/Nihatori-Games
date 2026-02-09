@@ -5,9 +5,16 @@
 ```
 assets/
 ├── README.md (このファイル)
-├── axolotl/          # 共通アセット: ウーパー画像
-├── unko.png          # 共通アセット: うんこ画像
-├── logo.png          # 共通アセット: ロゴ
+├── ASSET_LIST.md     # アセット一覧
+├── asset-helper.js   # アセットパスヘルパー
+├── characters/       # 全キャラクター画像
+│   └── axolotl/      # ウーパー画像（characters内に移動）
+├── ores/             # 鉱石・宝石アセット（統合）
+├── money/            # 硬貨・お札アセット
+├── materials/        # 粘土・石などの素材アセット
+├── weapons/          # 武器アセット
+├── items/            # その他アイテム（うんこなど）
+├── logo.png          # ロゴ
 └── [その他の共通アセット]
 
 games/[game-name]/
@@ -20,9 +27,22 @@ games/[game-name]/
 ### 共通アセット (`/assets/`)
 複数のゲームで使用されるアセット。ルートの `/assets/` ディレクトリに配置。
 
-- **ウーパー画像**: `/assets/axolotl/`
-- **うんこ画像**: `/assets/unko.png`
+- **キャラクター**: `/assets/characters/` - 全キャラクター画像
+  - ウーパー画像: `/assets/characters/axolotl/`
+  - その他のキャラ: `/assets/characters/`（スライム、柴犬など）
+- **鉱石・宝石**: `/assets/ores/` - 鉱石と宝石を統合
+  - 鉱石: 鉄、銀、金、プラチナ、クリスタルなど
+  - 宝石: ルビー、サファイア、エメラルド、ダイヤモンドなど
+  - 粘土・石: 各種粘土と石
+- **通貨**: `/assets/money/` - 硬貨とお札を統合
+  - 硬貨: 金貨、銀貨、銅貨など
+  - お札: 1円〜10000円紙幣
+- **素材**: `/assets/materials/` - 粘土、石、木材など（将来の拡張用）
+- **武器**: `/assets/weapons/` - ツルハシ、剣、斧など
+- **アイテム**: `/assets/items/` - うんこなどその他のアイテム
 - **ロゴ・アイコン**: `/assets/logo.png` など
+
+各フォルダには `README.md` があり、詳細な説明と使用方法が記載されています。
 
 ### ゲーム固有アセット (`games/[game-name]/assets/`)
 特定のゲームでのみ使用されるアセット。
@@ -33,18 +53,25 @@ games/[game-name]/
 
 ```javascript
 // 共通アセットヘルパーを使用（推奨）
-var assetPath = getAssetPath('axolotl/axo_nomal.png');
-// 結果: '/assets/axolotl/axo_nomal.png'
+var assetPath = getAssetPath('characters/axolotl/axo_nomal.png');
+// 結果: '/assets/characters/axolotl/axo_nomal.png'
 
 // または直接パスを指定
-var imagePath = '/assets/axolotl/axo_nomal.png';
+var axolotlPath = '/assets/characters/axolotl/axo_nomal.png';
+var unkoPath = '/assets/items/unko.png';
+var orePath = '/assets/ores/iron_ore.png';
+var gemPath = '/assets/ores/ruby.png';
+var coinPath = '/assets/money/coin_32.png';
 ```
 
 ### HTMLから使用
 
 ```html
 <!-- 共通アセット -->
-<img src="/assets/axolotl/axo_nomal.png" alt="ウーパー" />
+<img src="/assets/characters/axolotl/axo_nomal.png" alt="ウーパー" />
+<img src="/assets/items/unko.png" alt="うんこ" />
+<img src="/assets/ores/iron_ore.png" alt="鉄鉱石" />
+<img src="/assets/money/coin_32.png" alt="硬貨" />
 
 <!-- ゲーム固有アセット -->
 <img src="./assets/game-specific.png" alt="ゲーム固有" />

@@ -169,6 +169,45 @@
     .log-entry.rare { border-color: #3b82f6; color: #93c5fd; }
     .log-entry.epic { border-color: #a78bfa; color: #c4b5fd; }
     .log-entry.legendary { border-color: #fbbf24; color: #fde047; }
+    .log-entry img {
+      width: 16px;
+      height: 16px;
+      vertical-align: middle;
+      margin-right: 4px;
+      display: inline-block;
+    }
+    .reward-animation {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1000;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fbbf24;
+      text-shadow: 0 0 4px rgba(0,0,0,0.8);
+      animation: rewardFloat 2s ease-out forwards;
+    }
+    .reward-animation img {
+      width: 24px;
+      height: 24px;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+    @keyframes rewardFloat {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-80px) scale(1.2);
+      }
+    }
+    .stat-item img {
+      width: 20px;
+      height: 20px;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
     .equipment-grid {
       display: grid;
       gap: 12px;
@@ -318,6 +357,7 @@
       <button class="tab active" onclick="switchTab('mine')">掘る</button>
       <button class="tab" onclick="switchTab('equipment')">装備</button>
       <button class="tab" onclick="switchTab('upgrade')">強化</button>
+      <button class="tab" onclick="switchTab('shop')">ショップ</button>
     </div>
     
     <!-- 掘るタブ -->
@@ -329,6 +369,12 @@
             <div class="block-hp-fill" id="blockHpFill">100/100</div>
           </div>
           <div class="tap-power">掘削力: <span id="tapPowerValue">10</span></div>
+          <div id="toolDurabilityBar" style="margin-top:8px; display:none;">
+            <div style="font-size:11px; color:#aaa; margin-bottom:4px;">ツルハシの耐久力</div>
+            <div class="block-hp-bar" style="height:16px;">
+              <div class="block-hp-fill" id="toolDurabilityFill" style="background:linear-gradient(90deg, #22c55e, #16a34a); font-size:10px;">100/100</div>
+            </div>
+          </div>
         </div>
         <button class="mine-button" id="mineButton" onclick="mine()">掘る</button>
         <div class="log-panel" id="mineLog"></div>
@@ -389,8 +435,32 @@
           <button class="btn" id="critChanceBtn" onclick="upgradeCritChance()">強化する</button>
         </div>
       </div>
+      
+      <!-- レア武器開発解除 -->
+      <div style="margin-top:24px;">
+        <div class="section-title" style="font-size:16px; margin-bottom:12px;">レア武器開発</div>
+        <div id="rareWeaponsList"></div>
+      </div>
       <div style="margin-top:16px; text-align:center;">
         <button class="btn btn-danger" onclick="resetGame()">リセット</button>
+      </div>
+    </div>
+    
+    <!-- ショップタブ -->
+    <div id="shopTab" class="tab-content">
+      <div class="equipment-grid">
+        <div class="equipment-section">
+          <div class="section-title">装備を販売</div>
+          <div id="shopEquipmentList"></div>
+        </div>
+        <div class="equipment-section">
+          <div class="section-title">鉱物を販売</div>
+          <div id="shopOreList"></div>
+        </div>
+        <div class="equipment-section">
+          <div class="section-title">宝石を換金</div>
+          <div id="shopGemList"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -398,10 +468,24 @@
   <script>
     // ===== 定数定義 =====
     const ORE_TYPES = {
-      iron: { name: '鉄', depthRange: [1, 30] },
-      silver: { name: '銀', depthRange: [31, 80] },
-      gold: { name: '金', depthRange: [81, 150] },
-      crystal: { name: 'クリスタル', depthRange: [151, Infinity] }
+      iron: { name: '鉄', depthRange: [1, 30], image: '/assets/ores/iron_ore.png' },
+      silver: { name: '銀', depthRange: [31, 80], image: '/assets/ores/silver_ore.png' },
+      gold: { name: '金', depthRange: [81, 150], image: '/assets/ores/gold_ore.png' },
+      crystal: { name: 'クリスタル', depthRange: [151, Infinity], image: '/assets/ores/cristal_blue.png' }
+    };
+
+    // アセットパスマッピング
+    const ASSET_PATHS = {
+      coin: '/assets/money/coin_32.png',
+      goldCoin: '/assets/money/gold_coins128.png',
+      gems: {
+        ruby: '/assets/ores/ruby.png',
+        sapphire: '/assets/ores/sapphire.png',
+        emerald: '/assets/ores/emerald.png',
+        diamond: '/assets/ores/diamond.png',
+        amethyst: '/assets/ores/amegist.png',
+        topaz: '/assets/ores/topaz.png'
+      }
     };
 
     const RARITY = {
@@ -416,6 +500,103 @@
     const TOOL_UPGRADE_COST_MULT = 1.22;
     const TOOL_UPGRADE_POWER = 2;
 
+    // 基本ツルハシ
+    const BASE_PICKAXE = {
+      id: 'base-pickaxe',
+      type: 'tool',
+      name: '基本ツルハシ',
+      rarity: 'common',
+      durability: 100,
+      maxDurability: 100,
+      stats: {
+        tapPower: 0,
+        tapPowerPercent: 0,
+        goldBonus: 0,
+        oreBonus: 0
+      }
+    };
+
+    // 宝石の種類
+    const GEM_TYPES = {
+      ruby: { name: 'ルビー', basePrice: 100 },
+      sapphire: { name: 'サファイア', basePrice: 120 },
+      emerald: { name: 'エメラルド', basePrice: 150 },
+      diamond: { name: 'ダイヤモンド', basePrice: 200 },
+      amethyst: { name: 'アメジスト', basePrice: 80 },
+      topaz: { name: 'トパーズ', basePrice: 90 }
+    };
+
+    // 宝石のサイズ
+    const GEM_SIZES = {
+      small: { name: '小', multiplier: 1.0 },
+      medium: { name: '中', multiplier: 1.5 },
+      large: { name: '大', multiplier: 2.5 }
+    };
+
+    // レア武器（開発解除可能なツルハシ）
+    const RARE_WEAPONS = {
+      thunder: {
+        name: '雷鳴のツルハシ',
+        rarity: 'rare',
+        requiredOres: { iron: 50, silver: 30 },
+        stats: {
+          tapPower: 15,
+          tapPowerPercent: 20,
+          goldBonus: 10,
+          oreBonus: 10
+        },
+        durability: 200,
+        maxDurability: 200
+      },
+      ice: {
+        name: '氷結のツルハシ',
+        rarity: 'epic',
+        requiredOres: { silver: 50, gold: 30, crystal: 10 },
+        stats: {
+          tapPower: 25,
+          tapPowerPercent: 30,
+          goldBonus: 15,
+          oreBonus: 20
+        },
+        durability: 300,
+        maxDurability: 300
+      },
+      flame: {
+        name: '炎獄のツルハシ',
+        rarity: 'epic',
+        requiredOres: { gold: 50, crystal: 30 },
+        stats: {
+          tapPower: 30,
+          tapPowerPercent: 25,
+          goldBonus: 20,
+          oreBonus: 15
+        },
+        durability: 350,
+        maxDurability: 350
+      },
+      mythic: {
+        name: '神話のツルハシ',
+        rarity: 'legendary',
+        requiredOres: { crystal: 100, gold: 80 },
+        stats: {
+          tapPower: 50,
+          tapPowerPercent: 50,
+          goldBonus: 30,
+          oreBonus: 30
+        },
+        durability: 500,
+        maxDurability: 500
+      }
+    };
+
+    // 鉱物の基本価格
+    const ORE_PRICES = {
+      iron: 5,
+      silver: 15,
+      gold: 50,
+      crystal: 200
+    };
+
     const STORAGE_KEY = 'mine-tap-save';
     const AUTO_SAVE_INTERVAL = 5000; // 5秒
 
@@ -428,7 +609,7 @@
       resources: {
         gold: 0,
         ore: { iron: 0, silver: 0, gold: 0, crystal: 0 },
-        gems: 0
+        gems: [] // 宝石を配列で管理（各宝石に種類とサイズを持つ）
       },
       
       tool: {
@@ -444,18 +625,56 @@
         critChance: 0
       },
       
+      unlockedWeapons: [], // 開発解除済みの武器ID
+      
       lastSaveTime: Date.now()
     };
 
     // ===== 初期化 =====
     function initGame() {
       gameState.depth = 1;
-      gameState.resources = { gold: 0, ore: { iron: 0, silver: 0, gold: 0, crystal: 0 }, gems: 0 };
+      gameState.resources = { gold: 0, ore: { iron: 0, silver: 0, gold: 0, crystal: 0 }, gems: [] };
       gameState.tool = { level: 1, equipped: null };
       gameState.inventory = [];
       gameState.upgrades = { goldBonus: 0, oreBonus: 0, critChance: 0 };
+      gameState.unlockedWeapons = [];
+      
+      // 基本ツルハシを自動装備
+      const basePickaxe = JSON.parse(JSON.stringify(BASE_PICKAXE));
+      basePickaxe.id = 'base-pickaxe-' + Date.now();
+      gameState.tool.equipped = basePickaxe;
+      
       generateBlock();
       updateUI();
+    }
+
+    // 基本ツルハシを生成
+    function createBasePickaxe() {
+      const basePickaxe = JSON.parse(JSON.stringify(BASE_PICKAXE));
+      basePickaxe.id = 'base-pickaxe-' + Date.now();
+      return basePickaxe;
+    }
+
+    // ツルハシが壊れた時の処理（自動装備）
+    function breakTool() {
+      if (!gameState.tool.equipped) return;
+      
+      addLog(`${gameState.tool.equipped.name}が壊れました！`, 'rare');
+      
+      // インベントリから新しいツルハシを探す
+      const toolIndex = gameState.inventory.findIndex(eq => eq.type === 'tool');
+      if (toolIndex >= 0) {
+        // インベントリから装備
+        const newTool = gameState.inventory[toolIndex];
+        gameState.tool.equipped = newTool;
+        gameState.inventory.splice(toolIndex, 1);
+        addLog(`${newTool.name}を自動装備しました`, newTool.rarity);
+      } else {
+        // 基本ツルハシを生成して装備
+        const basePickaxe = createBasePickaxe();
+        gameState.tool.equipped = basePickaxe;
+        addLog('基本ツルハシを自動装備しました', 'common');
+      }
     }
 
     function generateBlock() {
@@ -479,6 +698,12 @@
     }
 
     function mine() {
+      // ツルハシがない場合は基本ツルハシを装備
+      if (!gameState.tool.equipped) {
+        const basePickaxe = createBasePickaxe();
+        gameState.tool.equipped = basePickaxe;
+      }
+      
       const tapPower = calculateTapPower();
       let damage = tapPower;
       
@@ -490,6 +715,19 @@
       }
       
       gameState.currentBlockHp -= damage;
+      
+      // ツルハシの耐久力を減少
+      if (gameState.tool.equipped) {
+        if (gameState.tool.equipped.durability === undefined) {
+          gameState.tool.equipped.durability = gameState.tool.equipped.maxDurability || 100;
+        }
+        gameState.tool.equipped.durability--;
+        
+        // 耐久力が0になったら壊れる
+        if (gameState.tool.equipped.durability <= 0) {
+          breakTool();
+        }
+      }
       
       // ボタン演出
       const btn = document.getElementById('mineButton');
@@ -522,7 +760,11 @@
       const baseGold = 1 + Math.floor(Math.random() * 3) + Math.floor(depth / 5);
       const goldBonus = 1 + gameState.upgrades.goldBonus * 0.05;
       const goldGained = Math.floor(baseGold * goldBonus);
-      gameState.resources.gold += goldGained;
+      if (goldGained > 0) {
+        gameState.resources.gold += goldGained;
+        showRewardAnimation(goldGained, ASSET_PATHS.coin, 'Gold');
+        addLog(`<img src="${ASSET_PATHS.coin}" alt="Gold" />Gold +${goldGained}`, 'rare');
+      }
       
       // Ore獲得
       let oreType = 'iron';
@@ -538,7 +780,9 @@
       const oreGained = baseOre > 0 ? Math.floor(baseOre * oreBonus) : 0;
       if (oreGained > 0) {
         gameState.resources.ore[oreType] += oreGained;
-        addLog(`${ORE_TYPES[oreType].name}x${oreGained}`, 'rare');
+        const oreData = ORE_TYPES[oreType];
+        showRewardAnimation(oreGained, oreData.image, ORE_TYPES[oreType].name);
+        addLog(`<img src="${oreData.image}" alt="${oreData.name}" />${oreData.name}x${oreGained}`, 'rare');
       }
       
       // 装備ドロップ（低確率）
@@ -546,11 +790,54 @@
         dropEquipment();
       }
       
-      // Gemsドロップ（超低確率）
-      if (Math.random() < 0.01) { // 1%でGems
-        gameState.resources.gems += 1;
-        addLog('Gems +1', 'legendary');
+      // 宝石ドロップ（超低確率）
+      if (Math.random() < 0.01) { // 1%で宝石
+        const gemTypes = Object.keys(GEM_TYPES);
+        const gemSizes = Object.keys(GEM_SIZES);
+        const gemType = gemTypes[Math.floor(Math.random() * gemTypes.length)];
+        const gemSize = gemSizes[Math.floor(Math.random() * gemSizes.length)];
+        
+        const gem = {
+          id: Date.now() + Math.random(),
+          type: gemType,
+          size: gemSize
+        };
+        
+        gameState.resources.gems.push(gem);
+        const gemImage = ASSET_PATHS.gems[gemType] || ASSET_PATHS.gems.ruby;
+        showRewardAnimation(1, gemImage, GEM_TYPES[gemType].name, 'legendary');
+        addLog(`<img src="${gemImage}" alt="${GEM_TYPES[gemType].name}" />${GEM_SIZES[gemSize].name}サイズの${GEM_TYPES[gemType].name}を発見！`, 'legendary');
       }
+    }
+
+    // 獲得アイテムのアニメーション表示
+    function showRewardAnimation(amount, imagePath, name, rarity = 'rare') {
+      const mineButton = document.getElementById('mineButton');
+      const rect = mineButton.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      
+      const rewardEl = document.createElement('div');
+      rewardEl.className = 'reward-animation';
+      rewardEl.style.left = x + 'px';
+      rewardEl.style.top = y + 'px';
+      rewardEl.style.color = rarity === 'legendary' ? '#fbbf24' : rarity === 'epic' ? '#a78bfa' : '#60a5fa';
+      
+      const img = document.createElement('img');
+      img.src = imagePath;
+      img.alt = name;
+      rewardEl.appendChild(img);
+      
+      const text = document.createTextNode(`+${amount} ${name}`);
+      rewardEl.appendChild(text);
+      
+      document.body.appendChild(rewardEl);
+      
+      setTimeout(() => {
+        if (rewardEl.parentNode) {
+          rewardEl.parentNode.removeChild(rewardEl);
+        }
+      }, 2000);
     }
 
     function dropEquipment() {
@@ -572,6 +859,8 @@
         type: 'tool',
         name: 'ツルハシ',
         rarity: rarity,
+        durability: 100,
+        maxDurability: 100,
         stats: generateEquipmentStats(rarity)
       };
       
@@ -607,7 +896,12 @@
       if (gameState.tool.equipped) {
         gameState.inventory.push(gameState.tool.equipped);
         gameState.tool.equipped = null;
+        // 装備を外したら基本ツルハシを自動装備
+        const basePickaxe = createBasePickaxe();
+        gameState.tool.equipped = basePickaxe;
         updateUI();
+        addLog('基本ツルハシを自動装備しました', 'common');
+        checkAutoSave();
       }
     }
 
@@ -676,11 +970,33 @@
 
     // ===== UI更新 =====
     function updateUI() {
-      // リソース表示
-      document.getElementById('goldValue').textContent = formatNumber(gameState.resources.gold);
+      // リソース表示（画像付き）
+      const goldEl = document.getElementById('goldValue');
+      goldEl.innerHTML = `<img src="${ASSET_PATHS.coin}" alt="Gold" />${formatNumber(gameState.resources.gold)}`;
+      
+      const oreEl = document.getElementById('oreValue');
       const totalOre = Object.values(gameState.resources.ore).reduce((a, b) => a + b, 0);
-      document.getElementById('oreValue').textContent = totalOre;
-      document.getElementById('gemValue').textContent = gameState.resources.gems;
+      // 最も多い鉱石の画像を表示
+      let maxOreType = 'iron';
+      let maxOreCount = 0;
+      for (const [type, count] of Object.entries(gameState.resources.ore)) {
+        if (count > maxOreCount) {
+          maxOreCount = count;
+          maxOreType = type;
+        }
+      }
+      const oreImage = ORE_TYPES[maxOreType]?.image || ORE_TYPES.iron.image;
+      oreEl.innerHTML = totalOre > 0 ? `<img src="${oreImage}" alt="Ore" />${totalOre}` : '0';
+      
+      const gemEl = document.getElementById('gemValue');
+      const gemCount = Array.isArray(gameState.resources.gems) ? gameState.resources.gems.length : gameState.resources.gems;
+      if (gemCount > 0 && gameState.resources.gems.length > 0) {
+        const firstGem = gameState.resources.gems[0];
+        const gemImage = ASSET_PATHS.gems[firstGem.type] || ASSET_PATHS.gems.ruby;
+        gemEl.innerHTML = `<img src="${gemImage}" alt="Gem" />${gemCount}`;
+      } else {
+        gemEl.textContent = '0';
+      }
       
       // 掘削画面
       document.getElementById('depthValue').textContent = gameState.depth;
@@ -690,11 +1006,38 @@
         `${Math.max(0, Math.floor(gameState.currentBlockHp))}/${gameState.currentBlockMaxHp}`;
       document.getElementById('tapPowerValue').textContent = calculateTapPower();
       
+      // ツルハシの耐久力表示
+      const toolDurabilityBar = document.getElementById('toolDurabilityBar');
+      const toolDurabilityFill = document.getElementById('toolDurabilityFill');
+      if (gameState.tool.equipped && gameState.tool.equipped.durability !== undefined) {
+        toolDurabilityBar.style.display = 'block';
+        const durability = gameState.tool.equipped.durability;
+        const maxDurability = gameState.tool.equipped.maxDurability || 100;
+        const durabilityPercent = (durability / maxDurability) * 100;
+        toolDurabilityFill.style.width = durabilityPercent + '%';
+        toolDurabilityFill.textContent = `${Math.max(0, Math.floor(durability))}/${maxDurability}`;
+        
+        // 耐久力が低い場合は色を変える
+        if (durabilityPercent < 20) {
+          toolDurabilityFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+        } else if (durabilityPercent < 50) {
+          toolDurabilityFill.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+        } else {
+          toolDurabilityFill.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
+        }
+      } else {
+        toolDurabilityBar.style.display = 'none';
+      }
+      
       // 装備画面
       updateEquipmentUI();
       
       // 強化画面
       updateUpgradeUI();
+      updateRareWeaponsUI();
+      
+      // ショップ画面
+      updateShopUI();
     }
 
     function updateEquipmentUI() {
@@ -734,6 +1077,16 @@
       if (stats.goldBonus) statsText += `Gold+${stats.goldBonus}% `;
       if (stats.oreBonus) statsText += `Ore+${stats.oreBonus}% `;
       
+      // 耐久力表示
+      let durabilityText = '';
+      if (equipment.durability !== undefined && equipment.maxDurability !== undefined) {
+        const durabilityPercent = (equipment.durability / equipment.maxDurability) * 100;
+        let durabilityColor = '#22c55e';
+        if (durabilityPercent < 20) durabilityColor = '#ef4444';
+        else if (durabilityPercent < 50) durabilityColor = '#f59e0b';
+        durabilityText = `<div style="font-size:10px; color:${durabilityColor}; margin-top:4px;">耐久力: ${Math.max(0, Math.floor(equipment.durability))}/${equipment.maxDurability}</div>`;
+      }
+      
       const card = document.createElement('div');
       card.className = `equipment-card ${equipment.rarity} ${isEquipped ? 'equipped' : ''}`;
       card.innerHTML = `
@@ -744,6 +1097,7 @@
           </div>
         </div>
         <div class="equipment-stats">${statsText || 'ステータスなし'}</div>
+        ${durabilityText}
       `;
       
       if (isEquipped) {
@@ -759,6 +1113,7 @@
             gameState.inventory.splice(index, 1);
             updateUI();
             addLog(`${equipment.name} を装備しました`, equipment.rarity);
+            checkAutoSave();
           }
         };
       }
@@ -793,11 +1148,303 @@
       document.getElementById('critChanceBtn').disabled = totalOre < critCost;
     }
 
+    function updateRareWeaponsUI() {
+      const weaponsList = document.getElementById('rareWeaponsList');
+      weaponsList.innerHTML = '';
+      
+      Object.entries(RARE_WEAPONS).forEach(([weaponId, weaponData]) => {
+        const isUnlocked = gameState.unlockedWeapons.includes(weaponId);
+        const card = document.createElement('div');
+        card.className = `upgrade-card ${weaponData.rarity}`;
+        
+        // 必要鉱物の表示
+        let requiredOresText = '';
+        const requiredOres = Object.entries(weaponData.requiredOres);
+        requiredOres.forEach(([oreType, amount]) => {
+          const current = gameState.resources.ore[oreType] || 0;
+          const hasEnough = current >= amount;
+          const oreData = ORE_TYPES[oreType];
+        requiredOresText += `<div style="color:${hasEnough ? '#22c55e' : '#ef4444'}; font-size:11px; display:flex; align-items:center;">
+          <img src="${oreData.image}" alt="${oreData.name}" style="width:16px; height:16px; margin-right:4px;" />
+          ${oreData.name}: ${current}/${amount}
+        </div>`;
+        });
+        
+        // ステータス表示
+        const stats = weaponData.stats;
+        let statsText = '';
+        if (stats.tapPower) statsText += `掘削力+${stats.tapPower} `;
+        if (stats.tapPowerPercent) statsText += `掘削力+${stats.tapPowerPercent}% `;
+        if (stats.goldBonus) statsText += `Gold+${stats.goldBonus}% `;
+        if (stats.oreBonus) statsText += `Ore+${stats.oreBonus}% `;
+        statsText += `耐久力: ${weaponData.durability}`;
+        
+        // 必要鉱物が揃っているかチェック
+        const canUnlock = requiredOres.every(([oreType, amount]) => 
+          (gameState.resources.ore[oreType] || 0) >= amount
+        );
+        
+        card.innerHTML = `
+          <div class="upgrade-header">
+            <div class="upgrade-name" style="color:${RARITY[weaponData.rarity].color}">${weaponData.name}</div>
+            <div class="equipment-rarity" style="background:${RARITY[weaponData.rarity].color}20; color:${RARITY[weaponData.rarity].color}; font-size:11px;">
+              ${RARITY[weaponData.rarity].name}
+            </div>
+          </div>
+          <div class="upgrade-desc" style="margin-bottom:8px;">${statsText}</div>
+          <div style="margin-bottom:8px;">
+            <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">必要鉱物:</div>
+            ${requiredOresText}
+          </div>
+          ${isUnlocked ? 
+            '<div style="color:#22c55e; font-size:12px; margin-bottom:8px;">✓ 開発済み</div>' :
+            `<button class="btn" ${canUnlock ? '' : 'disabled'} onclick="unlockWeapon('${weaponId}')">開発解除</button>`
+          }
+        `;
+        weaponsList.appendChild(card);
+      });
+    }
+
+    function unlockWeapon(weaponId) {
+      const weaponData = RARE_WEAPONS[weaponId];
+      if (!weaponData) return;
+      
+      if (gameState.unlockedWeapons.includes(weaponId)) {
+        alert('この武器は既に開発済みです！');
+        return;
+      }
+      
+      // 必要鉱物が揃っているかチェック
+      const requiredOres = Object.entries(weaponData.requiredOres);
+      const canUnlock = requiredOres.every(([oreType, amount]) => 
+        (gameState.resources.ore[oreType] || 0) >= amount
+      );
+      
+      if (!canUnlock) {
+        alert('必要鉱物が足りません！');
+        return;
+      }
+      
+      // 確認
+      let requiredOresText = '';
+      requiredOres.forEach(([oreType, amount]) => {
+        requiredOresText += `${ORE_TYPES[oreType].name}x${amount} `;
+      });
+      
+      if (!confirm(`${weaponData.name}を開発解除しますか？\n必要鉱物: ${requiredOresText}`)) {
+        return;
+      }
+      
+      // 鉱物を消費
+      requiredOres.forEach(([oreType, amount]) => {
+        gameState.resources.ore[oreType] -= amount;
+      });
+      
+      // 武器を開発解除
+      gameState.unlockedWeapons.push(weaponId);
+      
+      // 武器をインベントリに追加
+      const weapon = {
+        id: weaponId + '-' + Date.now(),
+        type: 'tool',
+        name: weaponData.name,
+        rarity: weaponData.rarity,
+        durability: weaponData.durability,
+        maxDurability: weaponData.maxDurability,
+        stats: JSON.parse(JSON.stringify(weaponData.stats))
+      };
+      
+      gameState.inventory.push(weapon);
+      
+      addLog(`${weaponData.name}を開発解除しました！`, weaponData.rarity);
+      updateUI();
+      checkAutoSave();
+    }
+
+    // ===== ショップ機能 =====
+    function calculateEquipmentPrice(equipment) {
+      const rarityMultipliers = {
+        common: 1,
+        rare: 3,
+        epic: 8,
+        legendary: 20
+      };
+      const multiplier = rarityMultipliers[equipment.rarity] || 1;
+      
+      const stats = equipment.stats || {};
+      let statValue = 0;
+      statValue += (stats.tapPower || 0) * 10;
+      statValue += (stats.tapPowerPercent || 0) * 5;
+      statValue += (stats.goldBonus || 0) * 8;
+      statValue += (stats.oreBonus || 0) * 8;
+      
+      // 耐久力も価格に影響
+      if (equipment.durability !== undefined && equipment.maxDurability !== undefined) {
+        const durabilityRatio = equipment.durability / equipment.maxDurability;
+        statValue = Math.floor(statValue * durabilityRatio);
+      }
+      
+      return Math.floor(statValue * multiplier);
+    }
+
+    function calculateOrePrice(oreType, quantity) {
+      const basePrice = ORE_PRICES[oreType] || 0;
+      // 数量に応じた価格（数量が多いほど単価が少し上がる）
+      const quantityMultiplier = 1 + (quantity - 1) * 0.1;
+      return Math.floor(basePrice * quantity * quantityMultiplier);
+    }
+
+    function calculateGemPrice(gem) {
+      const gemType = GEM_TYPES[gem.type];
+      const gemSize = GEM_SIZES[gem.size];
+      if (!gemType || !gemSize) return 0;
+      
+      return Math.floor(gemType.basePrice * gemSize.multiplier);
+    }
+
+    function sellEquipment(equipment) {
+      const price = calculateEquipmentPrice(equipment);
+      const index = gameState.inventory.findIndex(eq => eq.id === equipment.id);
+      if (index >= 0) {
+        gameState.resources.gold += price;
+        gameState.inventory.splice(index, 1);
+        addLog(`<img src="${ASSET_PATHS.coin}" alt="Gold" />${equipment.name}を${formatNumber(price)}Goldで販売しました`, equipment.rarity);
+        updateUI();
+        checkAutoSave();
+      }
+    }
+
+    function sellOre(oreType, quantity) {
+      if (gameState.resources.ore[oreType] < quantity) {
+        alert('鉱物が足りません！');
+        return;
+      }
+      
+      const price = calculateOrePrice(oreType, quantity);
+      gameState.resources.ore[oreType] -= quantity;
+      gameState.resources.gold += price;
+      const oreData = ORE_TYPES[oreType];
+      addLog(`<img src="${oreData.image}" alt="${oreData.name}" />${oreData.name}x${quantity}を<img src="${ASSET_PATHS.coin}" alt="Gold" />${formatNumber(price)}Goldで販売しました`, 'rare');
+      updateUI();
+      checkAutoSave();
+    }
+
+    function sellGem(gem) {
+      const price = calculateGemPrice(gem);
+      const index = gameState.resources.gems.findIndex(g => g.id === gem.id);
+      if (index >= 0) {
+        gameState.resources.gold += price;
+        gameState.resources.gems.splice(index, 1);
+        const gemImage = ASSET_PATHS.gems[gem.type] || ASSET_PATHS.gems.ruby;
+        addLog(`<img src="${gemImage}" alt="${GEM_TYPES[gem.type].name}" />${GEM_SIZES[gem.size].name}サイズの${GEM_TYPES[gem.type].name}を<img src="${ASSET_PATHS.coin}" alt="Gold" />${formatNumber(price)}Goldで換金しました`, 'legendary');
+        updateUI();
+        checkAutoSave();
+      }
+    }
+
+    function updateShopUI() {
+      // 装備リスト
+      const equipmentList = document.getElementById('shopEquipmentList');
+      equipmentList.innerHTML = '';
+      if (gameState.inventory.length === 0) {
+        equipmentList.innerHTML = '<div style="color:#666; padding:20px; text-align:center;">販売できる装備がありません</div>';
+      } else {
+        const tools = gameState.inventory.filter(eq => eq.type === 'tool');
+        if (tools.length === 0) {
+          equipmentList.innerHTML = '<div style="color:#666; padding:20px; text-align:center;">販売できるツルハシがありません</div>';
+        } else {
+          tools.forEach(eq => {
+            const card = document.createElement('div');
+            card.className = `equipment-card ${eq.rarity}`;
+            const price = calculateEquipmentPrice(eq);
+            const rarity = RARITY[eq.rarity];
+            card.innerHTML = `
+              <div class="equipment-header">
+                <div class="equipment-name">${eq.name}</div>
+                <div class="equipment-rarity" style="background:${rarity.color}20; color:${rarity.color}">
+                  ${rarity.name}
+                </div>
+              </div>
+              <div class="equipment-stats" style="margin-bottom:8px;">価格: ${formatNumber(price)}Gold</div>
+              <button class="btn" style="padding:6px; font-size:12px;" onclick="sellEquipmentById('${eq.id}')">販売</button>
+            `;
+            equipmentList.appendChild(card);
+          });
+        }
+      }
+      
+      // 鉱物リスト
+      const oreList = document.getElementById('shopOreList');
+      oreList.innerHTML = '';
+      const oreTypes = Object.keys(ORE_TYPES);
+      oreTypes.forEach(oreType => {
+        const quantity = gameState.resources.ore[oreType];
+        if (quantity > 0) {
+          const card = document.createElement('div');
+          card.className = 'equipment-card';
+          const price1 = calculateOrePrice(oreType, 1);
+          const price10 = calculateOrePrice(oreType, 10);
+          const priceAll = calculateOrePrice(oreType, quantity);
+          const oreData = ORE_TYPES[oreType];
+          card.innerHTML = `
+            <div class="equipment-header">
+              <div class="equipment-name" style="display:flex; align-items:center;">
+                <img src="${oreData.image}" alt="${oreData.name}" style="width:24px; height:24px; margin-right:6px;" />
+                ${oreData.name}
+              </div>
+              <div style="font-size:12px; color:#aaa;">所持: ${quantity}個</div>
+            </div>
+            <div class="equipment-stats" style="margin-bottom:8px;">
+              <div><img src="${ASSET_PATHS.coin}" alt="Gold" style="width:14px; height:14px; vertical-align:middle;" /> 1個: ${formatNumber(price1)}Gold</div>
+              <div><img src="${ASSET_PATHS.coin}" alt="Gold" style="width:14px; height:14px; vertical-align:middle;" /> 10個: ${formatNumber(price10)}Gold</div>
+              <div><img src="${ASSET_PATHS.coin}" alt="Gold" style="width:14px; height:14px; vertical-align:middle;" /> 全量: ${formatNumber(priceAll)}Gold</div>
+            </div>
+            <div style="display:flex; gap:4px;">
+              <button class="btn" style="flex:1; padding:6px; font-size:11px;" onclick="sellOreByType('${oreType}', 1)">1個販売</button>
+              <button class="btn" style="flex:1; padding:6px; font-size:11px;" onclick="sellOreByType('${oreType}', 10)">10個販売</button>
+              <button class="btn" style="flex:1; padding:6px; font-size:11px;" onclick="sellOreByType('${oreType}', ${quantity})">全量販売</button>
+            </div>
+          `;
+          oreList.appendChild(card);
+        }
+      });
+      if (oreList.innerHTML === '') {
+        oreList.innerHTML = '<div style="color:#666; padding:20px; text-align:center;">販売できる鉱物がありません</div>';
+      }
+      
+      // 宝石リスト
+      const gemList = document.getElementById('shopGemList');
+      gemList.innerHTML = '';
+      if (!Array.isArray(gameState.resources.gems) || gameState.resources.gems.length === 0) {
+        gemList.innerHTML = '<div style="color:#666; padding:20px; text-align:center;">換金できる宝石がありません</div>';
+      } else {
+        gameState.resources.gems.forEach(gem => {
+          const card = document.createElement('div');
+          card.className = 'equipment-card legendary';
+          const price = calculateGemPrice(gem);
+          const gemImage = ASSET_PATHS.gems[gem.type] || ASSET_PATHS.gems.ruby;
+          card.innerHTML = `
+            <div class="equipment-header">
+              <div class="equipment-name" style="display:flex; align-items:center;">
+                <img src="${gemImage}" alt="${GEM_TYPES[gem.type].name}" style="width:24px; height:24px; margin-right:6px;" />
+                ${GEM_SIZES[gem.size].name}サイズの${GEM_TYPES[gem.type].name}
+              </div>
+            </div>
+            <div class="equipment-stats" style="margin-bottom:8px;">
+              <img src="${ASSET_PATHS.coin}" alt="Gold" style="width:14px; height:14px; vertical-align:middle;" /> 価格: ${formatNumber(price)}Gold
+            </div>
+            <button class="btn" style="padding:6px; font-size:12px;" onclick="sellGemById('${gem.id}')">換金</button>
+          `;
+          gemList.appendChild(card);
+        });
+      }
+    }
+
     function addLog(message, type = '') {
       const logPanel = document.getElementById('mineLog');
       const entry = document.createElement('div');
       entry.className = 'log-entry' + (type ? ' ' + type : '');
-      entry.textContent = message;
+      entry.innerHTML = message; // innerHTMLに変更して画像を表示可能に
       logPanel.appendChild(entry);
       logPanel.scrollTop = logPanel.scrollHeight;
       
@@ -846,6 +1493,39 @@
         if (saved) {
           const data = JSON.parse(saved);
           gameState = { ...gameState, ...data };
+          
+          // 旧バージョンのセーブデータとの互換性
+          if (!Array.isArray(gameState.resources.gems)) {
+            gameState.resources.gems = [];
+          }
+          if (!Array.isArray(gameState.unlockedWeapons)) {
+            gameState.unlockedWeapons = [];
+          }
+          
+          // 装備中のツルハシに耐久力がない場合は追加
+          if (gameState.tool.equipped && gameState.tool.equipped.durability === undefined) {
+            gameState.tool.equipped.durability = gameState.tool.equipped.maxDurability || 100;
+            if (!gameState.tool.equipped.maxDurability) {
+              gameState.tool.equipped.maxDurability = 100;
+            }
+          }
+          
+          // インベントリの装備にも耐久力を追加
+          gameState.inventory.forEach(eq => {
+            if (eq.type === 'tool' && eq.durability === undefined) {
+              eq.durability = eq.maxDurability || 100;
+              if (!eq.maxDurability) {
+                eq.maxDurability = 100;
+              }
+            }
+          });
+          
+          // ツルハシがない場合は基本ツルハシを装備
+          if (!gameState.tool.equipped) {
+            const basePickaxe = createBasePickaxe();
+            gameState.tool.equipped = basePickaxe;
+          }
+          
           updateUI();
           addLog('ゲームを読み込みました', 'rare');
         }
@@ -885,6 +1565,35 @@
       window.addEventListener('beforeunload', saveGame);
     }
 
+    // ショップ用のグローバル関数
+    function sellEquipmentById(id) {
+      const equipment = gameState.inventory.find(eq => eq.id === id);
+      if (equipment) {
+        if (confirm(`${equipment.name}を${formatNumber(calculateEquipmentPrice(equipment))}Goldで販売しますか？`)) {
+          sellEquipment(equipment);
+        }
+      }
+    }
+
+    function sellOreByType(oreType, quantity) {
+      if (gameState.resources.ore[oreType] < quantity) {
+        alert('鉱物が足りません！');
+        return;
+      }
+      if (confirm(`${ORE_TYPES[oreType].name}x${quantity}を${formatNumber(calculateOrePrice(oreType, quantity))}Goldで販売しますか？`)) {
+        sellOre(oreType, quantity);
+      }
+    }
+
+    function sellGemById(id) {
+      const gem = gameState.resources.gems.find(g => g.id === id);
+      if (gem) {
+        if (confirm(`${GEM_SIZES[gem.size].name}サイズの${GEM_TYPES[gem.type].name}を${formatNumber(calculateGemPrice(gem))}Goldで換金しますか？`)) {
+          sellGem(gem);
+        }
+      }
+    }
+
     // グローバル関数（HTMLから呼び出すため）
     window.mine = mine;
     window.upgradeTool = upgradeTool;
@@ -894,6 +1603,10 @@
     window.unequipTool = unequipTool;
     window.switchTab = switchTab;
     window.resetGame = resetGame;
+    window.sellEquipmentById = sellEquipmentById;
+    window.sellOreByType = sellOreByType;
+    window.sellGemById = sellGemById;
+    window.unlockWeapon = unlockWeapon;
 
     init();
   </script>
