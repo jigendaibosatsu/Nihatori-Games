@@ -594,6 +594,7 @@
     obtainedTypes: {},  // 獲得した種類（図鑑用）
     achievements: {},  // 実績 {id: true}
     nameCounts: {},  // 種類ごとの名前カウント {type: count}
+    usedNames: {},  // 使用済みの名前 {fullName: true} 重複チェック用
     shopName: 'ウーパールーパーショップ',  // ショップ名
     equipment: {  // 自動設備（レベル制）最初から3槽 = tankLevel2
       autoFeeder: false,
@@ -707,10 +708,74 @@
   }
 
   // ランダムな人名漢字のリスト
-  var nameKanjiList = ['太', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '郎', '助', '介', '吉', '次', '三', '蔵', '平', '八', '衛', '門', '左', '右', '衛', '門', '兵', '衛', '之', '助', '作', '之', '助', '治', '郎', '太', '郎', '次', '郎', '三', '郎', '四', '郎', '五', '郎', '六', '郎', '七', '郎', '八', '郎', '九', '郎', '十', '郎', '一', '郎', '二', '郎'];
+  // 各モーフの初期名A（種限定）
+  var morphInitialNameA = {
+    'nomal': 'リュウ',
+    'marble': 'マー',
+    'albino': 'アル',
+    'gold': 'ゴル',
+    'black': 'クロ',
+    'superblack': 'スミ',
+    'yellow': 'イエ',
+    'dalmatian': 'ダル',
+    'goldblackeye': 'カネ',
+    'copper': 'コパ',
+    'chimera': 'キメ'
+  };
+
+  // オスのA候補（通字候補）
+  var maleNameElementA = ['義', '忠', '信', '直', '正', '清', '廉', '篤', '慎', '恭', '勇', '武', '剛', '猛', '勝', '威', '盛', '重', '堅', '吉', '昌', '久', '永', '長', '泰', '安', '保', '福', '寿', '政', '治', '成', '功', '元', '光', '顕', '章', '宣', '隆', '一', '龍', '虎', '家', '親', '綱', '経', '時', '頼', '兼', '定', '朝', '晴', '景', '秀', '宗', '氏', '房', '連', '満', '教', '敬', '仁', '礼', '誠', '寛', '良', '賢', '純', '征', '鎮', '衛', '統', '守', '督', '令', '明', '昭', '春', '秋', '興', '栄', '豊', '広', '弘', '祐', '祥', '延', '充', '恒', '尚', '基', '実', '康', '克', '照', '輝', '利', '英', '寧', '順', '則', '典', '規', '倫', '道', '方', '周', '通', '仲', '冬', '高', '夏'];
+
+  // オスのB候補（二字以上のB、通字候補）
+  var maleNameElementB = ['千代', '太郎', '一郎', '次郎', '二郎', '三郎', '四郎', '五郎', '六郎', '七郎', '八郎', '九郎', '十郎', '之助', '助', '右衛門', '左衛門', '兵衛', '之進', '太夫', '丸'];
+
+  // メスのB候補（通字候補）
+  var femaleNameElementB = ['子', '美', '女', '香', '枝', '恵', '絵', '江', '代', '世', '奈', '菜', '那', '南', '里', '理', '梨', '莉', '花', '華', '葉', '羽', '乃', '野', '緒', '栄', '鶴', '富', '登', '志', '千', '百', '万', '愛', '優', '萌', '咲', '陽', '結', '彩', '音', '詩', '心', '桜', '桃', '楓', '葵', '梅', '菫', '蘭', '蓮', '椿', '柚', '梢', '桂', '橙', '椛', '芽', '苗', '茜', '菊', '萩', '藤', '合', '実', '穂', '潮', '波', '渚', '汐', '海', '空', '月', '星', '雪', '風', '光', '霞', '露', '雫', '霧', '雲', '虹', '麗', '綺', '翠', '碧', '晶', '玉', '珠', '瑠', '琴', '歌', '和', '雅', '絹', '綾', '織', '夢', '希', '望', '真', '幸', '祈', '願', '温', '柔', '縁', '笑', '百合'];
+
+  // 名前の重複チェック関数
+  function isNameUsed(fullName) {
+    if (!state.usedNames) state.usedNames = {};
+    return state.usedNames[fullName] === true;
+  }
+
+  // 名前を登録する関数
+  function registerName(fullName) {
+    if (!state.usedNames) state.usedNames = {};
+    state.usedNames[fullName] = true;
+  }
+
+  // 重複を避けて名前を生成する関数
+  function generateUniqueName(baseName, maxAttempts) {
+    maxAttempts = maxAttempts || 100;
+    var fullName = baseName;
+    var attempt = 0;
+    
+    while (isNameUsed(fullName) && attempt < maxAttempts) {
+      attempt++;
+      if (attempt === 1) {
+        fullName = baseName + '2世';
+      } else if (attempt === 2) {
+        fullName = baseName + '3世';
+      } else {
+        fullName = baseName + (attempt + 1) + '世';
+      }
+    }
+    
+    registerName(fullName);
+    return fullName;
+  }
+
+  // ランダムにB要素を選択（性別に応じて）
+  function getRandomBElement(sex) {
+    if (sex === 'オス') {
+      return maleNameElementB[Math.floor(Math.random() * maleNameElementB.length)];
+    } else {
+      return femaleNameElementB[Math.floor(Math.random() * femaleNameElementB.length)];
+    }
+  }
 
   // 名前生成関数（要素A/Bシステム）
-  function generateDefaultName(type, parent1Id, parent2Id, isFirstChild) {
+  function generateDefaultName(type, parent1Id, parent2Id, isFirstChild, sex) {
     var result = {
       nameElementA: null,
       nameElementB: null,
@@ -718,6 +783,11 @@
       isHereditaryB: false,
       name: null
     };
+    
+    // 性別が指定されていない場合はランダムに決定
+    if (!sex) {
+      sex = Math.random() < 0.5 ? 'オス' : 'メス';
+    }
     
     // 繁殖の場合
     if (parent1Id && parent2Id) {
@@ -739,18 +809,22 @@
       if (!p2 && axolotlRegistry[parent2Id]) p2 = axolotlRegistry[parent2Id];
       
       if (p1 && p2) {
-        // 父（オス）の通字を引き継ぐ
+        // 父（オス）と母（メス）を特定
         var maleParent = p1.sex === 'オス' ? p1 : p2;
         var femaleParent = p1.sex === 'メス' ? p1 : p2;
         
-        // 父の通字を確認
+        // 父の通字を確認（AまたはB）
         var maleHereditaryA = maleParent.isHereditaryA && maleParent.nameElementA;
         var maleHereditaryB = maleParent.isHereditaryB && maleParent.nameElementB;
         
-        // 両方に通字がある場合はランダムに選択
+        // 母のB要素を確認（メスのBは通字候補）
+        var femaleB = femaleParent.nameElementB;
+        
+        // 通字の継承ルール：父のAまたはBの通字を継承（両方ある場合はランダム）
         var inheritedHereditary = null;
         var inheritedPosition = null;
         if (maleHereditaryA && maleHereditaryB) {
+          // 両方に通字がある場合はランダムに選択
           if (Math.random() < 0.5) {
             inheritedHereditary = maleHereditaryA;
             inheritedPosition = 'A';
@@ -766,81 +840,65 @@
           inheritedPosition = 'B';
         }
         
-        // 通字を設定
+        // 名前を構成
         if (inheritedPosition === 'A') {
+          // A位置に父の通字を継承
           result.nameElementA = inheritedHereditary;
           result.isHereditaryA = true;
-          // B位置にも通字が入る可能性（ランダム）
-          if (maleParent.isHereditaryB && Math.random() < 0.5) {
-            result.nameElementB = maleParent.nameElementB;
+          
+          // B位置：父のB通字が両方可能な場合、ランダムで継承する可能性
+          if (maleHereditaryB && Math.random() < 0.5) {
+            result.nameElementB = maleHereditaryB;
             result.isHereditaryB = true;
           } else {
-            // 母親から要素を引き継ぐ
-            result.nameElementB = femaleParent.nameElementB || femaleParent.nameElementA || nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
+            // 母のB要素を優先的に使用、なければランダム
+            result.nameElementB = femaleB || getRandomBElement(sex);
             result.isHereditaryB = false;
           }
         } else if (inheritedPosition === 'B') {
+          // B位置に父の通字を継承
           result.nameElementB = inheritedHereditary;
           result.isHereditaryB = true;
-          // A位置にも通字が入る可能性（ランダム）
-          if (maleParent.isHereditaryA && Math.random() < 0.5) {
-            result.nameElementA = maleParent.nameElementA;
+          
+          // A位置：父のA通字が両方可能な場合、ランダムで継承する可能性
+          if (maleHereditaryA && Math.random() < 0.5) {
+            result.nameElementA = maleHereditaryA;
             result.isHereditaryA = true;
           } else {
-            // 母親から要素を引き継ぐ
-            result.nameElementA = femaleParent.nameElementA || femaleParent.nameElementB || nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
+            // 母のA要素を優先的に使用、なければランダム（オスのA候補から）
+            result.nameElementA = femaleParent.nameElementA || maleNameElementA[Math.floor(Math.random() * maleNameElementA.length)];
             result.isHereditaryA = false;
           }
         } else {
-          // 通字がない場合は通常の名付け
-          result.nameElementA = femaleParent.nameElementA || nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
-          result.nameElementB = femaleParent.nameElementB || nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
+          // 通字がない場合：母から継承、なければランダム
+          result.nameElementA = femaleParent.nameElementA || maleNameElementA[Math.floor(Math.random() * maleNameElementA.length)];
+          result.nameElementB = femaleB || getRandomBElement(sex);
+          result.isHereditaryA = false;
+          result.isHereditaryB = false;
         }
       }
     } else {
-      // 通常の購入・生成の場合
-      var typeNameMap = {
-        'nomal': { first: '白王', prefix: '白' },
-        'albino': { first: '純真', prefix: '純' },
-        'marble': { first: '斑尾', prefix: '斑' },
-        'black': { first: '濃墨', prefix: '墨' },
-        'superblack': { first: '黒王', prefix: '黒' },
-        'gold': { first: '黄金', prefix: '金' },
-        'copper': { first: '赤銅', prefix: '銅' },
-        'goldblackeye': { first: '金塊', prefix: '金' },
-        'chimera': { first: '君麿', prefix: '君' },
-        'yellow': { first: '黄色', prefix: '黄' },
-        'dalmatian': { first: '斑王', prefix: '斑' }
-      };
-      
-      var nameInfo = typeNameMap[type] || { first: '白王', prefix: '白' };
-      
-      // カウントを取得・更新
-      if (!state.nameCounts[type]) {
-        state.nameCounts[type] = 0;
+      // 通常の購入・生成の場合：モーフの初期名A + ランダムなB
+      var initialA = morphInitialNameA[type];
+      if (!initialA) {
+        // モーフが定義されていない場合はデフォルト
+        initialA = 'リュウ';
       }
-      state.nameCounts[type]++;
       
-      if (state.nameCounts[type] === 1) {
-        // 最初の個体：要素A/Bに分割
-        var firstName = nameInfo.first;
-        if (firstName.length >= 2) {
-          result.nameElementA = firstName.substring(0, 1);
-          result.nameElementB = firstName.substring(1);
-        } else {
-          result.nameElementA = null;
-          result.nameElementB = firstName;
-        }
-      } else {
-        // 2匹目以降：プレフィックス + ランダムな漢字
-        result.nameElementA = nameInfo.prefix;
-        result.nameElementB = nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
-      }
+      result.nameElementA = initialA;
+      result.isHereditaryA = false; // 初期名Aは通字ではない（種限定）
+      result.nameElementB = getRandomBElement(sex);
+      result.isHereditaryB = false;
     }
     
     // 名前を結合
     result.name = (result.nameElementA || '') + (result.nameElementB || '');
     if (result.name === '') result.name = null;
+    
+    // 重複チェックと調整
+    if (result.name) {
+      result.name = generateUniqueName(result.name);
+    }
     
     return result;
   }
@@ -903,6 +961,9 @@
     var seed = Math.floor(Math.random() * 1000000);
     var variation = generateIndividualVariation(type, seed);
     
+    // 性別を決定（名前生成の前に必要）
+    var sex = Math.random() < 0.5 ? 'オス' : 'メス';
+    
     // 名前を生成（繁殖の場合は親の情報を使用）
     var isFirstChild = false;
     if (parent1Id && parent2Id) {
@@ -929,7 +990,7 @@
       isFirstChild = (siblingCount === 0);
     }
     
-    var defaultNameResult = generateDefaultName(type, parent1Id || null, parent2Id || null, isFirstChild);
+    var defaultNameResult = generateDefaultName(type, parent1Id || null, parent2Id || null, isFirstChild, sex);
     var defaultName = defaultNameResult.name;
     
     // 苗字を継承（父から）
@@ -1021,7 +1082,7 @@
       size: size,
       health: clamp(70 + randInt(-10, 10), 40, MAX_HEALTH),
       type: type,
-      sex: Math.random() < 0.5 ? 'オス' : 'メス',
+      sex: sex,
       shade: shade,
       injured: false,
       hunger: age >= 12 ? 80 : 70,
@@ -1046,6 +1107,11 @@
     // キメラの場合はchimeraTypesを保存
     if (type === 'chimera' && chimeraTypes) {
       ax.chimeraTypes = chimeraTypes;
+    }
+    
+    // 名前を登録（重複チェック用）
+    if (ax.name) {
+      registerName(ax.name);
     }
     
     // レジストリに登録（家系図用のスナップショット）
@@ -1576,9 +1642,9 @@
       var isHereditaryA = hereditaryACheckbox.checked;
       var isHereditaryB = hereditaryBCheckbox.checked;
       
-      // Aが空欄でBに通字がある場合、Aにランダムな要素を入れる
+      // Aが空欄でBに通字がある場合、Aにランダムな要素を入れる（オスのA候補から）
       if (!elementA && elementB && isHereditaryB) {
-        elementA = nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
+        elementA = maleNameElementA[Math.floor(Math.random() * maleNameElementA.length)];
         elementAInput.value = elementA;
       }
       
@@ -1586,6 +1652,17 @@
       if (newName === '') newName = null;
       
       if (currentAx) {
+        // 古い名前を削除（重複チェック用）
+        var oldName = currentAx.name;
+        if (oldName && state.usedNames && state.usedNames[oldName]) {
+          delete state.usedNames[oldName];
+        }
+        
+        // 新しい名前を登録（重複チェック）
+        if (newName) {
+          newName = generateUniqueName(newName);
+        }
+        
         currentAx.name = newName;
         currentAx.nameElementA = elementA || null;
         currentAx.nameElementB = elementB || null;
@@ -5191,6 +5268,7 @@
     state.obtainedTypes = {};
     state.achievements = {};
     state.nameCounts = {};  // 名前カウントをリセット
+    state.usedNames = {};  // 使用済みの名前をリセット
     state.shopName = 'ウーパールーパーショップ';  // ショップ名をリセット（後で最初のウパの名前で更新される）
     state.shopStockDaily = {};  // 日ごとの在庫状態をリセット
     state.initialNamingMessageShown = false;  // 最初のウパの名前付けメッセージ表示フラグをリセット
@@ -5203,10 +5281,29 @@
     state.shopSaleItems = [];  // ショップセール対象商品をリセット
     initTanks();
     
-    // 初期個体を図鑑に追加
+    // 初期個体を図鑑に追加し、名前を登録
     state.tanks.forEach(function(tank) {
       if (tank.axolotl) {
         state.obtainedTypes[tank.axolotl.type] = true;
+        // 名前を登録（重複チェック用）
+        if (tank.axolotl.name) {
+          registerName(tank.axolotl.name);
+        }
+      }
+      if (tank.breedingPair) {
+        tank.breedingPair.forEach(function(ax) {
+          if (ax.name) {
+            registerName(ax.name);
+          }
+        });
+      }
+    });
+    
+    // レジストリ内のすべてのaxolotlの名前も登録
+    Object.keys(axolotlRegistry).forEach(function(key) {
+      var reg = axolotlRegistry[key];
+      if (reg && reg.name && !reg.removed) {
+        registerName(reg.name);
       }
     });
     $('axLog').textContent = 'ショップを始めた。最初のウパに名前をつけよう。';
