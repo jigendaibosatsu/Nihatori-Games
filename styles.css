@@ -439,4 +439,37 @@ body.article-page .site-header {
   .sidebar-links a:hover {
     text-decoration: underline;
   }
+
+  .sidebar-social {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--sidebar-border);
+  }
+
+  .social-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .social-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+  }
+
+  .social-link:hover {
+    background-color: var(--body-bg);
+    text-decoration: none;
+  }
+
+  .social-link span {
+    font-size: 18px;
+  }
 }
