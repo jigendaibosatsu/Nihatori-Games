@@ -37,6 +37,9 @@
       <button type="button" class="ax-global-btn feed" id="btnFeedAll">
         <span>全体給餌</span>
       </button>
+      <button type="button" class="ax-global-btn poop" id="btnRemoveAllPoop">
+        <span>全体除去</span>
+      </button>
     </div>
   </header>
 
@@ -69,9 +72,13 @@
         <span class="ax-menu-icon">🏆</span>
         <span class="ax-menu-label">実績</span>
       </button>
-      <button type="button" class="ax-menu-item auction" id="btnAuction">
-        <span class="ax-menu-icon">🔨</span>
-        <span class="ax-menu-label">オークション</span>
+      <button type="button" class="ax-menu-item settings" id="btnSettings">
+        <span class="ax-menu-icon">⚙️</span>
+        <span class="ax-menu-label">設定</span>
+      </button>
+      <button type="button" class="ax-menu-item manual" id="btnManual">
+        <span class="ax-menu-icon">📘</span>
+        <span class="ax-menu-label">説明書</span>
       </button>
     </div>
   </nav>
@@ -127,7 +134,7 @@
   <div class="ax-overlay" id="axOverlayBuy">
     <div class="ax-overlay-box">
       <h2>ショップ</h2>
-      <p style="font-size:12px; margin-bottom:8px;">タブで種類を選んでください。固定化された種類のみ販売しています。</p>
+      <p style="font-size:12px; margin-bottom:8px;">ミューテーションショップでは、未固定のウーパーがランダムで販売されます。</p>
       <div id="axBuyTabs" class="ax-buy-tabs" style="display:flex; gap:4px; margin-bottom:10px; flex-wrap:wrap;"></div>
       <div id="axBuyTypeList" class="ax-buy-list" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-bottom:12px; max-height:52vh; overflow-y:auto; overflow-x:hidden;"></div>
       <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axBuyCancel">キャンセル</button>
@@ -179,7 +186,7 @@
   <div class="ax-overlay" id="axOverlayHatch">
     <div class="ax-overlay-box">
       <h2>孵化した幼生から1匹を選ぶ</h2>
-      <p style="font-size:12px; margin-bottom:8px;">3匹の候補から1匹を選んでください。残りは自動的に売却されます。</p>
+      <p style="font-size:12px; margin-bottom:8px;">10匹の候補から1匹を選んでください。残りは自動的に売却されます。</p>
       <div id="axHatchList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
       <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axHatchCancel">キャンセル</button>
     </div>
@@ -226,6 +233,73 @@
       <p style="font-size:12px; margin-bottom:8px;" id="axFeedDescription"></p>
       <div id="axFeedTankList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
       <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axFeedCancel">キャンセル</button>
+    </div>
+  </div>
+
+  <div class="ax-overlay" id="axOverlaySettings">
+    <div class="ax-overlay-box">
+      <h2>設定</h2>
+      <div style="margin-bottom:12px;">
+        <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer;">
+          <input type="checkbox" id="settingAutoReorderTanks" style="width:20px; height:20px;">
+          <span>空になった水槽を自動的に下に移動する</span>
+        </label>
+      </div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axSettingsClose">閉じる</button>
+    </div>
+  </div>
+
+  <div class="ax-overlay" id="axOverlayManual">
+    <div class="ax-overlay-box" style="max-width:600px;">
+      <h2>説明書</h2>
+      <div id="axManualContent" style="max-height:70vh; overflow-y:auto; text-align:left; font-size:12px; line-height:1.6;">
+        <h3>ゲームのルール</h3>
+        <p>ウーパールーパーショップは、ウーパールーパーを育てて販売する育成シミュレーションゲームです。</p>
+        <ul>
+          <li>水槽の水質とエサを管理して、ウーパールーパーを健康に育てましょう</li>
+          <li>12ヶ月以上の成体になったら、オスとメスを選んで繁殖させることができます</li>
+          <li>繁殖で生まれた個体から、良い個体を選んで育てることができます</li>
+          <li>評判を上げて、目標金額を達成することがゴールです</li>
+        </ul>
+
+        <h3>固定化とは</h3>
+        <p>固定化とは、同じ種類の個体を3世代続けて繁殖させることで、その種類を「固定化」することです。</p>
+        <ul>
+          <li>固定化された種類は、ショップで購入できるようになります</li>
+          <li>固定化には、祖父母・両親・子の3世代すべてが同じ種類である必要があります</li>
+          <li>固定化に成功すると、固定化報酬としてお金がもらえます</li>
+        </ul>
+
+        <h3>固定化の方法</h3>
+        <ol>
+          <li>同じ種類のオスとメスを繁殖させます</li>
+          <li>生まれた子も同じ種類になるように育てます</li>
+          <li>その子が12ヶ月以上になったら、同じ種類の個体と繁殖させます</li>
+          <li>さらにその子も同じ種類になるように育てます</li>
+          <li>3世代続けて同じ種類が生まれれば固定化成功です</li>
+        </ol>
+
+        <h3>レア個体の出し方</h3>
+        <ul>
+          <li>レア個体は、異なる種類の個体を組み合わせて繁殖させることで生まれることがあります</li>
+          <li>特に、ゴールド、ブラック、コッパーなどの種類を組み合わせると、レア個体が生まれやすくなります</li>
+          <li>固定化されていないレア種は弱いので、固定化するまで注意深く育てる必要があります</li>
+        </ul>
+
+        <h3>コツ</h3>
+        <ul>
+          <li>水質を40以上に保つことが重要です。水質が低いと個体が病気になったり、評判が下がります</li>
+          <li>うんこを放置すると水質が下がります。定期的に掃除しましょう</li>
+          <li>エサは種類によって効果が異なります。人工飼料は安いですが効果が低く、ミミズは高いですが効果が高いです</li>
+          <li>繁殖ペアの関係メーターが高いほど、産卵成功率が上がります</li>
+          <li>近親交配を繰り返すと、個体が弱くなったり病気になりやすくなります</li>
+          <li>水槽やショップに名前をつけることができます（クリックで変更）</li>
+        </ul>
+
+        <h3>今後の追加予定</h3>
+        <p>説明項目は今後も追加予定です。</p>
+      </div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b; margin-top:12px;" id="axManualClose">閉じる</button>
     </div>
   </div>
 

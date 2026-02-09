@@ -588,9 +588,8 @@
     lastBreedParent1: null,
     lastBreedParent2: null,
     nextAxolotlId: 1,
-    auctionAvailable: false,
-    auctionType: null,
-    auctionPrice: 0,
+    mutationShopAvailable: false,
+    mutationShopItems: [],  // ミューテーションショップの4匹の個体リスト
     fixedTypes: {},  // 固定化された種類 {type: true}
     obtainedTypes: {},  // 獲得した種類（図鑑用）
     achievements: {},  // 実績 {id: true}
@@ -607,7 +606,10 @@
     reputation100Celebrated: false,  // 満足度100達成時のポップアップ表示済みフラグ
     shopSale: false,  // ショップセール開催中フラグ
     shopSaleDiscount: 1.0,  // ショップセール割引率（1.0 = 通常価格）
-    shopSaleItems: []  // セール対象の商品リスト（タイプとサイズバンドの組み合わせ）
+    shopSaleItems: [],  // セール対象の商品リスト（タイプとサイズバンドの組み合わせ）
+    settings: {
+      autoReorderTanks: false  // 空になった水槽を自動的に下に移動する
+    }
   };
   
   // マイグレーション: feedTypeとwaterChangeTypeが無い場合は初期化
@@ -707,64 +709,140 @@
   // ランダムな人名漢字のリスト
   var nameKanjiList = ['太', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '郎', '助', '介', '吉', '次', '三', '蔵', '平', '八', '衛', '門', '左', '右', '衛', '門', '兵', '衛', '之', '助', '作', '之', '助', '治', '郎', '太', '郎', '次', '郎', '三', '郎', '四', '郎', '五', '郎', '六', '郎', '七', '郎', '八', '郎', '九', '郎', '十', '郎', '一', '郎', '二', '郎'];
 
-  // 名前生成関数
+  // 名前生成関数（要素A/Bシステム）
   function generateDefaultName(type, parent1Id, parent2Id, isFirstChild) {
+    var result = {
+      nameElementA: null,
+      nameElementB: null,
+      isHereditaryA: false,
+      isHereditaryB: false,
+      name: null
+    };
+    
     // 繁殖の場合
     if (parent1Id && parent2Id) {
-      var p1 = axolotlRegistry[parent1Id];
-      var p2 = axolotlRegistry[parent2Id];
-      if (p1 && p2) {
-        var p1Name = p1.name || '';
-        var p2Name = p2.name || '';
-        
-        // 親の名前から2文字目を取得（漢字二文字でない場合は通常の名付け法則を適用）
-        var p1SecondChar = p1Name.length >= 2 ? p1Name.charAt(1) : '';
-        var p2SecondChar = p2Name.length >= 2 ? p2Name.charAt(1) : '';
-        
-        // 親の名前が漢字二文字でない場合は、通常の名付け法則を適用
-        if (p1Name.length < 2 || p2Name.length < 2) {
-          // 通常の名付け法則にフォールバック
-        } else if (isFirstChild && p1SecondChar && p2SecondChar) {
-          // 最初の子：父の2文字目 + 母の2文字目
-          return p1SecondChar + p2SecondChar;
-        } else if (p1SecondChar) {
-          // 2匹目以降：父の2文字目 + ランダムな漢字
-          var randomKanji = nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
-          return p1SecondChar + randomKanji;
+      var p1 = null;
+      var p2 = null;
+      
+      // 親を取得（レジストリまたは現在の水槽から）
+      state.tanks.forEach(function(tank) {
+        if (tank.axolotl && tank.axolotl.id === parent1Id) p1 = tank.axolotl;
+        if (tank.axolotl && tank.axolotl.id === parent2Id) p2 = tank.axolotl;
+        if (tank.breedingPair) {
+          tank.breedingPair.forEach(function(pairAx) {
+            if (pairAx.id === parent1Id) p1 = pairAx;
+            if (pairAx.id === parent2Id) p2 = pairAx;
+          });
         }
+      });
+      if (!p1 && axolotlRegistry[parent1Id]) p1 = axolotlRegistry[parent1Id];
+      if (!p2 && axolotlRegistry[parent2Id]) p2 = axolotlRegistry[parent2Id];
+      
+      if (p1 && p2) {
+        // 父（オス）の通字を引き継ぐ
+        var maleParent = p1.sex === 'オス' ? p1 : p2;
+        var femaleParent = p1.sex === 'メス' ? p1 : p2;
+        
+        // 父の通字を確認
+        var maleHereditaryA = maleParent.isHereditaryA && maleParent.nameElementA;
+        var maleHereditaryB = maleParent.isHereditaryB && maleParent.nameElementB;
+        
+        // 両方に通字がある場合はランダムに選択
+        var inheritedHereditary = null;
+        var inheritedPosition = null;
+        if (maleHereditaryA && maleHereditaryB) {
+          if (Math.random() < 0.5) {
+            inheritedHereditary = maleHereditaryA;
+            inheritedPosition = 'A';
+          } else {
+            inheritedHereditary = maleHereditaryB;
+            inheritedPosition = 'B';
+          }
+        } else if (maleHereditaryA) {
+          inheritedHereditary = maleHereditaryA;
+          inheritedPosition = 'A';
+        } else if (maleHereditaryB) {
+          inheritedHereditary = maleHereditaryB;
+          inheritedPosition = 'B';
+        }
+        
+        // 通字を設定
+        if (inheritedPosition === 'A') {
+          result.nameElementA = inheritedHereditary;
+          result.isHereditaryA = true;
+          // B位置にも通字が入る可能性（ランダム）
+          if (maleParent.isHereditaryB && Math.random() < 0.5) {
+            result.nameElementB = maleParent.nameElementB;
+            result.isHereditaryB = true;
+          } else {
+            // 母親から要素を引き継ぐ
+            result.nameElementB = femaleParent.nameElementB || femaleParent.nameElementA || nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
+            result.isHereditaryB = false;
+          }
+        } else if (inheritedPosition === 'B') {
+          result.nameElementB = inheritedHereditary;
+          result.isHereditaryB = true;
+          // A位置にも通字が入る可能性（ランダム）
+          if (maleParent.isHereditaryA && Math.random() < 0.5) {
+            result.nameElementA = maleParent.nameElementA;
+            result.isHereditaryA = true;
+          } else {
+            // 母親から要素を引き継ぐ
+            result.nameElementA = femaleParent.nameElementA || femaleParent.nameElementB || nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
+            result.isHereditaryA = false;
+          }
+        } else {
+          // 通字がない場合は通常の名付け
+          result.nameElementA = femaleParent.nameElementA || nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
+          result.nameElementB = femaleParent.nameElementB || nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
+        }
+      }
+    } else {
+      // 通常の購入・生成の場合
+      var typeNameMap = {
+        'nomal': { first: '白王', prefix: '白' },
+        'albino': { first: '純真', prefix: '純' },
+        'marble': { first: '斑尾', prefix: '斑' },
+        'black': { first: '濃墨', prefix: '墨' },
+        'superblack': { first: '黒王', prefix: '黒' },
+        'gold': { first: '黄金', prefix: '金' },
+        'copper': { first: '赤銅', prefix: '銅' },
+        'goldblackeye': { first: '金塊', prefix: '金' },
+        'chimera': { first: '君麿', prefix: '君' },
+        'yellow': { first: '黄色', prefix: '黄' },
+        'dalmatian': { first: '斑王', prefix: '斑' }
+      };
+      
+      var nameInfo = typeNameMap[type] || { first: '白王', prefix: '白' };
+      
+      // カウントを取得・更新
+      if (!state.nameCounts[type]) {
+        state.nameCounts[type] = 0;
+      }
+      state.nameCounts[type]++;
+      
+      if (state.nameCounts[type] === 1) {
+        // 最初の個体：要素A/Bに分割
+        var firstName = nameInfo.first;
+        if (firstName.length >= 2) {
+          result.nameElementA = firstName.substring(0, 1);
+          result.nameElementB = firstName.substring(1);
+        } else {
+          result.nameElementA = null;
+          result.nameElementB = firstName;
+        }
+      } else {
+        // 2匹目以降：プレフィックス + ランダムな漢字
+        result.nameElementA = nameInfo.prefix;
+        result.nameElementB = nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
       }
     }
     
-    // 通常の購入・生成の場合
-    var typeNameMap = {
-      'nomal': { first: '白王', prefix: '白' },
-      'albino': { first: '純真', prefix: '純' },
-      'marble': { first: '斑尾', prefix: '斑' },
-      'black': { first: '濃墨', prefix: '墨' },
-      'superblack': { first: '黒王', prefix: '黒' },
-      'gold': { first: '黄金', prefix: '金' },
-      'copper': { first: '赤銅', prefix: '銅' },
-      'goldblackeye': { first: '金塊', prefix: '金' },
-      'chimera': { first: '君麿', prefix: '君' },
-      'yellow': { first: '黄色', prefix: '黄' },
-      'dalmatian': { first: '斑王', prefix: '斑' }
-    };
+    // 名前を結合
+    result.name = (result.nameElementA || '') + (result.nameElementB || '');
+    if (result.name === '') result.name = null;
     
-    var nameInfo = typeNameMap[type] || { first: '白王', prefix: '白' };
-    
-    // カウントを取得・更新
-    if (!state.nameCounts[type]) {
-      state.nameCounts[type] = 0;
-    }
-    state.nameCounts[type]++;
-    
-    if (state.nameCounts[type] === 1) {
-      return nameInfo.first;
-    } else {
-      // 2匹目以降：プレフィックス + ランダムな漢字
-      var randomKanji = nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
-      return nameInfo.prefix + randomKanji;
-    }
+    return result;
   }
 
   var SHADE_VALUES = ['light', 'normal', 'dark'];
@@ -851,7 +929,8 @@
       isFirstChild = (siblingCount === 0);
     }
     
-    var defaultName = generateDefaultName(type, parent1Id || null, parent2Id || null, isFirstChild);
+    var defaultNameResult = generateDefaultName(type, parent1Id || null, parent2Id || null, isFirstChild);
+    var defaultName = defaultNameResult.name;
     
     // 苗字を継承（父から）
     var familyName = null;
@@ -956,6 +1035,10 @@
       spotsDensity: variation.spotsDensity,
       seed: seed,
       name: defaultName,  // デフォルト名を設定
+      nameElementA: defaultNameResult.nameElementA || null,  // 要素A
+      nameElementB: defaultNameResult.nameElementB || null,  // 要素B
+      isHereditaryA: defaultNameResult.isHereditaryA || false,  // 要素Aの通字フラグ
+      isHereditaryB: defaultNameResult.isHereditaryB || false,  // 要素Bの通字フラグ
       familyName: familyName,  // 苗字（父から継承）
       isFixedLineage: false  // 固定化血統フラグ（デフォルトfalse）
     };
@@ -975,6 +1058,11 @@
       shade: ax.shade,
       parent1Id: parent1Id || null,
       parent2Id: parent2Id || null,
+      name: ax.name,
+      nameElementA: ax.nameElementA,
+      nameElementB: ax.nameElementB,
+      isHereditaryA: ax.isHereditaryA,
+      isHereditaryB: ax.isHereditaryB,
       name: ax.name,
       familyName: ax.familyName,
       removed: false,
@@ -1078,23 +1166,21 @@
   function getIconSizeFromSize(size) {
     if (size == null) return 96; // デフォルトサイズ（32の倍数）
     // サイズに応じてアイコンサイズを計算（32の整数倍で、CSSでスケール）
+    // 最大サイズを192pxに制限（水槽の状態ゲージを圧迫しないように）
     // 2-3cm: 64px（32×2）
     // 3ヶ月目: 96px（32×3）
     // 5-8cm: 128px（32×4）
     // 8-12cm: 160px（32×5）
     // 12-16cm: 192px（32×6）
-    // 16-18cm: 224px（32×7）
-    // 18-21cm: 256px（32×8）
-    // 20-22cm: 288px（32×9）
+    // 16-18cm: 192px（32×6、最大サイズ）
+    // 18-21cm: 192px（32×6、最大サイズ）
+    // 20-22cm: 192px（32×6、最大サイズ）
     var iconSize;
     if (size <= 3) iconSize = 64;
     else if (size <= 5) iconSize = 96;
     else if (size <= 8) iconSize = 128;
     else if (size <= 12) iconSize = 160;
-    else if (size <= 16) iconSize = 192;
-    else if (size <= 18) iconSize = 224;
-    else if (size <= 21) iconSize = 256;
-    else iconSize = 288;
+    else iconSize = 192; // 最大192pxに制限
     
     // 32の整数倍であることを保証
     if (!isValidPixelArtSize(iconSize)) {
@@ -1378,6 +1464,14 @@
     return clamp(coefficient, 0, 100);
   }
 
+  function openNamingModal(axolotlId, isHatch) {
+    // 名付け専用モーダルを開く（openDetailModalを呼び出すが、名付けモードとして）
+    openDetailModal(axolotlId);
+    // 名付けモードのフラグを設定（openDetailModal内で使用）
+    if (window._namingMode) window._namingMode = null;
+    window._namingMode = { axolotlId: axolotlId, isHatch: isHatch };
+  }
+
   function openDetailModal(axolotlId) {
     var ax = axolotlRegistry[axolotlId];
     if (!ax) return;
@@ -1417,42 +1511,121 @@
     var sizeBand = sizeBandFromAge(displayAx.age);
     bodyEl.innerHTML = '';
     
-    // 名前編集欄
+    // 名前編集欄（要素A/Bシステム）
     var nameEditDiv = document.createElement('div');
     nameEditDiv.style.marginBottom = '8px';
-    nameEditDiv.innerHTML = '<label style="font-size:11px;">名前：</label>';
-    var nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.value = displayAx.name || '';
-    nameInput.placeholder = typeLabel(displayAx.type);
-    nameInput.style.width = '100%';
-    nameInput.style.padding = '4px';
-    nameInput.style.marginTop = '2px';
-    nameInput.style.fontSize = '12px';
-    var isInitialAxolotl = false;
-    state.tanks.forEach(function(tank) {
-      if (tank.axolotl && tank.axolotl.id === axolotlId && tank.note === '最初のウパ') {
-        isInitialAxolotl = true;
-      }
-    });
     
-    nameInput.addEventListener('change', function() {
-      var newName = this.value.trim() || null;
+    // 要素A
+    var elementADiv = document.createElement('div');
+    elementADiv.style.marginBottom = '4px';
+    elementADiv.innerHTML = '<label style="font-size:11px;">要素A：</label>';
+    var elementAInput = document.createElement('input');
+    elementAInput.type = 'text';
+    elementAInput.value = displayAx.nameElementA || '';
+    elementAInput.placeholder = '要素A（例：斑）';
+    elementAInput.style.width = 'calc(100% - 100px)';
+    elementAInput.style.padding = '4px';
+    elementAInput.style.marginTop = '2px';
+    elementAInput.style.fontSize = '12px';
+    elementAInput.style.marginRight = '4px';
+    var hereditaryACheckbox = document.createElement('input');
+    hereditaryACheckbox.type = 'checkbox';
+    hereditaryACheckbox.checked = displayAx.isHereditaryA || false;
+    hereditaryACheckbox.id = 'hereditaryA_' + axolotlId;
+    var hereditaryALabel = document.createElement('label');
+    hereditaryALabel.htmlFor = 'hereditaryA_' + axolotlId;
+    hereditaryALabel.textContent = '通字';
+    hereditaryALabel.style.fontSize = '11px';
+    hereditaryALabel.style.marginLeft = '4px';
+    elementADiv.appendChild(elementAInput);
+    elementADiv.appendChild(hereditaryACheckbox);
+    elementADiv.appendChild(hereditaryALabel);
+    
+    // 要素B
+    var elementBDiv = document.createElement('div');
+    elementBDiv.style.marginBottom = '4px';
+    elementBDiv.innerHTML = '<label style="font-size:11px;">要素B：</label>';
+    var elementBInput = document.createElement('input');
+    elementBInput.type = 'text';
+    elementBInput.value = displayAx.nameElementB || '';
+    elementBInput.placeholder = '要素B（例：尾）';
+    elementBInput.style.width = 'calc(100% - 100px)';
+    elementBInput.style.padding = '4px';
+    elementBInput.style.marginTop = '2px';
+    elementBInput.style.fontSize = '12px';
+    elementBInput.style.marginRight = '4px';
+    var hereditaryBCheckbox = document.createElement('input');
+    hereditaryBCheckbox.type = 'checkbox';
+    hereditaryBCheckbox.checked = displayAx.isHereditaryB || false;
+    hereditaryBCheckbox.id = 'hereditaryB_' + axolotlId;
+    var hereditaryBLabel = document.createElement('label');
+    hereditaryBLabel.htmlFor = 'hereditaryB_' + axolotlId;
+    hereditaryBLabel.textContent = '通字';
+    hereditaryBLabel.style.fontSize = '11px';
+    hereditaryBLabel.style.marginLeft = '4px';
+    elementBDiv.appendChild(elementBInput);
+    elementBDiv.appendChild(hereditaryBCheckbox);
+    elementBDiv.appendChild(hereditaryBLabel);
+    
+    // 名前の更新処理
+    function updateNameFromElements() {
+      var elementA = elementAInput.value.trim();
+      var elementB = elementBInput.value.trim();
+      var isHereditaryA = hereditaryACheckbox.checked;
+      var isHereditaryB = hereditaryBCheckbox.checked;
+      
+      // Aが空欄でBに通字がある場合、Aにランダムな要素を入れる
+      if (!elementA && elementB && isHereditaryB) {
+        elementA = nameKanjiList[Math.floor(Math.random() * nameKanjiList.length)];
+        elementAInput.value = elementA;
+      }
+      
+      var newName = (elementA || '') + (elementB || '');
+      if (newName === '') newName = null;
+      
       if (currentAx) {
         currentAx.name = newName;
+        currentAx.nameElementA = elementA || null;
+        currentAx.nameElementB = elementB || null;
+        currentAx.isHereditaryA = isHereditaryA;
+        currentAx.isHereditaryB = isHereditaryB;
         if (axolotlRegistry[axolotlId]) {
           axolotlRegistry[axolotlId].name = newName;
+          axolotlRegistry[axolotlId].nameElementA = elementA || null;
+          axolotlRegistry[axolotlId].nameElementB = elementB || null;
+          axolotlRegistry[axolotlId].isHereditaryA = isHereditaryA;
+          axolotlRegistry[axolotlId].isHereditaryB = isHereditaryB;
         }
-        // モーダル内の表示のみ更新（アニメーションを維持するためupdateUI()は呼ばない）
+        // モーダル内の表示のみ更新
         var nameEl = $('axDetailName');
         var sexDisplayHtml = displayAx.age >= 12 ? (displayAx.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>') : '';
         var namePart = newName || typeLabel(displayAx.type);
         var displayName = (displayAx.familyName ? displayAx.familyName + ' ' : '') + namePart;
         nameEl.innerHTML = displayName + (sexDisplayHtml ? ' ' + sexDisplayHtml : '');
       }
-    });
-    nameEditDiv.appendChild(nameInput);
+    }
+    
+    elementAInput.addEventListener('change', updateNameFromElements);
+    elementBInput.addEventListener('change', updateNameFromElements);
+    hereditaryACheckbox.addEventListener('change', updateNameFromElements);
+    hereditaryBCheckbox.addEventListener('change', updateNameFromElements);
+    
+    nameEditDiv.appendChild(elementADiv);
+    nameEditDiv.appendChild(elementBDiv);
     bodyEl.appendChild(nameEditDiv);
+    
+    // 既存の名前がある場合は要素A/Bに分割
+    if (displayAx.name && !displayAx.nameElementA && !displayAx.nameElementB) {
+      // 既存の名前を2文字に分割（最初の1文字がA、残りがB）
+      var existingName = displayAx.name;
+      if (existingName.length >= 2) {
+        elementAInput.value = existingName.substring(0, 1);
+        elementBInput.value = existingName.substring(1);
+      } else {
+        elementBInput.value = existingName;
+      }
+      updateNameFromElements();
+    }
     
     // 苗字編集欄（繁殖ペアの場合のみ）
     if (displayAx.age >= 12 && (displayAx.sex === 'オス' || displayAx.sex === 'メス')) {
@@ -1547,15 +1720,29 @@
     
     // 最初のウパの名付け画面の場合のみ「決定」に変更（名前がついていない場合のみ）
     var isInitialAxolotl = false;
-    state.tanks.forEach(function(tank) {
-      if (tank.axolotl && tank.axolotl.id === axolotlId && tank.note === '最初のウパ' && !tank.axolotl.name) {
-        isInitialAxolotl = true;
-      }
-    });
+    var isHatchNaming = false;
+    var isShopNaming = false;
+    
+    if (window._namingMode && window._namingMode.axolotlId === axolotlId) {
+      isHatchNaming = window._namingMode.isHatch;
+      isShopNaming = !isHatchNaming;
+    } else {
+      state.tanks.forEach(function(tank) {
+        if (tank.axolotl && tank.axolotl.id === axolotlId && tank.note === '最初のウパ' && !tank.axolotl.name) {
+          isInitialAxolotl = true;
+        }
+        if (tank.axolotl && tank.axolotl.id === axolotlId && tank.note === '1ヶ月目のウパ' && !tank.axolotl.name) {
+          isHatchNaming = true;
+        }
+        if (tank.axolotl && tank.axolotl.id === axolotlId && (tank.note === 'ショップで購入したウパ' || tank.note === 'ミューテーションショップで購入したウパ') && !tank.axolotl.name) {
+          isShopNaming = true;
+        }
+      });
+    }
     
     var cancelBtn = $('axDetailCancel');
     var sellBtn = $('axDetailSell');
-    if (isInitialAxolotl) {
+    if (isInitialAxolotl || isHatchNaming || isShopNaming) {
       cancelBtn.textContent = '決定';
       if (sellBtn) sellBtn.style.display = 'none';
     } else {
@@ -1620,6 +1807,23 @@
   }
 
   function closeDetailModal() {
+    // 名付け後の処理
+    var hatchTank = state.tanks.find(function(tank) {
+      return tank.axolotl && tank.note === '1ヶ月目のウパ' && tank.axolotl.name;
+    });
+    if (hatchTank) {
+      hatchTank.note = '1ヶ月目のウパ';
+      if (window._namingMode) window._namingMode = null;
+    }
+    
+    var shopTank = state.tanks.find(function(tank) {
+      return tank.axolotl && (tank.note === 'ショップで購入したウパ' || tank.note === 'ミューテーションショップで購入したウパ') && tank.axolotl.name;
+    });
+    if (shopTank) {
+      shopTank.note = shopTank.note === 'ショップで購入したウパ' ? 'ショップで購入したウパ' : 'ミューテーションショップで購入したウパ';
+      if (window._namingMode) window._namingMode = null;
+    }
+    
     // 最初のウパに名前がつけられたかチェック
     var initialTank = state.tanks.find(function(tank) {
       return tank.axolotl && tank.note === '最初のウパ';
@@ -1638,6 +1842,8 @@
         }, 300);
       }
     }
+    // 名付けモードをクリア
+    if (window._namingMode) window._namingMode = null;
     $('axOverlayDetail').classList.remove('visible');
     // モーダルを閉じた後にupdateUI()を呼ぶ（アニメーションを維持するため、少し遅延させる）
     setTimeout(function() {
@@ -1655,7 +1861,7 @@
       var overlay = document.createElement('div');
       overlay.className = 'ax-overlay';
       overlay.id = 'axOverlayHatch';
-      overlay.innerHTML = '<div class="ax-overlay-box"><h2>孵化した幼生から1匹を選ぶ</h2><p style="font-size:12px; margin-bottom:8px;">5匹の候補から1匹を選んでください。残りは自動的に売却されます。</p><div id="axHatchList" style="margin-bottom:12px; max-height:60vh; overflow-y:auto;"></div><button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axHatchCancel">キャンセル</button></div>';
+      overlay.innerHTML = '<div class="ax-overlay-box"><h2>孵化した幼生から1匹を選ぶ</h2><p style="font-size:12px; margin-bottom:8px;">10匹の候補から1匹を選んでください。残りは自動的に売却されます。</p><div id="axHatchList" style="margin-bottom:12px; max-height:60vh; overflow-y:auto;"></div><button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axHatchCancel">キャンセル</button></div>';
       document.body.appendChild(overlay);
       list = $('axHatchList');
       $('axHatchCancel').addEventListener('click', function() {
@@ -1758,10 +1964,18 @@
     
     state.money += totalPrice;
     
-    // 選択した1匹を保持（混雑表記なし）
-    tank.juveniles = [selected];
-    tank.juvenileAge = 0;
-    tank.note = '幼生（0/5ヶ月）';
+    // 選択した1匹を1ヶ月の状態で水槽に入れる（juvenilesではなくaxolotlとして）
+    selected.age = 1;
+    selected.size = calculateSizeFromAge(1);
+    if (axolotlRegistry[selected.id]) {
+      axolotlRegistry[selected.id].age = 1;
+      axolotlRegistry[selected.id].size = selected.size;
+    }
+    tank.axolotl = selected;
+    tank.juveniles = null;
+    tank.juvenileAge = null;
+    tank.baby = true;
+    tank.note = '1ヶ月目のウパ';
     
     // 一時データをクリア
     tank._hatchCandidates = null;
@@ -1769,6 +1983,10 @@
     
     logLine('孵化した幼生から' + typeLabel(selected.type) + 'を選んだ。残り' + toSell.length + '匹を' + formatMoney(totalPrice) + 'で販売した。');
     $('axOverlayHatch').classList.remove('visible');
+    
+    // 名付けフェーズを表示
+    openNamingModal(selected.id, true);
+    
     updateUI();
   }
 
@@ -2012,14 +2230,14 @@
         var tankClean = tank.clean !== undefined ? tank.clean : 80;
         var avgHunger = ((p1.hunger || 100) + (p2.hunger || 100)) / 2;
         var avgHealth = (p1.health + p2.health) / 2;
-        // 中心で二分割
+        // 中心で二分割、それぞれクリック可能
         lines.innerHTML = 
           '<div style="display:flex; justify-content:space-around; border-bottom:1px solid #e5e7eb; padding-bottom:8px; margin-bottom:8px;">' +
-          '<div style="flex:1; text-align:center; border-right:1px solid #e5e7eb; padding-right:8px;">' +
+          '<div class="ax-breeding-pair-item" style="flex:1; text-align:center; border-right:1px solid #e5e7eb; padding-right:8px; cursor:pointer;" data-axolotl-id="' + p1.id + '">' +
           '<div style="font-weight:bold; margin-bottom:4px;">' + p1Name + (p1Sex ? ' ' + p1Sex : '') + '</div>' +
           '<div style="font-size:11px; color:#64748b; margin-bottom:4px;">齢: ' + p1.age + 'ヶ月</div>' +
           '</div>' +
-          '<div style="flex:1; text-align:center; padding-left:8px;">' +
+          '<div class="ax-breeding-pair-item" style="flex:1; text-align:center; padding-left:8px; cursor:pointer;" data-axolotl-id="' + p2.id + '">' +
           '<div style="font-weight:bold; margin-bottom:4px;">' + p2Name + (p2Sex ? ' ' + p2Sex : '') + '</div>' +
           '<div style="font-size:11px; color:#64748b; margin-bottom:4px;">齢: ' + p2.age + 'ヶ月</div>' +
           '</div>' +
@@ -2031,10 +2249,13 @@
           '</div>' +
           '<div style="text-align:center; font-size:14px; color:' + relationshipColor + '; margin-bottom:4px;">❤ ' + Math.round(relationshipMeter) + '</div>' +
           ageNote;
-        lines.classList.add('clickable');
-        lines.dataset.axolotlId = String(p1.id);
-        lines.addEventListener('click', function () {
-          openDetailModal(parseInt(this.dataset.axolotlId, 10));
+        // 各個体をクリック可能にする
+        var pairItems = lines.querySelectorAll('.ax-breeding-pair-item');
+        pairItems.forEach(function(item) {
+          item.addEventListener('click', function() {
+            var axId = parseInt(this.dataset.axolotlId, 10);
+            openDetailModal(axId);
+          });
         });
       } else if (tank.egg) {
         var eggText = '卵 ' + (tank.eggCount || 500) + '個\n孵化まであと' + (tank.hatchMonthsLeft != null ? tank.hatchMonthsLeft : 1) + 'ヶ月';
@@ -2351,7 +2572,6 @@
     var btnBuy = document.getElementById('btnBuy');
     var btnEncyclopedia = document.getElementById('btnEncyclopedia');
     var btnAchievements = document.getElementById('btnAchievements');
-    var btnAuction = document.getElementById('btnAuction');
     
     if (btnBreed) {
       var adults = getAdultTanks();
@@ -2365,10 +2585,6 @@
     if (btnBuy) btnBuy.disabled = disabled;
     if (btnEncyclopedia) btnEncyclopedia.disabled = disabled;
     if (btnAchievements) btnAchievements.disabled = disabled;
-    if (btnAuction) {
-      var canAuction = !disabled && state.auctionAvailable && state.auctionType;
-      btnAuction.disabled = !canAuction;
-    }
     
     // 未対応アラートの更新
     updateNextMonthAlerts();
@@ -2551,46 +2767,82 @@
     updateUI();
   }
 
-  function checkAuction() {
-    // オークションは低確率で発生（5%）、固定化していない個体が稀に売られる
-    if (Math.random() < 0.05) {
-      // 固定化されていない種類から選択
-      var unfixedTypes = AXO_TYPES.filter(function(type) {
-        return !state.fixedTypes[type];
-      });
-      if (unfixedTypes.length > 0) {
-        var selectedType = unfixedTypes[Math.floor(Math.random() * unfixedTypes.length)];
-        var basePrice = typePriceBase[selectedType] || 20000;
-        var auctionPrice = basePrice * randInt(4, 8); // 4-8倍の価格（下げる）
-        state.auctionAvailable = true;
-        state.auctionType = selectedType;
-        state.auctionPrice = auctionPrice;
-        // キメラの場合はランダムな2種類を選択
-        if (selectedType === 'chimera') {
-          var availableTypes = ['nomal', 'albino', 'gold', 'marble', 'copper', 'black'];
-          var type1 = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-          var type2 = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-          while (type1 === type2) {
-            type2 = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-          }
-          state.auctionChimeraTypes = [type1, type2];
-        } else {
-          state.auctionChimeraTypes = null;
-        }
-        logLine('【オークション】' + typeLabel(selectedType) + 'が' + formatMoney(auctionPrice) + 'で出品されています！オークションボタン!を確認してください。');
-        updateAuctionButton();
-      } else {
-        state.auctionAvailable = false;
-        state.auctionType = null;
-        state.auctionPrice = 0;
-        updateAuctionButton();
+  function removeAllPoop() {
+    var cleanedCount = 0;
+    state.tanks.forEach(function(tank) {
+      if (tank.poop) {
+        tank.poop = false;
+        cleanedCount++;
       }
+    });
+    if (cleanedCount > 0) {
+      logLine('全水槽のうんこを掃除した。（' + cleanedCount + '箇所）');
     } else {
-      state.auctionAvailable = false;
-      state.auctionType = null;
-      state.auctionPrice = 0;
-      updateAuctionButton();
+      logLine('掃除するうんこがない。');
     }
+    updateUI();
+  }
+
+  function checkMutationShop() {
+    // ミューテーションショップ: 最大4匹の未固定（ミューテーション）個体をランダムに生成
+    state.mutationShopItems = [];
+    
+    // 4匹をランダムに生成
+    for (var i = 0; i < 4; i++) {
+      // タイプをランダムに選択（全タイプから、固定化の有無に関わらず）
+      var selectedType = AXO_TYPES[Math.floor(Math.random() * AXO_TYPES.length)];
+      
+      // 年齢をランダムに選択（最大18ヶ月）
+      var age = randInt(1, 18);
+      
+      // キメラの場合はランダムな2種類を選択
+      var chimeraTypes = null;
+      if (selectedType === 'chimera') {
+        var availableTypes = ['nomal', 'albino', 'gold', 'marble', 'copper', 'black'];
+        var type1 = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        var type2 = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        while (type1 === type2) {
+          type2 = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        }
+        chimeraTypes = [type1, type2];
+      }
+      
+      // 問題フラグ（病気または怪我）をランダムに設定
+      var problemFlags = null;
+      if (Math.random() < 0.3) { // 30%の確率で問題あり
+        problemFlags = {};
+        if (Math.random() < 0.5) {
+          problemFlags.sick = true;
+        } else {
+          problemFlags.injured = true;
+        }
+      }
+      
+      // 価格を計算（基本価格 × 年齢係数 × 問題による割引）
+      var basePrice = typePriceBase[selectedType] || 20000;
+      var ageMultiplier = 0.5 + (age / 18) * 0.5; // 1ヶ月で0.5倍、18ヶ月で1.0倍
+      var price = Math.floor(basePrice * ageMultiplier);
+      
+      // 問題がある場合は価格を下げる
+      if (problemFlags) {
+        price = Math.floor(price * SICK_PRICE_RATE); // 20%の価格
+      }
+      
+      // 性別をランダムに決定
+      var sex = Math.random() < 0.5 ? 'オス' : 'メス';
+      
+      state.mutationShopItems.push({
+        type: selectedType,
+        age: age,
+        price: price,
+        problemFlags: problemFlags,
+        chimeraTypes: chimeraTypes,
+        sex: sex
+      });
+    }
+    
+    state.mutationShopAvailable = true;
+    logLine('【ミューテーションショップ】4匹の未固定個体が入荷しました！メニューボタン!を確認してください。');
     
     // ショップの在庫状態を日ごとに更新（品切れの可能性）
     state.shopStockDaily = {};
@@ -2614,7 +2866,7 @@
     var saleCount = Math.random() < 0.5 ? 1 : 2;
     saleCount = Math.min(saleCount, availableItems.length);
     
-    for (var i = 0; i < saleCount; i++) {
+    for (var j = 0; j < saleCount; j++) {
       if (availableItems.length === 0) break;
       var randomIndex = Math.floor(Math.random() * availableItems.length);
       state.shopSaleItems.push(availableItems[randomIndex]);
@@ -2706,6 +2958,18 @@
       if (tank.breedingPair) {
         tank.breedingPair.forEach(function (a) {
           a.hunger = clamp((a.hunger || MAX_HUNGER) - HUNGER_DECAY_PER_MONTH, 0, MAX_HUNGER);
+          // 年齢を更新
+          a.age += 1;
+          // サイズを年齢に応じて更新
+          if (a.size != null) {
+            var newSize = calculateSizeFromAge(a.age);
+            if (newSize > a.size) {
+              a.size = newSize;
+              if (axolotlRegistry[a.id]) {
+                axolotlRegistry[a.id].size = a.size;
+              }
+            }
+          }
           
           // 繁殖ペアの病気処理
           if (a.sick) {
@@ -2857,9 +3121,9 @@
           tank.eggRelationshipMeter = null;
           tank.hatchMonthsLeft = null;
           
-          // 5匹の候補をランダムに選択
+          // 10匹の候補をランダムに選択
           var candidates = [];
-          var maxCandidates = Math.min(5, allJuveniles.length);
+          var maxCandidates = Math.min(10, allJuveniles.length);
           while (candidates.length < maxCandidates && allJuveniles.length > 0) {
             var randomIndex = Math.floor(Math.random() * allJuveniles.length);
             candidates.push(allJuveniles[randomIndex]);
@@ -3033,6 +3297,17 @@
         }
       }
       ax.age += 1;
+      // サイズを年齢に応じて更新
+      if (ax.size != null) {
+        var newSize = calculateSizeFromAge(ax.age);
+        // 既存のサイズより大きい場合のみ更新（成長）
+        if (newSize > ax.size) {
+          ax.size = newSize;
+          if (axolotlRegistry[ax.id]) {
+            axolotlRegistry[ax.id].size = ax.size;
+          }
+        }
+      }
       // 12ヶ月で成体になる
       if (ax.age >= 12 && tank.baby) {
         tank.baby = false;
@@ -3090,16 +3365,11 @@
     }
   }
 
-  function updateAuctionButton() {
-    var auctionBtn = document.getElementById('btnAuction');
-    if (auctionBtn) {
-      var auctionMark = state.auctionAvailable && state.auctionType ? ' !' : '';
-      auctionBtn.innerHTML = '<span class="label">オークション' + auctionMark + '</span>';
-    }
+  function updateMutationShopButton() {
     // ハンバーガーアイコンに!を表示
     var menuToggle = document.getElementById('axMenuToggle');
     if (menuToggle) {
-      if (state.auctionAvailable && state.auctionType) {
+      if (state.mutationShopAvailable && state.mutationShopItems && state.mutationShopItems.length > 0) {
         menuToggle.classList.add('has-notification');
       } else {
         menuToggle.classList.remove('has-notification');
@@ -3107,36 +3377,54 @@
     }
   }
   
-  function openAuctionOverlay() {
-    if (!state.auctionAvailable || !state.auctionType) {
-      logLine('現在オークションに出ている個体はありません。');
+  function openMutationShopOverlay() {
+    if (!state.mutationShopAvailable || !state.mutationShopItems || state.mutationShopItems.length === 0) {
+      logLine('現在ミューテーションショップに出ている個体はありません。');
       return;
     }
-    // ショップオーバーレイを開いて、オークション表示に切り替え
+    // ショップオーバーレイを開いて、ミューテーションショップ表示に切り替え
     var tabsEl = $('axBuyTabs');
     tabsEl.innerHTML = '';
     
-    // オークション専用のタブ表示
-    var auctionTab = document.createElement('button');
-    auctionTab.type = 'button';
-    auctionTab.className = 'ax-buy-tab';
-    auctionTab.textContent = 'オークション';
-    auctionTab.dataset.tab = 'auction';
-    auctionTab.classList.add('active');
-    tabsEl.appendChild(auctionTab);
+    // ミューテーションショップ専用のタブ表示
+    var mutationTab = document.createElement('button');
+    mutationTab.type = 'button';
+    mutationTab.className = 'ax-buy-tab';
+    mutationTab.textContent = 'ミューテーション';
+    mutationTab.dataset.tab = 'mutation';
+    mutationTab.classList.add('active');
+    tabsEl.appendChild(mutationTab);
     
-    showBuyTypeList('auction');
+    showBuyTypeList('mutation');
     $('axOverlayBuy').classList.add('visible');
   }
 
   function nextMonth() {
     state.month += 1;
     applyAutoEquipment();
-    checkAuction();
+    checkMutationShop();
     endOfMonthDrift();
+    // 設定が有効な場合、空の水槽を下に移動
+    if (state.settings && state.settings.autoReorderTanks) {
+      reorderTanks();
+    }
     checkEnd();
     updateUI();
-    updateAuctionButton();
+    updateMutationShopButton();
+  }
+
+  function reorderTanks() {
+    // 空の水槽を最後に移動
+    var nonEmptyTanks = [];
+    var emptyTanks = [];
+    state.tanks.forEach(function(tank) {
+      if (tank.axolotl || tank.breedingPair || tank.egg || tank.juveniles) {
+        nonEmptyTanks.push(tank);
+      } else {
+        emptyTanks.push(tank);
+      }
+    });
+    state.tanks = nonEmptyTanks.concat(emptyTanks);
   }
 
   function applyAutoEquipment() {
@@ -3644,6 +3932,42 @@
     updateUI();
   }
 
+  function separateBreedingPairForBreeding(tankIdx, axId) {
+    var tank = state.tanks[tankIdx];
+    if (!tank || !tank.breedingPair) return;
+    var pair = tank.breedingPair;
+    var targetAx = pair.find(function(ax) { return ax.id === axId; });
+    if (!targetAx) return;
+    
+    // 空き水槽を探す
+    var emptyIdx = state.tanks.findIndex(function (t, i) {
+      return i !== tankIdx && !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles;
+    });
+    
+    if (emptyIdx >= 0) {
+      // 空き水槽に移動
+      state.tanks[emptyIdx].axolotl = targetAx;
+      state.tanks[emptyIdx].baby = targetAx.age < 12;
+      state.tanks[emptyIdx].note = '繁殖用に分離';
+      if (state.tanks[emptyIdx].clean === undefined) state.tanks[emptyIdx].clean = 80;
+      if (state.tanks[emptyIdx].poop === undefined) state.tanks[emptyIdx].poop = false;
+      
+      // もう1匹を残す
+      var otherAx = pair.find(function(ax) { return ax.id !== axId; });
+      if (otherAx) {
+        tank.axolotl = otherAx;
+        tank.baby = otherAx.age < 12;
+        tank.note = '繁殖用に分離';
+      } else {
+        tank.axolotl = null;
+        tank.note = '空き水槽';
+      }
+      tank.breedingPair = null;
+      tank.breedingMonthsLeft = null;
+      tank.relationshipMeter = null;
+    }
+  }
+
   function separateBreedingPair(tankIdx) {
     var tank = state.tanks[tankIdx];
     if (!tank || !tank.breedingPair) return;
@@ -3705,11 +4029,24 @@
   }
 
   function getAdultTanks() {
-    return state.tanks.map(function (t, idx) {
-      return { tank: t, idx: idx };
-    }).filter(function (x) {
-      return x.tank.axolotl && !x.tank.breedingPair && x.tank.axolotl.age >= 12 && x.tank.axolotl.health > 0 && !x.tank.axolotl.injured && !x.tank.axolotl.sick && x.tank.axolotl.sex && (x.tank.axolotl.sex === 'オス' || x.tank.axolotl.sex === 'メス');
+    var result = [];
+    state.tanks.forEach(function (t, idx) {
+      // 通常の個体
+      if (t.axolotl && !t.breedingPair && t.axolotl.age >= 12 && t.axolotl.health > 0 && !t.axolotl.injured && !t.axolotl.sick && t.axolotl.sex && (t.axolotl.sex === 'オス' || t.axolotl.sex === 'メス')) {
+        result.push({ tank: t, idx: idx });
+      }
+      // 繁殖ペアの個体も考慮
+      if (t.breedingPair && t.breedingPair.length === 2) {
+        t.breedingPair.forEach(function(ax) {
+          if (ax.age >= 12 && ax.health > 0 && !ax.injured && !ax.sick && ax.sex && (ax.sex === 'オス' || ax.sex === 'メス')) {
+            // 仮想的なタンクオブジェクトを作成（繁殖ペアの個体を個別に扱うため）
+            var virtualTank = { axolotl: ax, breedingPair: null };
+            result.push({ tank: virtualTank, idx: idx });
+          }
+        });
+      }
     });
+    return result;
   }
 
 
@@ -3720,8 +4057,25 @@
       logLine('12ヶ月以上の成体2匹と空き水槽が必要だ。');
       return;
     }
-    var males = adults.filter(function (x) { return x.tank.axolotl.sex === 'オス'; });
-    var females = adults.filter(function (x) { return x.tank.axolotl.sex === 'メス'; });
+    // 繁殖ペアの個体は実際のタンクから取得する必要がある
+    var actualAdults = state.tanks.map(function (t, idx) {
+      return { tank: t, idx: idx };
+    }).filter(function (x) {
+      return x.tank.axolotl && !x.tank.breedingPair && x.tank.axolotl.age >= 12 && x.tank.axolotl.health > 0 && !x.tank.axolotl.injured && !x.tank.axolotl.sick && x.tank.axolotl.sex && (x.tank.axolotl.sex === 'オス' || x.tank.axolotl.sex === 'メス');
+    });
+    // 繁殖ペアからも取得
+    state.tanks.forEach(function (t, idx) {
+      if (t.breedingPair && t.breedingPair.length === 2) {
+        t.breedingPair.forEach(function(ax) {
+          if (ax.age >= 12 && ax.health > 0 && !ax.injured && !ax.sick && ax.sex && (ax.sex === 'オス' || ax.sex === 'メス')) {
+            var virtualTank = { axolotl: ax, breedingPair: null };
+            actualAdults.push({ tank: virtualTank, idx: idx });
+          }
+        });
+      }
+    });
+    var males = actualAdults.filter(function (x) { return x.tank.axolotl.sex === 'オス'; });
+    var females = actualAdults.filter(function (x) { return x.tank.axolotl.sex === 'メス'; });
     if (males.length === 0 || females.length === 0) {
       logLine('交配にはオスとメスが1匹ずつ必要だ。');
       return;
@@ -3733,10 +4087,12 @@
     sel1.innerHTML = '';
     males.forEach(function (x) {
       var opt = document.createElement('option');
-      opt.value = String(x.idx);
+      // 繁殖ペアの個体の場合は特別なマーカーを付ける
+      var isBreedingPair = state.tanks[x.idx] && state.tanks[x.idx].breedingPair && state.tanks[x.idx].breedingPair.some(function(ax) { return ax.id === x.tank.axolotl.id; });
+      opt.value = String(x.idx) + (isBreedingPair ? '_bp_' + x.tank.axolotl.id : '');
       var namePart = x.tank.axolotl.name || typeLabel(x.tank.axolotl.type);
       var displayName = (x.tank.axolotl.familyName ? x.tank.axolotl.familyName + ' ' : '') + namePart;
-      opt.textContent = '水槽' + (x.idx + 1) + '：' + displayName;
+      opt.textContent = '水槽' + (x.idx + 1) + '：' + displayName + (isBreedingPair ? '（同棲中）' : '');
       sel1.appendChild(opt);
     });
     
@@ -3744,10 +4100,12 @@
     sel2.innerHTML = '';
     females.forEach(function (x) {
       var opt = document.createElement('option');
-      opt.value = String(x.idx);
+      // 繁殖ペアの個体の場合は特別なマーカーを付ける
+      var isBreedingPair = state.tanks[x.idx] && state.tanks[x.idx].breedingPair && state.tanks[x.idx].breedingPair.some(function(ax) { return ax.id === x.tank.axolotl.id; });
+      opt.value = String(x.idx) + (isBreedingPair ? '_bp_' + x.tank.axolotl.id : '');
       var namePart = x.tank.axolotl.name || typeLabel(x.tank.axolotl.type);
       var displayName = (x.tank.axolotl.familyName ? x.tank.axolotl.familyName + ' ' : '') + namePart;
-      opt.textContent = '水槽' + (x.idx + 1) + '：' + displayName;
+      opt.textContent = '水槽' + (x.idx + 1) + '：' + displayName + (isBreedingPair ? '（同棲中）' : '');
       sel2.appendChild(opt);
     });
     
@@ -3992,80 +4350,115 @@
     var list = $('axBuyTypeList');
     if (!list) return;
     
-    if (isAuction && state.auctionAvailable && state.auctionType === selectedType) {
-      var auctionStats = getRandomShopStats();
-      var auctionCard = document.createElement('div');
-      auctionCard.className = 'ax-buy-type-card ax-buy-type-btn ax-auction-btn';
-      var auctionIconSize = getShopIconSizeFromBand(7);
-      if (selectedType === 'chimera') {
-        var fakeAx = { id: 0, type: 'chimera', chimeraTypes: state.auctionChimeraTypes || ['nomal', 'marble'] };
-        var sprite = createChimeraCanvasSprite(fakeAx, auctionIconSize);
-        sprite.classList.add('ax-idle');
-        sprite.dataset.bobIntervalMs = '500';
-        sprite.dataset.bobIndex = '0';
-        sprite.dataset.bobLastStep = '0';
-        sprite.style.width = auctionIconSize + 'px';
-        sprite.style.height = auctionIconSize + 'px';
-        auctionCard.appendChild(sprite);
-      } else {
-        var img = document.createElement('img');
-        img.src = typeImagePath(selectedType);
-        img.alt = '';
-        img.className = 'ax-buy-type-img ax-axolotl-img ax-idle';
-        img.dataset.bobIntervalMs = '500';
-        img.dataset.bobIndex = '0';
-        img.dataset.bobLastStep = '0';
-        img.width = auctionIconSize;
-        img.height = auctionIconSize;
-        img.style.width = auctionIconSize + 'px';
-        img.style.height = auctionIconSize + 'px';
-        auctionCard.appendChild(img);
-      }
-      var nameSpan = document.createElement('span');
-      nameSpan.className = 'ax-buy-type-name';
-      nameSpan.textContent = '🔴 オークション出品';
-      auctionCard.appendChild(nameSpan);
-      var priceSpan = document.createElement('span');
-      priceSpan.className = 'ax-buy-type-price';
-      priceSpan.textContent = formatMoney(state.auctionPrice);
-      auctionCard.appendChild(priceSpan);
-      var btnRow = document.createElement('div');
-      btnRow.className = 'ax-buy-btn-row';
-      btnRow.style.display = 'flex';
-      btnRow.style.gap = '6px';
-      btnRow.style.justifyContent = 'center';
-      btnRow.style.marginTop = '6px';
-      var detailBtn = document.createElement('button');
-      detailBtn.type = 'button';
-      detailBtn.className = 'ax-btn ax-buy-detail-btn';
-      detailBtn.textContent = '詳細';
-      detailBtn.style.fontSize = '10px';
-      detailBtn.style.padding = '4px 8px';
-      detailBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        openShopDetail('オークション出品 ' + typeLabel(selectedType), '<p><strong>価格:</strong> ' + formatMoney(state.auctionPrice) + '</p><p><strong>目安（個体差あり）:</strong><br>空腹: ' + auctionStats.hunger + '% 健康: ' + auctionStats.health + '%</p><p><strong>効果:</strong><br>成体です。落札するとすぐに水槽に追加されます。</p>');
+    // ミューテーションショップの場合は特別処理
+    if (selectedType === 'mutation' && state.mutationShopAvailable && state.mutationShopItems && state.mutationShopItems.length > 0) {
+      state.mutationShopItems.forEach(function(item) {
+        var card = document.createElement('div');
+        card.className = 'ax-buy-type-card ax-buy-type-btn';
+        // 年齢からサイズバンドを計算（簡易版：年齢に基づいて適切なサイズを表示）
+        var ageBand = item.age <= 3 ? 1 : (item.age <= 6 ? 3 : (item.age <= 12 ? 5 : 7));
+        var shopIconSize = getShopIconSizeFromBand(ageBand);
+        
+        if (item.type === 'chimera') {
+          var fakeAx = { id: 0, type: 'chimera', chimeraTypes: item.chimeraTypes || ['nomal', 'marble'] };
+          var sprite = createChimeraCanvasSprite(fakeAx, shopIconSize);
+          sprite.classList.add('ax-idle');
+          sprite.dataset.bobIntervalMs = '500';
+          sprite.dataset.bobIndex = '0';
+          sprite.dataset.bobLastStep = '0';
+          sprite.style.width = shopIconSize + 'px';
+          sprite.style.height = shopIconSize + 'px';
+          card.appendChild(sprite);
+        } else {
+          var img = document.createElement('img');
+          img.src = typeImagePath(item.type);
+          img.alt = '';
+          img.className = 'ax-buy-type-img ax-axolotl-img ax-idle';
+          img.dataset.bobIntervalMs = '500';
+          img.dataset.bobIndex = '0';
+          img.dataset.bobLastStep = '0';
+          img.width = shopIconSize;
+          img.height = shopIconSize;
+          img.style.width = shopIconSize + 'px';
+          img.style.height = shopIconSize + 'px';
+          card.appendChild(img);
+        }
+        
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'ax-buy-type-name';
+        var problemLabel = '';
+        if (item.problemFlags && item.problemFlags.injured) problemLabel = '【欠損】';
+        else if (item.problemFlags && item.problemFlags.sick) problemLabel = '【病気】';
+        var ageLabel = item.age + 'ヶ月';
+        nameSpan.textContent = problemLabel + typeLabel(item.type) + ' (' + ageLabel + ')';
+        card.appendChild(nameSpan);
+        
+        var priceSpan = document.createElement('span');
+        priceSpan.className = 'ax-buy-type-price';
+        priceSpan.textContent = formatMoney(item.price);
+        card.appendChild(priceSpan);
+        
+        var btnRow = document.createElement('div');
+        btnRow.className = 'ax-buy-btn-row';
+        btnRow.style.display = 'flex';
+        btnRow.style.gap = '6px';
+        btnRow.style.justifyContent = 'center';
+        btnRow.style.marginTop = '6px';
+        
+        var detailBtn = document.createElement('button');
+        detailBtn.type = 'button';
+        detailBtn.className = 'ax-btn ax-buy-detail-btn';
+        detailBtn.textContent = '詳細';
+        detailBtn.style.fontSize = '10px';
+        detailBtn.style.padding = '4px 8px';
+        detailBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var stats = getRandomShopStats();
+          if (item.problemFlags && (item.problemFlags.injured || item.problemFlags.sick)) stats.health = Math.min(stats.health, 50);
+          var detailText = '<p><strong>価格:</strong> ' + formatMoney(item.price) + '</p>';
+          detailText += '<p><strong>詳細（個体差あり）:</strong><br>空腹: ' + stats.hunger + '% 健康: ' + stats.health + '% サイズ: 約' + formatSize(calculateSizeFromAge(item.age)) + '</p>';
+          if (item.problemFlags && item.problemFlags.injured) detailText += '<p><strong>状態:</strong> 欠損</p>';
+          else if (item.problemFlags && item.problemFlags.sick) detailText += '<p><strong>状態:</strong> 病気</p>';
+          detailText += '<p>治療や世話で回復の余地があります。</p>';
+          openShopDetail((problemLabel || '') + typeLabel(item.type) + ' (' + ageLabel + ')', detailText);
+        });
+        btnRow.appendChild(detailBtn);
+        
+        var buyBtn = document.createElement('button');
+        buyBtn.type = 'button';
+        buyBtn.className = 'ax-btn ax-buy-buy-btn';
+        buyBtn.textContent = '購入';
+        buyBtn.style.fontSize = '10px';
+        buyBtn.style.padding = '4px 8px';
+        buyBtn.dataset.type = item.type;
+        buyBtn.dataset.age = String(item.age);
+        buyBtn.dataset.price = String(item.price);
+        buyBtn.dataset.injured = (item.problemFlags && item.problemFlags.injured) ? 'true' : '';
+        buyBtn.dataset.sick = (item.problemFlags && item.problemFlags.sick) ? 'true' : '';
+        buyBtn.dataset.chimeraTypes = item.chimeraTypes ? JSON.stringify(item.chimeraTypes) : '';
+        if (state.money < item.price) buyBtn.disabled = true;
+        buyBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (this.disabled) return;
+          var flags = {};
+          if (this.dataset.injured === 'true') flags.injured = true;
+          if (this.dataset.sick === 'true') flags.sick = true;
+          var chimeraTypes = null;
+          if (this.dataset.chimeraTypes) {
+            try {
+              chimeraTypes = JSON.parse(this.dataset.chimeraTypes);
+            } catch(e) {}
+          }
+          doBuyMutation(this.dataset.type, parseInt(this.dataset.age, 10), parseInt(this.dataset.price, 10), flags, chimeraTypes);
+        });
+        btnRow.appendChild(buyBtn);
+        
+        card.appendChild(btnRow);
+        list.appendChild(card);
       });
-      btnRow.appendChild(detailBtn);
-      var buyBtn = document.createElement('button');
-      buyBtn.type = 'button';
-      buyBtn.className = 'ax-btn ax-buy-buy-btn';
-      buyBtn.textContent = '購入';
-      buyBtn.style.fontSize = '10px';
-      buyBtn.style.padding = '4px 8px';
-      buyBtn.dataset.type = selectedType;
-      buyBtn.dataset.band = String(7);
-      buyBtn.dataset.price = String(state.auctionPrice);
-      buyBtn.dataset.isAuction = 'true';
-      if (state.money < state.auctionPrice) buyBtn.disabled = true;
-      buyBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        doBuy(this.dataset.type, parseInt(this.dataset.band, 10), parseInt(this.dataset.price, 10), true);
-      });
-      btnRow.appendChild(buyBtn);
-      auctionCard.appendChild(btnRow);
-      list.appendChild(auctionCard);
       return;
     }
+    
     
     // 訳あり商品（固定種・欠損 or 病気・低価格）
     if (options && options.isProblem) {
@@ -4264,31 +4657,28 @@
     var tabsEl = $('axBuyTabs');
     tabsEl.innerHTML = '';
     
-    // 固定化された種類のみ
-    var fixedTypes = Object.keys(state.fixedTypes).filter(function(type) {
-      return state.fixedTypes[type] === true;
-    });
+    // ミューテーションショップが利用可能な場合はそれを表示
+    if (state.mutationShopAvailable && state.mutationShopItems && state.mutationShopItems.length > 0) {
+      var mutationTab = document.createElement('button');
+      mutationTab.type = 'button';
+      mutationTab.className = 'ax-buy-tab';
+      mutationTab.textContent = 'ミューテーション !';
+      mutationTab.dataset.tab = 'mutation';
+      mutationTab.classList.add('active');
+      tabsEl.appendChild(mutationTab);
+      showBuyTypeList('mutation');
+      $('axOverlayBuy').classList.add('visible');
+      return;
+    }
     
-    // 「生体」タブ（固定化された種類のみ）
-    var normalTab = document.createElement('button');
-    normalTab.type = 'button';
-    normalTab.className = 'ax-buy-tab';
-    normalTab.textContent = '生体';
-    normalTab.dataset.tab = 'normal';
-    normalTab.classList.add('active');
-    normalTab.addEventListener('click', function () {
-      tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
-      normalTab.classList.add('active');
-      showBuyTypeList('normal');
-    });
-    tabsEl.appendChild(normalTab);
-    
-    // 「設備」タブ
+    // 通常のショップは削除（固定化済みの販売を削除）
+    // 設備タブのみ表示
     var equipmentTab = document.createElement('button');
     equipmentTab.type = 'button';
     equipmentTab.className = 'ax-buy-tab';
     equipmentTab.textContent = '設備';
     equipmentTab.dataset.tab = 'equipment';
+    equipmentTab.classList.add('active');
     equipmentTab.addEventListener('click', function () {
       tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
       equipmentTab.classList.add('active');
@@ -4296,8 +4686,7 @@
     });
     tabsEl.appendChild(equipmentTab);
     
-    
-    showBuyTypeList('normal');
+    showBuyTypeList('equipment');
     
     $('axOverlayBuy').classList.add('visible');
   }
@@ -4306,10 +4695,7 @@
     var list = $('axBuyTypeList');
     list.innerHTML = '';
     
-    if (tabType === 'auction' && state.auctionAvailable && state.auctionType) {
-      // オークション：固定化していない個体が稀に売られる
-      fillBuyTypeList(state.auctionType, true);
-    } else if (tabType === 'equipment') {
+    if (tabType === 'equipment') {
       // 設備タブ：生体と同じく箱ごとに表示し、詳細・効果を見れるようにする
       function addEquipmentCard(name, statusText, detailTitle, detailBody, buyLabel, cost, disabled, onBuy) {
         var card = document.createElement('div');
@@ -4505,6 +4891,87 @@
     }
   }
 
+  function doBuyMutation(type, age, price, problemFlags, chimeraTypes) {
+    var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
+    if (!empty) {
+      logLine('空き水槽がないので、新しいウパをお迎えできない。');
+      $('axOverlayBuy').classList.remove('visible');
+      updateUI();
+      return;
+    }
+    if (state.money < price) {
+      logLine('購入できません。資金が足りません。');
+      $('axOverlayBuy').classList.remove('visible');
+      updateUI();
+      return;
+    }
+    state.money -= price;
+    
+    var ax = createAxolotl(age, type, null, null, chimeraTypes);
+    // サイズを年齢に応じて再計算
+    ax.size = calculateSizeFromAge(age);
+    if (axolotlRegistry[ax.id]) {
+      axolotlRegistry[ax.id].size = ax.size;
+    }
+    
+    // 問題フラグの適用
+    if (problemFlags) {
+      if (problemFlags.injured) {
+        ax.injured = true;
+        if (axolotlRegistry[ax.id]) axolotlRegistry[ax.id].injured = true;
+      }
+      if (problemFlags.sick) {
+        ax.sick = true;
+        if (axolotlRegistry[ax.id]) axolotlRegistry[ax.id].sick = true;
+      }
+      if (problemFlags.injured || problemFlags.sick) {
+        ax.health = Math.min(ax.health != null ? ax.health : 100, 50);
+        if (axolotlRegistry[ax.id]) axolotlRegistry[ax.id].health = ax.health;
+      }
+    }
+    
+    empty.axolotl = ax;
+    empty.baby = age < 12;
+    empty.note = 'ミューテーションショップで購入したウパ';
+    if (empty.clean === undefined) empty.clean = 80;
+    if (empty.poop === undefined) empty.poop = false;
+    
+    // ミューテーションショップ購入個体はisFixedLineage=false（未固定種）
+    ax.isFixedLineage = false;
+    if (axolotlRegistry[ax.id]) {
+      axolotlRegistry[ax.id].isFixedLineage = false;
+    }
+    
+    // 図鑑に追加
+    state.obtainedTypes[type] = true;
+    
+    var problemLabel = '';
+    if (problemFlags && problemFlags.injured) problemLabel = '【欠損】';
+    else if (problemFlags && problemFlags.sick) problemLabel = '【病気】';
+    logLine(problemLabel + typeLabel(type) + '（' + age + 'ヶ月）を' + formatMoney(price) + 'でお迎えした。');
+    
+    // 購入したアイテムをリストから削除
+    var itemIndex = state.mutationShopItems.findIndex(function(item) {
+      return item.type === type && item.age === age && item.price === price;
+    });
+    if (itemIndex >= 0) {
+      state.mutationShopItems.splice(itemIndex, 1);
+      if (state.mutationShopItems.length === 0) {
+        state.mutationShopAvailable = false;
+        updateMutationShopButton();
+      }
+    }
+    
+    $('axOverlayBuy').classList.remove('visible');
+    
+    // 名付けフェーズを表示
+    if (empty && empty.axolotl) {
+      openNamingModal(empty.axolotl.id, false);
+    }
+    
+    updateUI();
+  }
+
   function doBuy(type, sizeBand, price, isAuction, sex, problemFlags) {
     var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
     if (!empty) {
@@ -4524,14 +4991,14 @@
     // キメラの場合はchimeraTypesを設定
     var chimeraTypes = null;
     if (type === 'chimera') {
-      // オークションの場合はオークションで設定されたchimeraTypesを使用
-      if (isAuction && state.auctionChimeraTypes) {
-        chimeraTypes = state.auctionChimeraTypes;
-      } else {
-        chimeraTypes = ['nomal', 'marble']; // デフォルトでリューシとマーブルのキメラ
-      }
+      chimeraTypes = ['nomal', 'marble']; // デフォルトでリューシとマーブルのキメラ
     }
     var ax = createAxolotl(age, type, null, null, chimeraTypes);
+    // サイズを年齢に応じて再計算（ショップで買った個体のサイズを適切に設定）
+    ax.size = calculateSizeFromAge(age);
+    if (axolotlRegistry[ax.id]) {
+      axolotlRegistry[ax.id].size = ax.size;
+    }
     // 性別を指定
     if (sex) {
       ax.sex = sex;
@@ -4569,13 +5036,8 @@
     // 図鑑に追加
     state.obtainedTypes[type] = true;
     
-    if (isAuction) {
-      logLine('【オークション落札】' + typeLabel(type) + 'を' + formatMoney(price) + 'で購入した！');
-      state.auctionAvailable = false;
-      state.auctionType = null;
-      state.auctionPrice = 0;
-      updateAuctionButton();
-    } else {
+    // オークション機能は削除
+    {
       var sizeLabel = sizeBand === 7 ? '成体' : '3ヶ月目のうーぱー';
       var sexLabel = sex ? (sex === 'オス' ? '♂' : '♀') : '';
       if (problemFlags && (problemFlags.injured || problemFlags.sick)) {
@@ -4586,6 +5048,12 @@
       }
     }
     $('axOverlayBuy').classList.remove('visible');
+    
+    // 名付けフェーズを表示
+    if (empty && empty.axolotl) {
+      openNamingModal(empty.axolotl.id, false);
+    }
+    
     updateUI();
   }
 
@@ -4703,9 +5171,8 @@
     state.ended = false;
     state.lastBreedParent1 = null;
     state.lastBreedParent2 = null;
-    state.auctionAvailable = false;
-    state.auctionType = null;
-    state.auctionPrice = 0;
+    state.mutationShopAvailable = false;
+    state.mutationShopItems = [];
     // 最初はリューシとマーブルのみ固定化済み
     state.fixedTypes = {
       nomal: true,
@@ -4778,6 +5245,12 @@
       if (!state.ended) actClean();
     });
   }
+  var btnRemoveAllPoop = document.getElementById('btnRemoveAllPoop');
+  if (btnRemoveAllPoop) {
+    btnRemoveAllPoop.addEventListener('click', function () {
+      if (!state.ended) removeAllPoop();
+    });
+  }
   
   // ハンバーガーメニュー
   var menuToggle = document.getElementById('axMenuToggle');
@@ -4830,7 +5303,36 @@
     });
   }
   $('axBreedConfirm').addEventListener('click', function () {
-    doBreed(parseInt($('axBreedParent1').value, 10), parseInt($('axBreedParent2').value, 10));
+    var val1 = $('axBreedParent1').value;
+    var val2 = $('axBreedParent2').value;
+    var parent1Idx, parent2Idx;
+    
+    // 繁殖ペアの個体の場合は分離してから繁殖
+    if (val1.indexOf('_bp_') >= 0) {
+      var parts1 = val1.split('_bp_');
+      parent1Idx = parseInt(parts1[0], 10);
+      var axId1 = parseInt(parts1[1], 10);
+      separateBreedingPairForBreeding(parent1Idx, axId1);
+      // 分離後、実際のタンクインデックスを取得
+      var newTank1 = state.tanks.findIndex(function(t) { return t.axolotl && t.axolotl.id === axId1; });
+      if (newTank1 >= 0) parent1Idx = newTank1;
+    } else {
+      parent1Idx = parseInt(val1, 10);
+    }
+    
+    if (val2.indexOf('_bp_') >= 0) {
+      var parts2 = val2.split('_bp_');
+      parent2Idx = parseInt(parts2[0], 10);
+      var axId2 = parseInt(parts2[1], 10);
+      separateBreedingPairForBreeding(parent2Idx, axId2);
+      // 分離後、実際のタンクインデックスを取得
+      var newTank2 = state.tanks.findIndex(function(t) { return t.axolotl && t.axolotl.id === axId2; });
+      if (newTank2 >= 0) parent2Idx = newTank2;
+    } else {
+      parent2Idx = parseInt(val2, 10);
+    }
+    
+    doBreed(parent1Idx, parent2Idx);
   });
   var axBreedLineageIntroductionBtn = document.getElementById('axBreedLineageIntroduction');
   if (axBreedLineageIntroductionBtn) {
@@ -4864,13 +5366,59 @@
       }
     });
   }
-  var btnAuction = document.getElementById('btnAuction');
-  if (btnAuction) {
-    btnAuction.addEventListener('click', function () {
+  var btnSettings = document.getElementById('btnSettings');
+  if (btnSettings) {
+    btnSettings.addEventListener('click', function () {
       if (!state.ended) {
-        openAuctionOverlay();
+        openSettingsOverlay();
         closeMenu();
       }
+    });
+  }
+
+  function openSettingsOverlay() {
+    var overlay = $('axOverlaySettings');
+    if (!overlay) return;
+    
+    // 設定値を反映
+    var checkbox = document.getElementById('settingAutoReorderTanks');
+    if (checkbox) {
+      checkbox.checked = state.settings && state.settings.autoReorderTanks || false;
+    }
+    
+    overlay.classList.add('visible');
+  }
+
+  var axSettingsClose = document.getElementById('axSettingsClose');
+  if (axSettingsClose) {
+    axSettingsClose.addEventListener('click', function () {
+      $('axOverlaySettings').classList.remove('visible');
+    });
+  }
+
+  var settingAutoReorderTanks = document.getElementById('settingAutoReorderTanks');
+  if (settingAutoReorderTanks) {
+    settingAutoReorderTanks.addEventListener('change', function () {
+      if (!state.settings) state.settings = {};
+      state.settings.autoReorderTanks = this.checked;
+      saveGame();
+    });
+  }
+
+  var btnManual = document.getElementById('btnManual');
+  if (btnManual) {
+    btnManual.addEventListener('click', function () {
+      if (!state.ended) {
+        $('axOverlayManual').classList.add('visible');
+        closeMenu();
+      }
+    });
+  }
+
+  var axManualClose = document.getElementById('axManualClose');
+  if (axManualClose) {
+    axManualClose.addEventListener('click', function () {
+      $('axOverlayManual').classList.remove('visible');
     });
   }
   $('axBuyCancel').addEventListener('click', function () {
@@ -4893,6 +5441,8 @@
     resetGame();
   });
   $('axDetailCancel').addEventListener('click', function () {
+    // 名付けモードの場合はクリア
+    if (window._namingMode) window._namingMode = null;
     closeDetailModal();
   });
   

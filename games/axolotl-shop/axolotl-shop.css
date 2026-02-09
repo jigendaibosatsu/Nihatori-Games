@@ -142,6 +142,11 @@ body.game-page {
   border-color: #7dd3fc;
   color: #ecfeff;
 }
+.ax-global-btn.poop {
+  background: linear-gradient(180deg, #dc2626, #b91c1c);
+  border-color: #f87171;
+  color: #fef2f2;
+}
 .ax-global-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -463,6 +468,8 @@ body.game-page {
   justify-content: center;
   align-items: center;
   min-width: 0;
+  position: relative;
+  z-index: 1; /* ボタンより後ろのレイヤー */
 }
 .ax-tank-lines { line-height: 1.3; font-size: 9px; }
 .ax-health-bar-wrap {
@@ -504,6 +511,19 @@ body.game-page {
 /* たまごっち風Idle Bob: JSでフレーム配列駆動（整数pxのみ・頂点/底で滞在） */
 .ax-axolotl-img.ax-idle {
   /* transform は JS で translateY(Npx) に更新 */
+  position: relative;
+}
+
+@keyframes ax-hop {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(8px) translateY(-4px); }
+  50% { transform: translateX(0) translateY(0); }
+  75% { transform: translateX(-8px) translateY(-4px); }
+}
+
+.ax-tank-sprite-wrap canvas.ax-idle,
+.ax-tank-sprite-wrap img.ax-idle {
+  animation: ax-hop 1.5s ease-in-out infinite;
 }
 
 @keyframes ax-float {
@@ -561,6 +581,8 @@ canvas.ax-axolotl-img.ax-idle {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid #e5e7eb;
+  position: relative;
+  z-index: 2; /* スプライトより前のレイヤー */
 }
 .ax-tank-action-btn {
   flex: 1;
