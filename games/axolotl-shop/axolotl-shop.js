@@ -633,6 +633,173 @@
     state.shopSaleItems = [];
   }
 
+  // セーブデータのバージョン管理
+  var SAVE_DATA_VERSION = '1.0.0';
+  var SAVE_KEY = 'axolotl-shop-save';
+
+  // ゲーム状態を保存
+  function saveGame() {
+    try {
+      var saveData = {
+        version: SAVE_DATA_VERSION,
+        state: JSON.parse(JSON.stringify(state)),
+        axolotlRegistry: JSON.parse(JSON.stringify(axolotlRegistry))
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+      console.log('[Save] ゲームを保存しました');
+    } catch (e) {
+      console.error('[Save] セーブに失敗しました:', e);
+    }
+  }
+
+  // ゲーム状態を読み込み
+  function loadGame() {
+    try {
+      var saveDataStr = localStorage.getItem(SAVE_KEY);
+      if (!saveDataStr) {
+        console.log('[Load] セーブデータが見つかりません');
+        return false;
+      }
+
+      var saveData = JSON.parse(saveDataStr);
+      var loadedVersion = saveData.version || '0.0.0';
+      
+      // バージョンチェックとマイグレーション
+      if (loadedVersion !== SAVE_DATA_VERSION) {
+        console.log('[Load] バージョンが異なります。マイグレーションを実行します:', loadedVersion, '->', SAVE_DATA_VERSION);
+        saveData = migrateSaveData(saveData, loadedVersion, SAVE_DATA_VERSION);
+      }
+
+      // 状態を復元
+      if (saveData.state) {
+        Object.assign(state, saveData.state);
+        state.version = SAVE_DATA_VERSION;
+      }
+      
+      if (saveData.axolotlRegistry) {
+        axolotlRegistry = saveData.axolotlRegistry;
+      }
+
+      console.log('[Load] ゲームを読み込みました');
+      return true;
+    } catch (e) {
+      console.error('[Load] ロードに失敗しました:', e);
+      return false;
+    }
+  }
+
+  // セーブデータのマイグレーション
+  function migrateSaveData(saveData, fromVersion, toVersion) {
+    console.log('[Migration]', fromVersion, '->', toVersion);
+    
+    // バージョン1.0.0へのマイグレーション
+    if (!saveData.state.version) {
+      saveData.state.version = '1.0.0';
+      
+      // 新しいフィールドの初期化
+      if (!saveData.state.usedNames) saveData.state.usedNames = {};
+      if (!saveData.state.settings) saveData.state.settings = { autoReorderTanks: false };
+      if (!saveData.state.mutationShopAvailable) {
+        saveData.state.mutationShopAvailable = false;
+        saveData.state.mutationShopItems = [];
+      }
+      
+      // axolotlのマイグレーション
+      function migrateAxolotl(ax) {
+        if (!ax) return;
+        if (ax.isFixedLineage === undefined) ax.isFixedLineage = false;
+        if (!ax.nameElementA) ax.nameElementA = null;
+        if (!ax.nameElementB) ax.nameElementB = null;
+        if (ax.isHereditaryA === undefined) ax.isHereditaryA = false;
+        if (ax.isHereditaryB === undefined) ax.isHereditaryB = false;
+      }
+      
+      if (saveData.state.tanks) {
+        saveData.state.tanks.forEach(function(tank) {
+          if (tank.axolotl) migrateAxolotl(tank.axolotl);
+          if (tank.breedingPair) tank.breedingPair.forEach(migrateAxolotl);
+          if (tank.juveniles) tank.juveniles.forEach(migrateAxolotl);
+        });
+      }
+      
+      if (saveData.axolotlRegistry) {
+        Object.keys(saveData.axolotlRegistry).forEach(function(key) {
+          migrateAxolotl(saveData.axolotlRegistry[key]);
+        });
+      }
+    }
+    
+    // 将来のバージョンアップ時のマイグレーション処理をここに追加
+    // if (fromVersion < '1.1.0') { ... }
+    
+    return saveData;
+  }
+
+  // 復活の呪文を生成（JSONをBase64エンコード）
+  function generatePassword() {
+    try {
+      var saveData = {
+        version: SAVE_DATA_VERSION,
+        state: JSON.parse(JSON.stringify(state)),
+        axolotlRegistry: JSON.parse(JSON.stringify(axolotlRegistry))
+      };
+      var jsonStr = JSON.stringify(saveData);
+      // Base64エンコード（スマホでも動作するように）
+      var base64 = btoa(unescape(encodeURIComponent(jsonStr)));
+      return base64;
+    } catch (e) {
+      console.error('[Password] 復活の呪文生成に失敗しました:', e);
+      return null;
+    }
+  }
+
+  // 復活の呪文から復元
+  function loadFromPassword(password) {
+    try {
+      // Base64デコード
+      var jsonStr = decodeURIComponent(escape(atob(password)));
+      var saveData = JSON.parse(jsonStr);
+      
+      var loadedVersion = saveData.version || '0.0.0';
+      if (loadedVersion !== SAVE_DATA_VERSION) {
+        saveData = migrateSaveData(saveData, loadedVersion, SAVE_DATA_VERSION);
+      }
+
+      if (saveData.state) {
+        Object.assign(state, saveData.state);
+        state.version = SAVE_DATA_VERSION;
+      }
+      
+      if (saveData.axolotlRegistry) {
+        axolotlRegistry = saveData.axolotlRegistry;
+      }
+
+      // 名前を再登録
+      if (state.usedNames) state.usedNames = {};
+      state.tanks.forEach(function(tank) {
+        if (tank.axolotl && tank.axolotl.name) {
+          registerName(tank.axolotl.name);
+        }
+        if (tank.breedingPair) {
+          tank.breedingPair.forEach(function(ax) {
+            if (ax.name) registerName(ax.name);
+          });
+        }
+      });
+      Object.keys(axolotlRegistry).forEach(function(key) {
+        var reg = axolotlRegistry[key];
+        if (reg && reg.name && !reg.removed) {
+          registerName(reg.name);
+        }
+      });
+
+      return true;
+    } catch (e) {
+      console.error('[Password] 復活の呪文の復元に失敗しました:', e);
+      return false;
+    }
+  }
+
   // 種類ごとの特徴説明
   var typeDescriptions = {
     nomal: '最も一般的な種類。丈夫で育てやすい。',
@@ -1681,6 +1848,7 @@
         var namePart = newName || typeLabel(displayAx.type);
         var displayName = (displayAx.familyName ? displayAx.familyName + ' ' : '') + namePart;
         nameEl.innerHTML = displayName + (sexDisplayHtml ? ' ' + sexDisplayHtml : '');
+        saveGame();
       }
     }
     
@@ -1927,6 +2095,7 @@
     // モーダルを閉じた後にupdateUI()を呼ぶ（アニメーションを維持するため、少し遅延させる）
     setTimeout(function() {
       updateUI();
+      saveGame();
     }, 200);
   }
 
@@ -2067,6 +2236,7 @@
     openNamingModal(selected.id, true);
     
     updateUI();
+    saveGame();
   }
 
   function openJuvenileSelectionModal(tankIdx) {
@@ -2852,6 +3022,7 @@
     tank.poop = false;
     logLine('水槽' + (tankIdx + 1) + 'のうんこを掃除した。');
     updateUI();
+    saveGame();
   }
 
   function removeAllPoop() {
@@ -3498,6 +3669,7 @@
     checkEnd();
     updateUI();
     updateMutationShopButton();
+    saveGame();
   }
 
   function reorderTanks() {
@@ -4357,6 +4529,7 @@
     logLine('水槽' + (emptyIdx + 1) + 'に' + typeLabel(ax1.type) + 'と' + typeLabel(ax2.type) + 'を入れて同棲を開始した。');
     $('axOverlayBreed').classList.remove('visible');
     updateUI();
+    saveGame();
   }
 
   function openTreatmentOverlay() {
@@ -5057,6 +5230,7 @@
     }
     
     updateUI();
+    saveGame();
   }
 
   function doBuy(type, sizeBand, price, isAuction, sex, problemFlags) {
@@ -5142,6 +5316,7 @@
     }
     
     updateUI();
+    saveGame();
   }
 
   function buyEquipment(equipmentType, cost) {
@@ -5528,6 +5703,119 @@
       $('axOverlayManual').classList.remove('visible');
     });
   }
+
+  var btnPassword = document.getElementById('btnPassword');
+  if (btnPassword) {
+    btnPassword.addEventListener('click', function () {
+      if (!state.ended) {
+        openPasswordOverlay();
+        closeMenu();
+      }
+    });
+  }
+
+  function openPasswordOverlay() {
+    var overlay = $('axOverlayPassword');
+    if (!overlay) return;
+    
+    // 出力エリアをクリア
+    var output = document.getElementById('axPasswordOutput');
+    var copyBtn = document.getElementById('btnCopyPassword');
+    if (output) output.value = '';
+    if (copyBtn) copyBtn.style.display = 'none';
+    
+    overlay.classList.add('visible');
+  }
+
+  var axPasswordClose = document.getElementById('axPasswordClose');
+  if (axPasswordClose) {
+    axPasswordClose.addEventListener('click', function () {
+      $('axOverlayPassword').classList.remove('visible');
+    });
+  }
+
+  var btnGeneratePassword = document.getElementById('btnGeneratePassword');
+  if (btnGeneratePassword) {
+    btnGeneratePassword.addEventListener('click', function () {
+      var password = generatePassword();
+      var output = document.getElementById('axPasswordOutput');
+      var copyBtn = document.getElementById('btnCopyPassword');
+      if (password && output) {
+        output.value = password;
+        if (copyBtn) copyBtn.style.display = 'block';
+        logLine('復活の呪文を生成しました。コピーして保存してください。');
+      } else {
+        logLine('復活の呪文の生成に失敗しました。');
+      }
+    });
+  }
+
+  var btnCopyPassword = document.getElementById('btnCopyPassword');
+  if (btnCopyPassword) {
+    btnCopyPassword.addEventListener('click', function () {
+      var output = document.getElementById('axPasswordOutput');
+      if (output && output.value) {
+        output.select();
+        try {
+          document.execCommand('copy');
+          logLine('復活の呪文をコピーしました。');
+          alert('復活の呪文をコピーしました！メモ帳などに保存してください。');
+        } catch (e) {
+          // モダンブラウザの場合はClipboard APIを使用
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(output.value).then(function() {
+              logLine('復活の呪文をコピーしました。');
+              alert('復活の呪文をコピーしました！メモ帳などに保存してください。');
+            }).catch(function(err) {
+              console.error('コピーに失敗しました:', err);
+              alert('コピーに失敗しました。手動で選択してコピーしてください。');
+            });
+          } else {
+            alert('コピー機能が利用できません。手動で選択してコピーしてください。');
+          }
+        }
+      }
+    });
+  }
+
+  var btnLoadPassword = document.getElementById('btnLoadPassword');
+  if (btnLoadPassword) {
+    btnLoadPassword.addEventListener('click', function () {
+      var input = document.getElementById('axPasswordInput');
+      if (input && input.value.trim()) {
+        if (confirm('現在のゲーム状態を上書きして復元しますか？')) {
+          if (loadFromPassword(input.value.trim())) {
+            logLine('復活の呪文からゲームを復元しました。');
+            $('axOverlayPassword').classList.remove('visible');
+            updateUI();
+            // 名前を再登録
+            if (state.usedNames) state.usedNames = {};
+            state.tanks.forEach(function(tank) {
+              if (tank.axolotl && tank.axolotl.name) {
+                registerName(tank.axolotl.name);
+              }
+              if (tank.breedingPair) {
+                tank.breedingPair.forEach(function(ax) {
+                  if (ax.name) registerName(ax.name);
+                });
+              }
+            });
+            Object.keys(axolotlRegistry).forEach(function(key) {
+              var reg = axolotlRegistry[key];
+              if (reg && reg.name && !reg.removed) {
+                registerName(reg.name);
+              }
+            });
+          } else {
+            alert('復活の呪文が正しくありません。');
+          }
+        }
+      } else {
+        alert('復活の呪文を入力してください。');
+      }
+    });
+  }
+
   $('axBuyCancel').addEventListener('click', function () {
     $('axOverlayBuy').classList.remove('visible');
   });
@@ -5732,7 +6020,31 @@
     $('axOverlayAchievements').classList.add('visible');
   }
 
-  resetGame();
+  // ゲーム開始時にセーブデータを読み込む
+  if (!loadGame()) {
+    resetGame();
+  } else {
+    // セーブデータから復元した場合、UIを更新
+    updateUI();
+    // 既存のaxolotlの名前を登録
+    if (state.usedNames) state.usedNames = {};
+    state.tanks.forEach(function(tank) {
+      if (tank.axolotl && tank.axolotl.name) {
+        registerName(tank.axolotl.name);
+      }
+      if (tank.breedingPair) {
+        tank.breedingPair.forEach(function(ax) {
+          if (ax.name) registerName(ax.name);
+        });
+      }
+    });
+    Object.keys(axolotlRegistry).forEach(function(key) {
+      var reg = axolotlRegistry[key];
+      if (reg && reg.name && !reg.removed) {
+        registerName(reg.name);
+      }
+    });
+  }
   
   // スマホのブラウザバーによるビューポート高さの変動を防ぐ
   function setViewportHeight() {
