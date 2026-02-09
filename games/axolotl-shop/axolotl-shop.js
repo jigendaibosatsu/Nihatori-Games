@@ -348,6 +348,18 @@
     yellow: true
   };
 
+  // 生体の品揃えは毎月変わる（state.monthで決定的に在庫ありの種類を返す）
+  function getShopStockForMonth() {
+    var types = AXO_TYPES_BUY.slice();
+    var result = {};
+    var seed = state.month || 1;
+    types.forEach(function(type, i) {
+      var h = (seed * 31 + (type.length * 17) + i * 13) % 100;
+      result[type] = h < 85;
+    });
+    return result;
+  }
+
   // 交配確率テーブル: breedingTable[親1タイプ][親2タイプ] = { 子タイプ: 重み, ... }
   // 遺伝子ベースの繁殖システム
   var breedingTable = (function () {
@@ -590,6 +602,7 @@
     nextAxolotlId: 1,
     mutationShopAvailable: false,
     mutationShopItems: [],  // ミューテーションショップの4匹の個体リスト
+    mutationShopSeenThisPeriod: false,  // メニュー!を消す用（ショップを開いたらtrue）
     fixedTypes: {},  // 固定化された種類 {type: true}
     obtainedTypes: {},  // 獲得した種類（図鑑用）
     achievements: {},  // 実績 {id: true}
@@ -704,6 +717,7 @@
         saveData.state.mutationShopAvailable = false;
         saveData.state.mutationShopItems = [];
       }
+      if (saveData.state.mutationShopSeenThisPeriod === undefined) saveData.state.mutationShopSeenThisPeriod = false;
       if (!saveData.state.deadAxolotls) {
         saveData.state.deadAxolotls = [];
       }
@@ -902,6 +916,8 @@
 
   // メスのB候補（通字候補）
   var femaleNameElementB = ['子', '美', '女', '香', '枝', '恵', '絵', '江', '代', '世', '奈', '菜', '那', '南', '里', '理', '梨', '莉', '花', '華', '葉', '羽', '乃', '野', '緒', '栄', '鶴', '富', '登', '志', '千', '百', '万', '愛', '優', '萌', '咲', '陽', '結', '彩', '音', '詩', '心', '桜', '桃', '楓', '葵', '梅', '菫', '蘭', '蓮', '椿', '柚', '梢', '桂', '橙', '椛', '芽', '苗', '茜', '菊', '萩', '藤', '合', '実', '穂', '潮', '波', '渚', '汐', '海', '空', '月', '星', '雪', '風', '光', '霞', '露', '雫', '霧', '雲', '虹', '麗', '綺', '翠', '碧', '晶', '玉', '珠', '瑠', '琴', '歌', '和', '雅', '絹', '綾', '織', '夢', '希', '望', '真', '幸', '祈', '願', '温', '柔', '縁', '笑', '百合'];
+  // 名付けは男女関係なく使うB候補（合体リスト）
+  var nameElementB = maleNameElementB.concat(femaleNameElementB);
 
   // 名前の重複チェック関数
   function isNameUsed(fullName) {
@@ -936,13 +952,9 @@
     return fullName;
   }
 
-  // ランダムにB要素を選択（性別に応じて）
-  function getRandomBElement(sex) {
-    if (sex === 'オス') {
-      return maleNameElementB[Math.floor(Math.random() * maleNameElementB.length)];
-    } else {
-      return femaleNameElementB[Math.floor(Math.random() * femaleNameElementB.length)];
-    }
+  // ランダムにB要素を選択（男女関係なく合体リストから）
+  function getRandomBElement() {
+    return nameElementB[Math.floor(Math.random() * nameElementB.length)];
   }
 
   // 名前生成関数（要素A/Bシステム）
@@ -1023,7 +1035,7 @@
             result.isHereditaryB = true;
           } else {
             // 母のB要素を優先的に使用、なければランダム
-            result.nameElementB = femaleB || getRandomBElement(sex);
+            result.nameElementB = femaleB || getRandomBElement();
             result.isHereditaryB = false;
           }
         } else if (inheritedPosition === 'B') {
@@ -1043,7 +1055,7 @@
         } else {
           // 通字がない場合：母から継承、なければランダム
           result.nameElementA = femaleParent.nameElementA || maleNameElementA[Math.floor(Math.random() * maleNameElementA.length)];
-          result.nameElementB = femaleB || getRandomBElement(sex);
+          result.nameElementB = femaleB || getRandomBElement();
           result.isHereditaryA = false;
           result.isHereditaryB = false;
         }
@@ -1058,7 +1070,7 @@
       
       result.nameElementA = initialA;
       result.isHereditaryA = false; // 初期名Aは通字ではない（種限定）
-      result.nameElementB = getRandomBElement(sex);
+      result.nameElementB = getRandomBElement();
       result.isHereditaryB = false;
     }
     
@@ -2007,14 +2019,19 @@
     } else {
       cancelBtn.textContent = '閉じる';
       if (sellBtn) {
+        var sameMonthBought = (displayAx.boughtAtMonth != null && displayAx.boughtAtMonth === state.month);
+        var sameMonthWelcomed = (displayAx.welcomedAtMonth != null && displayAx.welcomedAtMonth === state.month);
+        var cannotSellThisMonth = sameMonthBought || sameMonthWelcomed;
         sellBtn.style.display = 'block';
-        sellBtn.textContent = '販売 ' + formatMoney(calcPrice(displayAx));
+        sellBtn.textContent = cannotSellThisMonth ? '今月お迎えした個体は販売できません' : ('販売 ' + formatMoney(calcPrice(displayAx)));
+        sellBtn.disabled = cannotSellThisMonth;
         // 既存のイベントリスナーを削除
         var newSellBtn = sellBtn.cloneNode(true);
         sellBtn.parentNode.replaceChild(newSellBtn, sellBtn);
         // 新しいボタンにイベントリスナーを設定
         var currentAxolotlId = axolotlId; // クロージャで保持
         newSellBtn.onclick = function() {
+          if (this.disabled) return;
           sellAxolotlFromDetail(currentAxolotlId);
         };
       }
@@ -2236,6 +2253,7 @@
     tank.juvenileAge = null;
     tank.baby = true;
     tank.note = '1ヶ月目のウパ';
+    selected.welcomedAtMonth = state.month;
     
     // 一時データをクリア
     tank._hatchCandidates = null;
@@ -2378,6 +2396,7 @@
         tank.juvenileAge = null;
         tank.baby = selected.age < 12;
         tank.note = '選んだ幼生';
+        selected.welcomedAtMonth = state.month;
         
         logLine(selectedName + 'を残し、他の' + otherCount + '匹を' + formatMoney(otherPrice) + 'で販売した。');
         $('axOverlayJuvenile').classList.remove('visible');
@@ -2390,6 +2409,7 @@
     emptyTank.axolotl = selected;
     emptyTank.baby = selected.age < 12;
     emptyTank.note = '選んだ幼生';
+    selected.welcomedAtMonth = state.month;
     
     tank.juveniles = tank.juveniles.filter(function (j) { return j.id !== selected.id; });
     
@@ -2600,7 +2620,7 @@
         // うんこの表示（繁殖ペアの場合）
         if (tank.poop) {
           var poopEl = document.createElement('img');
-          poopEl.src = '/assets/unko.png';
+          poopEl.src = '/assets/items/unko_32.png';
           poopEl.style.width = '16px';
           poopEl.style.height = '16px';
           poopEl.style.position = 'absolute';
@@ -2664,7 +2684,7 @@
         // うんこの表示
         if (tank.poop) {
           var poopEl = document.createElement('img');
-          poopEl.src = '/assets/unko.png';
+          poopEl.src = '/assets/items/unko_32.png';
           poopEl.style.width = '16px';
           poopEl.style.height = '16px';
           poopEl.style.position = 'absolute';
@@ -3112,6 +3132,7 @@
     }
     
     state.mutationShopAvailable = true;
+    state.mutationShopSeenThisPeriod = false;  // 新規入荷なので!を表示
     logLine('【ミューテーションショップ】4匹の未固定個体が入荷しました！メニューボタン!を確認してください。');
     
     // ショップの在庫状態を日ごとに更新（品切れの可能性）
@@ -3688,10 +3709,12 @@
   }
 
   function updateMutationShopButton() {
-    // ハンバーガーアイコンに!を表示
+    // ミューテーションが売られている時だけ!表示。ショップを開いたら消す
     var menuToggle = document.getElementById('axMenuToggle');
     if (menuToggle) {
-      if (state.mutationShopAvailable && state.mutationShopItems && state.mutationShopItems.length > 0) {
+      var hasMutation = state.mutationShopAvailable && state.mutationShopItems && state.mutationShopItems.length > 0;
+      var notSeen = !state.mutationShopSeenThisPeriod;
+      if (hasMutation && notSeen) {
         menuToggle.classList.add('has-notification');
       } else {
         menuToggle.classList.remove('has-notification');
@@ -4978,65 +5001,54 @@
   }
 
   function openBuyOverlay() {
+    state.mutationShopSeenThisPeriod = true;
+    updateMutationShopButton();
+    
     var tabsEl = $('axBuyTabs');
     tabsEl.innerHTML = '';
     
-    // ミューテーションショップが利用可能な場合はタブを追加
+    // 生体タブ（常に最初）
+    var creatureTab = document.createElement('button');
+    creatureTab.type = 'button';
+    creatureTab.className = 'ax-buy-tab active';
+    creatureTab.textContent = '生体';
+    creatureTab.dataset.tab = 'creature';
+    creatureTab.addEventListener('click', function () {
+      tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
+      creatureTab.classList.add('active');
+      showBuyTypeList('creature');
+    });
+    tabsEl.appendChild(creatureTab);
+    showBuyTypeList('creature');
+    
+    // ミューテーションが売られている時だけタブを追加（!付き）
+    checkMutationShop();
     if (state.mutationShopAvailable && state.mutationShopItems && state.mutationShopItems.length > 0) {
       var mutationTab = document.createElement('button');
       mutationTab.type = 'button';
       mutationTab.className = 'ax-buy-tab';
       mutationTab.textContent = 'ミューテーション !';
       mutationTab.dataset.tab = 'mutation';
-      mutationTab.classList.add('active');
       mutationTab.addEventListener('click', function () {
         tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
         mutationTab.classList.add('active');
         showBuyTypeList('mutation');
       });
       tabsEl.appendChild(mutationTab);
-      showBuyTypeList('mutation');
-    } else {
-      // ミューテーションショップが利用可能でない場合は、強制的にチェックして生成
-      checkMutationShop();
-      if (state.mutationShopAvailable && state.mutationShopItems && state.mutationShopItems.length > 0) {
-        var mutationTab = document.createElement('button');
-        mutationTab.type = 'button';
-        mutationTab.className = 'ax-buy-tab';
-        mutationTab.textContent = 'ミューテーション !';
-        mutationTab.dataset.tab = 'mutation';
-        mutationTab.classList.add('active');
-        mutationTab.addEventListener('click', function () {
-          tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
-          mutationTab.classList.add('active');
-          showBuyTypeList('mutation');
-        });
-        tabsEl.appendChild(mutationTab);
-        showBuyTypeList('mutation');
-      }
     }
     
-    // 設備タブを追加
+    // 設備タブ
     var equipmentTab = document.createElement('button');
     equipmentTab.type = 'button';
     equipmentTab.className = 'ax-buy-tab';
     equipmentTab.textContent = '設備';
     equipmentTab.dataset.tab = 'equipment';
-    if (!state.mutationShopAvailable || !state.mutationShopItems || state.mutationShopItems.length === 0) {
-      equipmentTab.classList.add('active');
-    }
     equipmentTab.addEventListener('click', function () {
       tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
       equipmentTab.classList.add('active');
       showBuyTypeList('equipment');
     });
     tabsEl.appendChild(equipmentTab);
-    
-    // アクティブなタブがない場合は設備タブを表示
-    if (!tabsEl.querySelector('.ax-buy-tab.active')) {
-      equipmentTab.classList.add('active');
-      showBuyTypeList('equipment');
-    }
     
     $('axOverlayBuy').classList.add('visible');
   }
@@ -5210,10 +5222,15 @@
         card.appendChild(btns);
         list.appendChild(card);
       })();
+    } else if (tabType === 'mutation') {
+      // ミューテーションタブ：ミューテーションショップの個体のみ
+      fillBuyTypeList('mutation');
+      return;
     } else {
-      // 生体タブ：固定化された種類のみ表示（3ヶ月目は性別ランダム、成体はオスとメスそれぞれ）
+      // 生体タブ：固定化された種類のうち、今月の品揃えのみ表示（毎月変わる）
+      var stockThisMonth = getShopStockForMonth();
       var fixedTypes = Object.keys(state.fixedTypes).filter(function(type) {
-        return state.fixedTypes[type] === true;
+        return state.fixedTypes[type] === true && stockThisMonth[type];
       });
       fixedTypes.forEach(function(type) {
         // 3ヶ月目（性別ランダム、一種類のみ）
@@ -5224,19 +5241,22 @@
         fillBuyTypeList(type, false, 7, 'メス');
       });
       // 低確率で訳あり商品を1点追加（固定種・欠損 or 病気・大幅値引き）
-      if (fixedTypes.length > 0 && Math.random() < 0.12) {
-        var problemType = fixedTypes[Math.floor(Math.random() * fixedTypes.length)];
-        var problemBand = Math.random() < 0.5 ? 1 : 7;
-        var problemDefect = Math.random() < 0.5 ? 'injured' : 'sick';
-        var bandPrices = sizePriceTable[problemType] || sizePriceTable.nomal;
-        var normalPrice = bandPrices[problemBand] || 10000;
-        var problemPrice = Math.max(500, Math.floor(normalPrice * 0.25));
-        fillBuyTypeList(problemType, false, problemBand, null, {
-          isProblem: true,
-          injured: problemDefect === 'injured',
-          sick: problemDefect === 'sick',
-          price: problemPrice
-        });
+      if (fixedTypes.length > 0) {
+        var problemSeed = (state.month || 1) * 7 + 3;
+        if ((problemSeed % 100) < 12) {
+          var problemType = fixedTypes[problemSeed % fixedTypes.length];
+          var problemBand = (problemSeed >> 2) % 2 === 0 ? 1 : 7;
+          var problemDefect = (problemSeed >> 1) % 2 === 0 ? 'injured' : 'sick';
+          var bandPrices = sizePriceTable[problemType] || sizePriceTable.nomal;
+          var normalPrice = bandPrices[problemBand] || 10000;
+          var problemPrice = Math.max(500, Math.floor(normalPrice * 0.25));
+          fillBuyTypeList(problemType, false, problemBand, null, {
+            isProblem: true,
+            injured: problemDefect === 'injured',
+            sick: problemDefect === 'sick',
+            price: problemPrice
+          });
+        }
       }
     }
   }
@@ -5285,6 +5305,8 @@
     empty.note = 'ミューテーションショップで購入したウパ';
     if (empty.clean === undefined) empty.clean = 80;
     if (empty.poop === undefined) empty.poop = false;
+    empty.boughtAtMonth = state.month;
+    ax.boughtAtMonth = state.month;
     
     // ミューテーションショップ購入個体はisFixedLineage=false（未固定種）
     ax.isFixedLineage = false;
@@ -5377,6 +5399,8 @@
       empty.note = (problemFlags && (problemFlags.injured || problemFlags.sick)) ? '訳ありで購入したウパ' : 'ショップで購入したウパ';
       if (empty.clean === undefined) empty.clean = 80;
       if (empty.poop === undefined) empty.poop = false;
+      empty.boughtAtMonth = state.month;
+      ax.boughtAtMonth = state.month;
       
       // ショップ購入個体はisFixedLineage=true（固定化済み種のみ買えるため）
       ax.isFixedLineage = true;

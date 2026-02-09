@@ -70,6 +70,9 @@
     fertilizer: 0,
     compostGauge: 0,
     
+    // 店舗名（空なら「ウーパーカフェ」表示）
+    cafeName: '',
+    
     // ウーパー管理
     axolotls: [],
     managers: [],
@@ -147,37 +150,48 @@
   }
 
   // ===== クリックシステム =====
-  function handleClick() {
+  function handleClick(e) {
     var clickGain = 1 + state.clickUpgradeLevel;
     state.coins += clickGain;
     updateUI();
     
-    // クリックエフェクト（オプション）
-    showCoinGain(clickGain);
+    // タップ位置にコイン画像＋数値を表示
+    showCoinGain(clickGain, e);
   }
 
-  function showCoinGain(amount) {
-    // クリック位置に+コイン表示（簡易実装）
-    var effect = document.createElement('div');
-    effect.textContent = '+' + amount;
-    effect.style.position = 'absolute';
-    effect.style.color = '#22c55e';
-    effect.style.fontWeight = 'bold';
-    effect.style.fontSize = '16px';
-    effect.style.pointerEvents = 'none';
-    effect.style.zIndex = '100';
+  function showCoinGain(amount, e) {
     var tankArea = $('cafeTankClickable');
     var rect = tankArea.getBoundingClientRect();
-    effect.style.left = (rect.left + rect.width / 2) + 'px';
-    effect.style.top = (rect.top + rect.height / 2) + 'px';
+    var x = rect.left + rect.width / 2;
+    var y = rect.top + rect.height / 2;
+    if (e) {
+      if (e.changedTouches && e.changedTouches.length > 0) {
+        x = e.changedTouches[0].clientX;
+        y = e.changedTouches[0].clientY;
+      } else if (e.clientX != null) {
+        x = e.clientX;
+        y = e.clientY;
+      }
+    }
+    var effect = document.createElement('div');
+    effect.className = 'cafe-coin-gain-effect';
+    effect.style.cssText = 'position:fixed; left:' + x + 'px; top:' + y + 'px; transform:translate(-50%,-50%); pointer-events:none; z-index:100; display:flex; align-items:center; gap:4px; font-weight:bold; font-size:18px; color:#22c55e; text-shadow:0 1px 2px rgba(0,0,0,0.3);';
+    var img = document.createElement('img');
+    img.src = '/assets/money/coin_32.png';
+    img.alt = '';
+    img.style.cssText = 'width:28px; height:28px; display:block; animation:cafe-coin-pop 0.3s ease;';
+    var text = document.createElement('span');
+    text.textContent = '+' + amount;
+    text.style.animation = 'cafe-coin-pop 0.3s ease';
+    effect.appendChild(img);
+    effect.appendChild(text);
     document.body.appendChild(effect);
-    
     setTimeout(function() {
-      effect.style.transition = 'all 0.5s';
+      effect.style.transition = 'all 0.5s ease';
       effect.style.opacity = '0';
-      effect.style.transform = 'translateY(-30px)';
+      effect.style.transform = 'translate(-50%, -50%) translateY(-40px) scale(1.1)';
       setTimeout(function() {
-        document.body.removeChild(effect);
+        if (effect.parentNode) document.body.removeChild(effect);
       }, 500);
     }, 10);
   }
@@ -505,6 +519,11 @@
 
   // ===== UI更新 =====
   function updateUI() {
+    // 店舗名（タイトル）
+    var titleEl = $('cafeTitle');
+    if (titleEl) {
+      titleEl.textContent = (state.cafeName && state.cafeName.trim()) ? state.cafeName.trim() : 'ウーパーカフェ';
+    }
     // リソース表示
     var coinsEl = $('cafeCoins');
     if (coinsEl) {
@@ -712,12 +731,28 @@
     $('overlayUpgrade').classList.remove('visible');
   }
 
+  function changeCafeName() {
+    var current = (state.cafeName && state.cafeName.trim()) ? state.cafeName.trim() : 'ウーパーカフェ';
+    var name = window.prompt('店舗名を入力してください', current);
+    if (name != null && name.trim() !== '') {
+      state.cafeName = name.trim();
+      updateUI();
+      saveState();
+      if ($('overlayShop').classList.contains('visible')) {
+        openShopModal();
+      }
+    }
+  }
+
   function openShopModal() {
     var info = $('shopInfo');
     info.innerHTML = '';
     
+    var displayName = (state.cafeName && state.cafeName.trim()) ? state.cafeName.trim() : 'ウーパーカフェ';
+    var html = '<p><strong>店舗名:</strong> ' + displayName + ' <button type="button" class="btn" style="font-size:11px; padding:4px 8px; margin-left:8px;" id="btnChangeCafeName">変更</button></p>';
+    
     var currentShop = shops[state.currentShop];
-    var html = '<p><strong>現在の店舗:</strong> ' + currentShop.name + '</p>';
+    html += '<p><strong>現在の店舗:</strong> ' + currentShop.name + '</p>';
     html += '<p><strong>累計売上:</strong> ' + formatMoney(state.totalRevenue) + '</p>';
     html += '<p><strong>店長数:</strong> ' + state.managers.length + '人</p>';
     
@@ -735,6 +770,8 @@
     html += '</ul></div>';
     
     info.innerHTML = html;
+    var btnChangeName = document.getElementById('btnChangeCafeName');
+    if (btnChangeName) btnChangeName.addEventListener('click', changeCafeName);
     $('overlayShop').classList.add('visible');
   }
 
@@ -838,12 +875,19 @@
 
   // ===== イベントリスナー =====
   function initEventListeners() {
+    // 店舗名タップで変更
+    var titleEl = $('cafeTitle');
+    if (titleEl) {
+      titleEl.style.cursor = 'pointer';
+      titleEl.title = 'タップで店舗名を変更';
+      titleEl.addEventListener('click', function() { changeCafeName(); });
+    }
     // クリック（タッチにも対応）
     var tankClickable = $('cafeTankClickable');
-    tankClickable.addEventListener('click', handleClick);
+    tankClickable.addEventListener('click', function(e) { handleClick(e); });
     tankClickable.addEventListener('touchend', function(e) {
       e.preventDefault();
-      handleClick();
+      handleClick(e);
     });
     
     // ガチャ
@@ -937,8 +981,9 @@
     window.addEventListener('beforeunload', saveState);
   }
 
-  // グローバルにswitchShopを公開
+  // グローバルに公開
   window.switchShop = switchShop;
+  window.changeCafeName = changeCafeName;
 
   // 初期化実行
   if (document.readyState === 'loading') {

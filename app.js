@@ -20,7 +20,7 @@
     items: [
       { id: 'post-2026-01-update-summary', type: 'post', title: '2026年1月 新作・アップデートまとめ', url: '/index.html?tab=games', image: null, category: 'devlog', publishedAt: '2026-01-31T20:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 90 },
       { id: 'tetris-like', type: 'game', title: 'ブロック落とし', url: './games/tetris-like/', image: null, category: 'games', publishedAt: '2026-01-31T23:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 90 },
-      { id: 'japan-war', type: 'game', title: '合戦', url: './games/japan-war/', image: null, category: 'games', publishedAt: '2026-01-31T12:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 95 },
+      { id: 'japan-war', type: 'game', title: '合戦', url: './games/japan-war/', image: '/assets/icon/japan_war.png', category: 'games', publishedAt: '2026-02-05T14:00:07+09:00', commentCount: 0, isNew: false, recommended: true, trendingScore: 95 },
       { id: 'baba-nuki', type: 'game', title: 'ババ抜き', url: './games/baba-nuki/', image: null, category: 'games', publishedAt: '2026-01-31T10:00:00+09:00', commentCount: 0, isNew: true, recommended: true, trendingScore: 90 },
       { id: 'post-roadmap', type: 'post', title: '開発ロードマップ公開', url: '/roadmap.html', image: null, category: 'devlog', publishedAt: '2026-01-30T14:00:00+09:00', commentCount: 2, isNew: false, recommended: true, trendingScore: 70 },
       { id: 'post-site-open', type: 'post', title: 'サイトオープンのお知らせ', url: './blog/2026-01-29-site-open.html', image: null, category: 'devlog', publishedAt: '2026-01-29T09:00:00+09:00', commentCount: 0, isNew: false, recommended: true, trendingScore: 60 },

@@ -16,6 +16,9 @@
     CANVAS_HEIGHT = Math.min(600, window.innerHeight * 0.6);
   }
 
+  // カメラ: 先端（積み上がりの一番上）が常に良い位置で見えるように
+  var CAMERA_TOP_MARGIN = 80;
+
   // ===== ゲーム状態 =====
   var state = {
     gameStarted: false,
@@ -28,7 +31,8 @@
     bestHeight: 0,
     currentX: CANVAS_WIDTH / 2,
     movingLeft: false,
-    movingRight: false
+    movingRight: false,
+    cameraY: 0  // 表示している世界の上端のY（これより下が画面内）
   };
 
   // ===== Canvas設定 =====
@@ -115,13 +119,48 @@
     var width = state.nextBlock;
     state.nextBlock = generateNextBlock();
     
+    // ブロックは常に画面の良い位置（先端付近）に出現
     state.currentBlock = createBlock(
       state.currentX - width / 2,
-      0,
+      state.cameraY,
       width
     );
     
     drawNextBlock();
+  }
+
+  // 積みの先端（一番上のY）を取得
+  function getTopOfStack() {
+    var top = CANVAS_HEIGHT - 20 - BLOCK_SIZE;
+    state.blocks.forEach(function(b) {
+      if (b.y < top) top = b.y;
+    });
+    if (state.currentBlock && state.currentBlock.y < top) {
+      top = state.currentBlock.y;
+    }
+    return top;
+  }
+
+  // カメラを先端に合わせて、いいスペースが常に見えるように
+  function updateCamera() {
+    var topY = getTopOfStack();
+    var targetCameraY = topY - CAMERA_TOP_MARGIN;
+    state.cameraY = state.cameraY + (targetCameraY - state.cameraY) * 0.2;
+  }
+
+  // 画面下にはみ出したブロックを削除（はみ出した分は減っていく）
+  function removeBlocksBelowView() {
+    var cutLine = state.cameraY + CANVAS_HEIGHT;
+    var before = state.blocks.length;
+    state.blocks = state.blocks.filter(function(b) {
+      return b.y + b.height <= cutLine;
+    });
+    if (state.blocks.length !== before && state.blocks.length > 0) {
+      var topY = getTopOfStack();
+      var height = (state.cameraY + CANVAS_HEIGHT) - topY;
+      state.score = Math.max(state.score, height);
+      updateScore();
+    }
   }
 
   // ===== 描画 =====
@@ -160,6 +199,9 @@
     ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+    ctx.save();
+    ctx.translate(0, -state.cameraY);
+
     // 地面
     ctx.fillStyle = '#334155';
     ctx.fillRect(0, CANVAS_HEIGHT - 20, CANVAS_WIDTH, 20);
@@ -174,23 +216,25 @@
       drawBlock(state.currentBlock, ctx);
     }
 
-    // 高さライン表示
-    if (state.blocks.length > 0) {
-      var topBlock = state.blocks[state.blocks.length - 1];
-      var height = CANVAS_HEIGHT - topBlock.y;
-      
+    ctx.restore();
+
+    // 高さライン表示（画面座標で、先端の高さを表示）
+    var topY = getTopOfStack();
+    var screenTopY = topY - state.cameraY;
+    if (state.blocks.length > 0 || state.currentBlock) {
+      var height = (state.cameraY + CANVAS_HEIGHT) - topY;
       ctx.strokeStyle = '#60a5fa';
       ctx.lineWidth = 2;
       ctx.setLineDash([5, 5]);
       ctx.beginPath();
-      ctx.moveTo(0, topBlock.y);
-      ctx.lineTo(CANVAS_WIDTH, topBlock.y);
+      ctx.moveTo(0, screenTopY);
+      ctx.lineTo(CANVAS_WIDTH, screenTopY);
       ctx.stroke();
       ctx.setLineDash([]);
-      
+
       ctx.fillStyle = '#60a5fa';
       ctx.font = '16px sans-serif';
-      ctx.fillText('高さ: ' + Math.floor(height) + 'px', 10, topBlock.y - 10);
+      ctx.fillText('高さ: ' + Math.floor(height) + 'px', 10, screenTopY - 10);
     }
   }
 
@@ -248,8 +292,9 @@
     state.blocks.push(block);
     state.blockCount++;
     
-    // スコア計算（高さ）
-    var height = CANVAS_HEIGHT - block.y;
+    // スコア計算（高さ＝表示範囲内の先端からの高さ）
+    var topY = getTopOfStack();
+    var height = (state.cameraY + CANVAS_HEIGHT) - topY;
     state.score = Math.max(state.score, height);
     updateScore();
 
@@ -292,6 +337,8 @@
     if (!state.gameStarted || state.gameOver) return;
 
     updateCurrentBlock();
+    updateCamera();
+    removeBlocksBelowView();
     draw();
 
     requestAnimationFrame(gameLoop);
@@ -307,6 +354,7 @@
     state.score = 0;
     state.blockCount = 0;
     state.currentX = CANVAS_WIDTH / 2;
+    state.cameraY = 0;
 
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('gameOverScreen').classList.add('hidden');

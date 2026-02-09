@@ -37,12 +37,12 @@ var iconPath = getIconPath('axolotl-shop');
 <!-- ゲームアイコン -->
 <img src="/assets/icon/axolotl-shop.png" alt="ウーパールーパーショップ" />
 
-<!-- Favicon（システムのライト/ダークに合わせる） -->
-<link rel="icon" href="/assets/icon/Nihatori_web_icon.png" type="image/png" media="(prefers-color-scheme: light)" />
-<link rel="icon" href="/assets/icon/Nihatori_web_icon_dark.png" type="image/png" media="(prefers-color-scheme: dark)" />
+<!-- サイト共通 Favicon・ヘッダーロゴ -->
+<link rel="icon" href="/assets/icon/nihatori_icon.png" type="image/png" media="(prefers-color-scheme: light)" />
+<link rel="icon" href="/assets/icon/nihatori_icon.png" type="image/png" media="(prefers-color-scheme: dark)" />
 ```
 
-- ダークモード用に **Nihatori_web_icon_dark.png** を置くと、システムがダークのときそのアイコンが使われます。なければ同じ `Nihatori_web_icon.png` が使われます。
+- **nihatori_icon.png** がサイト全体のファビコンおよびホーム（ヘッダー）のロゴとして使われます。
 
 ## 注意事項
 

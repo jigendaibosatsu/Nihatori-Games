@@ -515,29 +515,29 @@ body.game-page {
 }
 
 @keyframes ax-hop-left {
-  0% { transform: translateX(80px) translateY(0); }
-  20% { transform: translateX(40px) translateY(-4px); }
+  0% { transform: translateX(120px) translateY(0); }
+  20% { transform: translateX(60px) translateY(-4px); }
   40% { transform: translateX(0px) translateY(0); }
-  60% { transform: translateX(-40px) translateY(-4px); }
-  80% { transform: translateX(-80px) translateY(0); }
-  100% { transform: translateX(80px) translateY(0); }
+  60% { transform: translateX(-60px) translateY(-4px); }
+  80% { transform: translateX(-120px) translateY(0); }
+  100% { transform: translateX(120px) translateY(0); }
 }
 
 @keyframes ax-hop-right {
-  0% { transform: translateX(-80px) translateY(0); }
-  20% { transform: translateX(-40px) translateY(-4px); }
+  0% { transform: translateX(-120px) translateY(0); }
+  20% { transform: translateX(-60px) translateY(-4px); }
   40% { transform: translateX(0px) translateY(0); }
-  60% { transform: translateX(40px) translateY(-4px); }
-  80% { transform: translateX(80px) translateY(0); }
-  100% { transform: translateX(-80px) translateY(0); }
+  60% { transform: translateX(60px) translateY(-4px); }
+  80% { transform: translateX(120px) translateY(0); }
+  100% { transform: translateX(-120px) translateY(0); }
 }
 
 @keyframes ax-hop-center {
-  0% { transform: translateX(-60px) translateY(0); }
-  25% { transform: translateX(-30px) translateY(-4px); }
+  0% { transform: translateX(-90px) translateY(0); }
+  25% { transform: translateX(-45px) translateY(-4px); }
   50% { transform: translateX(0px) translateY(0); }
-  75% { transform: translateX(30px) translateY(-4px); }
-  100% { transform: translateX(-60px) translateY(0); }
+  75% { transform: translateX(45px) translateY(-4px); }
+  100% { transform: translateX(-90px) translateY(0); }
 }
 
 .ax-tank-sprite-wrap canvas.ax-idle,
