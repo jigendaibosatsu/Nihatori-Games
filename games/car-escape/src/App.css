@@ -1,42 +1,103 @@
-#root {
-  max-width: 1280px;
+.app-root {
+  padding-top: 48px;
+  padding-bottom: 80px;
+  max-width: 520px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.app-back {
+  display: block;
+  padding: 10px 14px 0;
+  font-size: 13px;
+  color: #9aa3bd;
+  text-decoration: none;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.frame {
+  margin: 10px 14px;
+  background: rgba(24, 29, 40, 0.96);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.title-main {
+  font-weight: 900;
+  font-size: 20px;
 }
 
-.card {
-  padding: 2em;
+.title-sub {
+  color: #9aa3bd;
+  font-size: 13px;
+  margin-top: 4px;
 }
 
-.read-the-docs {
-  color: #888;
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn {
+  border-radius: 12px;
+  border: 0;
+  padding: 10px 14px;
+  font-weight: 800;
+  font-size: 14px;
+  background: #ffd66b;
+  color: #1a1300;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f7ff;
+}
+
+.scene-label {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #9aa3bd;
+}
+
+.footer-hint {
+  margin-top: 16px;
+  color: #9aa3bd;
+  font-size: 12px;
+}
+
+.board {
+  margin-top: 16px;
+  display: grid;
+  gap: 5px;
+}
+
+.tile {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.25);
+  position: relative;
+  color: #f5f7ff;
+  font-size: 16px;
+}
+
+.tile.exit {
+  border-style: dashed;
+  border-color: rgba(255, 214, 107, 0.7);
+}
+
+.tile.car {
+  background: rgba(111, 186, 255, 0.3);
+}
+
+.tile.car.player {
+  background: rgba(255, 106, 122, 0.55);
+}
+
+.tile.selected {
+  box-shadow: 0 0 0 2px #ffd66b;
 }

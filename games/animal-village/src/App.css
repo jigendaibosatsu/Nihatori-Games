@@ -1,0 +1,135 @@
+.app-root {
+  padding-top: 48px;
+  padding-bottom: 80px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.app-back {
+  display: block;
+  padding: 10px 14px 0;
+  font-size: 13px;
+  color: #4a5b3f;
+  text-decoration: none;
+}
+
+.frame {
+  margin: 10px 14px;
+  background: linear-gradient(180deg, #e5f7e1 0%, #f4ead5 100%);
+  border-radius: 18px;
+  border: 1px solid rgba(64, 79, 54, 0.25);
+  padding: 14px;
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.2);
+}
+
+.title-main {
+  font-weight: 900;
+  font-size: 20px;
+  color: #35442b;
+}
+
+.title-sub {
+  color: #6d7a60;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn {
+  border-radius: 12px;
+  border: 0;
+  padding: 10px 14px;
+  font-weight: 800;
+  font-size: 14px;
+  background: #ffcf6b;
+  color: #4f3810;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.7);
+  color: #35442b;
+}
+
+.scene-label {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6d7a60;
+}
+
+.footer-hint {
+  margin-top: 16px;
+  color: #6d7a60;
+  font-size: 12px;
+}
+
+.map {
+  margin-top: 14px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 14px;
+  padding: 8px;
+  border: 1px solid rgba(53, 68, 43, 0.25);
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.tile {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.tile.grass {
+  background: #c8e6a5;
+}
+.tile.tree {
+  background: #8cc36b;
+}
+.tile.rock {
+  background: #d0d4de;
+}
+.tile.water {
+  background: #9ad0ff;
+}
+.tile.house {
+  background: #ffd6a5;
+}
+.tile.villager {
+  background: #ffe4b8;
+}
+.tile.player {
+  outline: 2px solid #ffcf6b;
+}
+
+.hud {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #35442b;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.inv {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #35442b;
+}

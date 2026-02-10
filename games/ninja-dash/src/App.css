@@ -1,0 +1,117 @@
+.app-root {
+  padding-top: 48px;
+  padding-bottom: 80px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.app-back {
+  display: block;
+  padding: 10px 14px 0;
+  font-size: 13px;
+  color: #9aa3bd;
+  text-decoration: none;
+}
+
+.frame {
+  margin: 10px 14px;
+  background: radial-gradient(260px 160px at 100% 0, rgba(255, 106, 122, 0.28), transparent 60%),
+    rgba(10, 12, 20, 0.98);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.6);
+}
+
+.title-main {
+  font-weight: 900;
+  font-size: 20px;
+}
+
+.title-sub {
+  color: #9aa3bd;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn {
+  border-radius: 12px;
+  border: 0;
+  padding: 10px 14px;
+  font-weight: 800;
+  font-size: 14px;
+  background: #ffd66b;
+  color: #1a1300;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f7ff;
+}
+
+.scene-label {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #9aa3bd;
+}
+
+.footer-hint {
+  margin-top: 16px;
+  color: #9aa3bd;
+  font-size: 12px;
+}
+
+.lane-view {
+  margin-top: 16px;
+  background: linear-gradient(to right, #060812, #111522);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 10px;
+}
+
+.lanes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.lane {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+}
+
+.cell {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.cell.player {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.cell.obstacle {
+  background: rgba(255, 106, 122, 0.7);
+}
+
+.cell.player.obstacle {
+  box-shadow: 0 0 0 2px #ff6a7a;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
