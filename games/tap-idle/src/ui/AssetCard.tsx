@@ -16,7 +16,15 @@ export function AssetCard({ def, owned, money }: AssetCardProps) {
   return (
     <div className="card asset-card">
       <div className="card-header">
-        <h3>{def.name}</h3>
+        <div className="asset-header-main">
+          <div className="asset-icon">
+            {def.id === 'cart' && <img src="/assets/money/copper_coins.png" alt="" />}
+            {def.id === 'cafe' && <img src="/assets/money/sibver_coins.png" alt="" />}
+            {def.id === 'factory' && <img src="/assets/money/gold_coins128.png" alt="" />}
+            {def.id === 'tower' && <img src="/assets/ores/diamond.png" alt="" />}
+          </div>
+          <h3>{def.name}</h3>
+        </div>
         <span className="owned">×{owned}</span>
       </div>
       <p className="card-desc">{def.description}</p>

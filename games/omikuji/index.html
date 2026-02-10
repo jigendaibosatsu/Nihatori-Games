@@ -85,6 +85,29 @@
     .omikuji-rank.suekichi { color: #666; }
     .omikuji-rank.kyo { color: #b8860b; }
     .omikuji-rank.daikyo { color: #333; }
+    .omikuji-icons {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .omikuji-icon-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: radial-gradient(circle at 30% 20%, #fff9c4 0%, #fbbf24 40%, #c2410c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(251,191,36,0.6);
+    }
+    .omikuji-icon-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
     .omikuji-message {
       font-size: 0.95rem;
       color: #444;
@@ -111,6 +134,7 @@
       <div class="omikuji-loading" id="loading">おみくじを引いています…</div>
       <div class="omikuji-result" id="result">
         <p class="omikuji-rank" id="rank"></p>
+        <div class="omikuji-icons" id="icons" aria-hidden="true"></div>
         <p class="omikuji-message" id="message"></p>
       </div>
     </div>
@@ -135,7 +159,29 @@
       var resultEl = document.getElementById('result');
       var rankEl = document.getElementById('rank');
       var messageEl = document.getElementById('message');
+      var iconsEl = document.getElementById('icons');
       var TAMEGA_MS = 2500;
+
+      function getIconsForRank(fortune) {
+        // ランクに応じて宝石・コインなどのアイコンを切り替え
+        switch (fortune.class) {
+          case 'daikichi':
+            return ['/assets/ores/diamond.png', '/assets/money/gold_coins128.png'];
+          case 'kichi':
+            return ['/assets/ores/ruby.png', '/assets/money/sibver_coins.png'];
+          case 'chukichi':
+            return ['/assets/ores/emerald.png'];
+          case 'shokichi':
+            return ['/assets/ores/quartz.png'];
+          case 'suekichi':
+            return ['/assets/ores/rock.png'];
+          case 'kyo':
+            return ['/assets/money/stone_coins.png'];
+          case 'daikyo':
+          default:
+            return ['/assets/items/unko.png'];
+        }
+      }
 
       function draw() {
         resultEl.classList.remove('visible');
@@ -147,6 +193,13 @@
           rankEl.textContent = f.rank;
           rankEl.className = 'omikuji-rank ' + f.class;
           messageEl.textContent = f.message;
+          // アイコン描画
+          if (iconsEl) {
+            var icons = getIconsForRank(f);
+            iconsEl.innerHTML = icons.map(function (src) {
+              return '<div class="omikuji-icon-circle"><img src=\"' + src + '\" alt=\"\" loading=\"lazy\"></div>';
+            }).join('');
+          }
           loadingEl.classList.remove('visible');
           resultEl.classList.add('visible');
           drawBtn.disabled = false;

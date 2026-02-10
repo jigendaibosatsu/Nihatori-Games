@@ -309,7 +309,7 @@
       speed: enemyType.speed,
       reward: enemyType.reward,
       color: enemyType.color,
-      radius: 12
+      radius: 18
     };
   }
 

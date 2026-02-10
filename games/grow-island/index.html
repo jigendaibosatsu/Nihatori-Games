@@ -380,14 +380,9 @@
     document.querySelectorAll('.grow-btn').forEach(function (b) {
       b.disabled = false;
       b.classList.remove('done');
-      b.innerHTML = '';
-      var icon = document.createElement('span');
-      icon.className = 'icon';
-      icon.textContent = { tree: '🌲', water: '💧', fire: '🔥', earth: '🟫', person: '🧑', house: '🏠' }[id];
-      b.appendChild(icon);
-      b.appendChild(document.createTextNode(LABELS[b.getAttribute('data-id')]));
     });
     updateHint();
+    updateButtons();
     draw();
   }
 

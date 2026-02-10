@@ -233,7 +233,6 @@
   var TOTAL_INNINGS = 5;
   var SWEET_LEFT = 35;
   var SWEET_WIDTH = 30;
-  var BALL_SPEED = 0.8;
   var BALL_DURATION_MS = 1200;
 
   var state = {
@@ -247,7 +246,8 @@
     ballMoving: false,
     ballStartTime: 0,
     animId: null,
-    gameOver: false
+    gameOver: false,
+    pitchType: 'normal'
   };
 
   function addLog(msg) {
@@ -333,6 +333,14 @@
     updateScoreboard();
   }
 
+  function choosePitchType() {
+    var r = Math.random();
+    if (r < 0.4) return 'normal';
+    if (r < 0.7) return 'fast';
+    if (r < 0.85) return 'invisible';
+    return 'slow';
+  }
+
   function startBall() {
     if (state.ballMoving || state.gameOver) return;
     state.ballMoving = true;
@@ -340,14 +348,26 @@
     state.ballPos = 0;
     var ballEl = document.getElementById('bbBall');
     if (ballEl) ballEl.classList.add('moving');
-    document.getElementById('bbZoneLabel').textContent = '球が飛んでくる！ タイミングで打つ！';
+    state.pitchType = choosePitchType();
+    if (state.pitchType === 'fast') {
+      document.getElementById('bbZoneLabel').textContent = '速球！ タイミングをよく見て！';
+    } else if (state.pitchType === 'invisible') {
+      document.getElementById('bbZoneLabel').textContent = '一瞬ボールが消える…？';
+    } else if (state.pitchType === 'slow') {
+      document.getElementById('bbZoneLabel').textContent = 'スローボール。しっかり引きつけて！';
+    } else {
+      document.getElementById('bbZoneLabel').textContent = '球が飛んでくる！ タイミングで打つ！';
+    }
     document.getElementById('bbResult').classList.remove('visible');
     requestAnimationFrame(animateBall);
   }
 
   function animateBall() {
     if (!state.ballMoving) return;
-    var t = (Date.now() - state.ballStartTime) / BALL_DURATION_MS;
+    var duration = BALL_DURATION_MS;
+    if (state.pitchType === 'fast') duration *= 0.6;
+    if (state.pitchType === 'slow') duration *= 1.4;
+    var t = (Date.now() - state.ballStartTime) / duration;
     if (t >= 1) {
       state.ballMoving = false;
       state.ballPos = 100;
@@ -361,7 +381,15 @@
       nextAfterOut();
       return;
     }
-    state.ballPos = t * 100;
+    if (state.pitchType === 'invisible' && t > 0.4 && t < 0.7) {
+      state.ballPos = t * 100;
+      var ballEl = document.getElementById('bbBall');
+      if (ballEl) ballEl.style.opacity = '0';
+    } else {
+      state.ballPos = t * 100;
+      var ballEl2 = document.getElementById('bbBall');
+      if (ballEl2) ballEl2.style.opacity = '1';
+    }
     updateBallPos();
     state.animId = requestAnimationFrame(animateBall);
   }

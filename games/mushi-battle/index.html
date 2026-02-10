@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>ムシバトル じゃんけんカード – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="mushi-battle.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="mb-wrap">
+    <h1 class="mb-title">ムシバトル じゃんけんカード</h1>
+
+    <div class="mb-hud">
+      <div class="mb-meter">
+        <span class="mb-label">自分HP</span>
+        <div class="mb-hp-bar"><div id="mb-your-hp-inner" class="mb-hp-inner"></div></div>
+        <span id="mb-your-hp-text" class="mb-meter-value">0 / 0</span>
+      </div>
+      <div class="mb-meter">
+        <span class="mb-label">相手HP</span>
+        <div class="mb-hp-bar"><div id="mb-enemy-hp-inner" class="mb-hp-inner enemy"></div></div>
+        <span id="mb-enemy-hp-text" class="mb-meter-value">0 / 0</span>
+      </div>
+      <div class="mb-meter">
+        <span class="mb-label">ラウンド</span>
+        <span id="mb-round" class="mb-meter-value">1</span>
+      </div>
+    </div>
+
+    <section class="mb-field">
+      <div class="mb-side">
+        <h2 class="mb-subtitle">あなたのムシ</h2>
+        <div id="mb-your-cards" class="mb-cards"></div>
+      </div>
+      <div class="mb-side">
+        <h2 class="mb-subtitle">相手のムシ</h2>
+        <div id="mb-enemy-cards" class="mb-cards enemy"></div>
+      </div>
+    </section>
+
+    <div id="mb-message" class="mb-message"></div>
+
+    <div class="mb-controls">
+      <button type="button" id="mb-btn-restart" class="mb-btn">もう一度対戦する</button>
+    </div>
+
+    <p class="mb-help">
+      3 枚のムシカードから 1 枚を選びます。<br>
+      グー（かぶと）・チョキ（かまきり）・パー（くわがた）の<strong>じゃんけん勝負</strong>で、勝った側が攻撃！<br>
+      攻撃力と有利属性によってダメージが変わります。
+    </p>
+
+    <a href="/index.html" class="mb-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="mushi-battle.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>イニシエ風ダンジョン ライト – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="ini-dungeon-lite.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="id-wrap">
+    <h1 class="id-title">イニシエ風ダンジョン ライト</h1>
+
+    <div class="id-hud">
+      <div class="id-meter">
+        <span class="id-label">フロア</span>
+        <span id="id-floor" class="id-meter-value">1</span>
+      </div>
+      <div class="id-meter">
+        <span class="id-label">HP</span>
+        <span id="id-hp" class="id-meter-value">10 / 10</span>
+      </div>
+      <div class="id-meter">
+        <span class="id-label">ゴールド</span>
+        <span id="id-gold" class="id-meter-value">0</span>
+      </div>
+    </div>
+
+    <div class="id-main">
+      <div class="id-battle-ui">
+        <div class="id-battle-side">
+          <div class="id-battle-label">主人公 HP</div>
+          <div class="id-battle-bar"><div id="id-hero-hp-bar" class="id-battle-bar-fill"></div></div>
+        </div>
+        <div class="id-battle-side">
+          <div class="id-battle-label">敵 HP</div>
+          <div class="id-battle-bar"><div id="id-enemy-hp-bar" class="id-battle-bar-fill enemy"></div></div>
+        </div>
+      </div>
+      <div class="id-board-wrap">
+        <div id="id-board" class="id-board" aria-label="ダンジョンマップ"></div>
+      </div>
+
+      <div id="id-log" class="id-log"></div>
+
+      <div class="id-controls">
+        <div class="id-dpad">
+          <button type="button" class="id-btn" data-dir="up">↑</button>
+          <div class="id-dpad-mid">
+            <button type="button" class="id-btn" data-dir="left">←</button>
+            <button type="button" class="id-btn" data-dir="right">→</button>
+          </div>
+          <button type="button" class="id-btn" data-dir="down">↓</button>
+        </div>
+        <button type="button" id="id-btn-next" class="id-btn-next">次のフロアへ</button>
+      </div>
+    </div>
+
+    <p class="id-help">
+      矢印ボタンかキーボード（WASD / 方向キー）で一歩ずつ移動します。<br>
+      スライムにぶつかると自動で戦闘、宝箱に乗るとゴールド入手。HP が 0 になるとゲームオーバーです。
+    </p>
+
+    <a href="/index.html" class="id-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="ini-dungeon-lite.js"></script>
+</body>
+</html>
+

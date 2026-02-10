@@ -142,18 +142,42 @@
     <div class="overlay win" id="winOverlay">
       <h2>Victory!</h2>
       <p>Survived 60 seconds or defeated 15 enemies.</p>
-      <button type="button" class="btn" id="btnRestart">Restart</button>
+      <button type="button" class="btn" id="btnRestartWin">Restart</button>
     </div>
     <div class="overlay lose" id="loseOverlay">
       <h2>Game Over</h2>
       <p>HP reached 0.</p>
-      <button type="button" class="btn" id="btnRestart">Restart</button>
+      <button type="button" class="btn" id="btnRestartLose">Restart</button>
     </div>
 
     <a href="/index.html" class="arena-back">← トップへ戻る</a>
   </div>
 
   <script type="module" src="./dist/assets/index-B7sUPp0c.js"></script>
+  <script>
+    // 操作説明とRestartの補助
+    (function () {
+      var wrap = document.querySelector('.game-canvas-wrap');
+      if (wrap) {
+        var hint = document.createElement('p');
+        hint.className = 'control-hint';
+        hint.style.marginTop = '8px';
+        hint.style.fontSize = '12px';
+        hint.textContent = '画面をドラッグして移動し、自動で攻撃します。エネルギーを貯めて必殺技ボタンをタップ！';
+        wrap.insertAdjacentElement('afterend', hint);
+      }
+      function attachRestart(id) {
+        var btn = document.getElementById(id);
+        if (btn) {
+          btn.addEventListener('click', function () {
+            window.location.reload();
+          });
+        }
+      }
+      attachRestart('btnRestartWin');
+      attachRestart('btnRestartLose');
+    })();
+  </script>
   <script src="/assets/header.js"></script>
 </body>
 </html>

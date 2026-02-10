@@ -60,11 +60,32 @@
     .mc-encounter { display: none; margin-bottom: 12px; }
     .mc-encounter.visible { display: block; }
     .mc-monster-card {
-      padding: 20px;
+      padding: 16px;
       background: rgba(255,255,255,0.15);
       border-radius: 12px;
       border: 3px solid #81c784;
       margin-bottom: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .mc-monster-art {
+      width: 72px;
+      height: 72px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: radial-gradient(circle at 30% 20%, #fff9c4 0%, #facc15 40%, #14532d 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 14px rgba(129,199,132,0.7);
+      flex-shrink: 0;
+    }
+    .mc-monster-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
     }
     .mc-monster-name { font-size: 1.3rem; font-weight: bold; margin-bottom: 4px; color: #fff; }
     .mc-monster-type { font-size: 12px; color: #a5d6a7; margin-bottom: 8px; }
@@ -126,12 +147,29 @@
       gap: 10px;
     }
     .mc-dex-cell {
-      padding: 12px 8px;
+      padding: 8px 4px;
       background: rgba(0,0,0,0.3);
       border-radius: 10px;
       border: 2px solid #66bb6a;
       text-align: center;
-      font-size: 12px;
+      font-size: 11px;
+    }
+    .mc-dex-art {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 0 auto 4px;
+      background: radial-gradient(circle at 30% 20%, #fff9c4 0%, #facc15 40%, #14532d 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mc-dex-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
     }
     .mc-dex-cell.caught { background: rgba(46,125,50,0.5); border-color: #a5d6a7; }
     .mc-dex-cell .name { font-weight: bold; margin-bottom: 2px; color: #fff; }
@@ -161,9 +199,12 @@
 
       <div class="mc-encounter" id="mcEncounter">
         <div class="mc-monster-card" id="mcMonsterCard">
-          <div class="mc-monster-name" id="mcMonsterName">???</div>
-          <div class="mc-monster-type" id="mcMonsterType">???</div>
-          <span class="mc-monster-rarity common" id="mcMonsterRarity">???</span>
+          <div class="mc-monster-art" id="mcMonsterArt"></div>
+          <div>
+            <div class="mc-monster-name" id="mcMonsterName">???</div>
+            <div class="mc-monster-type" id="mcMonsterType">???</div>
+            <span class="mc-monster-rarity common" id="mcMonsterRarity">???</span>
+          </div>
         </div>
         <button type="button" class="mc-catch-btn" id="mcCatchBtn">つかまえる！</button>
         <div class="mc-result" id="mcResult"></div>
@@ -182,26 +223,26 @@
   <script>
 (function () {
   var MONSTERS = [
-    { id: 'm1', name: 'スライム', type: 'スライム', rarity: 'common' },
-    { id: 'm2', name: 'バット', type: '飛行', rarity: 'common' },
-    { id: 'm3', name: 'ゴブリン', type: '人型', rarity: 'common' },
-    { id: 'm4', name: 'ウルフ', type: '獣', rarity: 'common' },
-    { id: 'm5', name: 'スケルトン', type: 'アンデッド', rarity: 'common' },
-    { id: 'm6', name: 'キノコン', type: '植物', rarity: 'common' },
-    { id: 'm7', name: 'ハニービー', type: '虫', rarity: 'common' },
-    { id: 'm8', name: 'メタルスライム', type: 'スライム', rarity: 'rare' },
-    { id: 'm9', name: 'ウィスプ', type: '精霊', rarity: 'rare' },
-    { id: 'm10', name: 'サハギン', type: '水棲', rarity: 'rare' },
-    { id: 'm11', name: 'マンドラ', type: '植物', rarity: 'rare' },
-    { id: 'm12', name: 'フェニックス', type: '炎', rarity: 'rare' },
-    { id: 'm13', name: 'ドラゴン', type: '竜', rarity: 'super' },
-    { id: 'm14', name: 'キングスライム', type: 'スライム', rarity: 'super' },
-    { id: 'm15', name: 'デーモン', type: '悪魔', rarity: 'super' },
-    { id: 'm16', name: 'ユニコーン', type: '幻獣', rarity: 'super' },
-    { id: 'm17', name: 'ゴースト', type: 'アンデッド', rarity: 'common' },
-    { id: 'm18', name: 'トード', type: '両生', rarity: 'common' },
-    { id: 'm19', name: 'ウィザード', type: '人型', rarity: 'rare' },
-    { id: 'm20', name: 'レジェンド', type: '伝説', rarity: 'super' }
+    { id: 'm1', name: 'スライムくん', type: 'スライム', rarity: 'common', image: '/assets/characters/slime-kun.png' },
+    { id: 'm2', name: 'コウモリ', type: '飛行', rarity: 'common', image: null },
+    { id: 'm3', name: 'オーク戦士', type: '人型', rarity: 'common', image: '/assets/characters/ork_128.png' },
+    { id: 'm4', name: 'ウルフ', type: '獣', rarity: 'common', image: null },
+    { id: 'm5', name: 'スケルトン', type: 'アンデッド', rarity: 'common', image: null },
+    { id: 'm6', name: 'キノコン', type: '植物', rarity: 'common', image: null },
+    { id: 'm7', name: 'ハニービー', type: '虫', rarity: 'common', image: null },
+    { id: 'm8', name: 'メタルスライム', type: 'スライム', rarity: 'rare', image: '/assets/characters/slime.png' },
+    { id: 'm9', name: 'ウィスプ', type: '精霊', rarity: 'rare', image: null },
+    { id: 'm10', name: 'サハギン', type: '水棲', rarity: 'rare', image: null },
+    { id: 'm11', name: 'マンドラゴラ', type: '植物', rarity: 'rare', image: null },
+    { id: 'm12', name: 'フェニックスの雛', type: '炎', rarity: 'rare', image: '/assets/characters/phenix_32.png' },
+    { id: 'm13', name: '星龍', type: '竜', rarity: 'super', image: '/assets/decorations/crown_gold.png' },
+    { id: 'm14', name: 'キングスライム', type: 'スライム', rarity: 'super', image: '/assets/decorations/crown_silver.png' },
+    { id: 'm15', name: 'デーモン卿', type: '悪魔', rarity: 'super', image: '/assets/decorations/crown_gold.png' },
+    { id: 'm16', name: '聖獣ユニコーン', type: '幻獣', rarity: 'super', image: null },
+    { id: 'm17', name: 'ゴースト', type: 'アンデッド', rarity: 'common', image: null },
+    { id: 'm18', name: 'トード', type: '両生', rarity: 'common', image: null },
+    { id: 'm19', name: '大魔導師ウィザード', type: '人型', rarity: 'rare', image: null },
+    { id: 'm20', name: '伝説の英雄', type: '伝説', rarity: 'super', image: '/assets/decorations/crown_gold.png' }
   ];
 
   var CATCH_RATE = { common: 0.75, rare: 0.5, super: 0.3 };
@@ -234,6 +275,11 @@
     var rarityEl = document.getElementById('mcMonsterRarity');
     rarityEl.textContent = monster.rarity === 'common' ? 'ノーマル' : monster.rarity === 'rare' ? 'レア' : 'スーパーレア';
     rarityEl.className = 'mc-monster-rarity ' + monster.rarity;
+    var artEl = document.getElementById('mcMonsterArt');
+    if (artEl) {
+      var src = monster.image || '/assets/characters/axolotl/axo_nomal.png';
+      artEl.innerHTML = '<img src=\"' + src + '\" alt=\"\" loading=\"lazy\">';
+    }
     document.getElementById('mcEncounter').classList.add('visible');
     document.getElementById('mcResult').classList.remove('visible');
     document.getElementById('mcCatchBtn').disabled = false;
@@ -275,9 +321,15 @@
       var count = state.caught[m.id] || 0;
       var cell = document.createElement('div');
       cell.className = 'mc-dex-cell' + (count > 0 ? ' caught' : '');
+      var nameText = count > 0 ? m.name : '???';
+      var typeText = count > 0 ? m.type : '???';
+      var imgSrc = m.image || '/assets/characters/axolotl/axo_nomal.png';
       cell.innerHTML =
-        '<div class="name' + (count > 0 ? '' : ' unknown') + '">' + (count > 0 ? m.name : '???') + '</div>' +
-        '<div class="type">' + (count > 0 ? m.type : '???') + '</div>' +
+        '<div class="mc-dex-art">' +
+          (count > 0 ? '<img src=\"' + imgSrc + '\" alt=\"\" loading=\"lazy\">' : '') +
+        '</div>' +
+        '<div class="name' + (count > 0 ? '' : ' unknown') + '">' + nameText + '</div>' +
+        '<div class="type">' + typeText + '</div>' +
         (count > 0 ? '<div class="count">×' + count + '</div>' : '');
       grid.appendChild(cell);
     });

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>ミニ将棋ライト – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="shogi-lite.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="sl-wrap">
+    <h1 class="sl-title">ミニ将棋ライト（1端末2人用）</h1>
+
+    <div class="sl-hud">
+      <div class="sl-meter">
+        <span class="sl-label">手番</span>
+        <span id="sl-turn" class="sl-meter-value">先手</span>
+      </div>
+      <div class="sl-meter">
+        <span class="sl-label">状態</span>
+        <span id="sl-status" class="sl-meter-value">駒を選んでください</span>
+      </div>
+    </div>
+
+    <div class="sl-main">
+      <div class="sl-board-wrap">
+        <div id="sl-board" class="sl-board" aria-label="ミニ将棋盤面"></div>
+      </div>
+
+      <div class="sl-controls">
+        <button type="button" id="sl-btn-reset" class="sl-btn">初期配置に戻す</button>
+      </div>
+    </div>
+
+    <p class="sl-help">
+      5×5 のミニ将棋です。先手（▲）と後手（△）で交互に 1 手ずつ指します。<br>
+      駒の種類は「玉・金・銀・角・飛・歩」。成りや持ち駒はありません。<br>
+      どちらかの玉を取った時点で対局終了です。
+    </p>
+
+    <a href="/index.html" class="sl-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="shogi-lite.js"></script>
+</body>
+</html>
+

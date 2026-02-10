@@ -61,18 +61,18 @@ export default function TimerTab() {
 
   return (
     <div className="timer-tab">
-      <h2>LEX RHYTHM</h2>
+      <h2>LEX RHYTHM（作業タイマー）</h2>
       <div className="timer-hud">
-        <div>Energy: {state.player.energy}</div>
-        <div>Vocab: {vocabCount}</div>
-        <div>Sessions today: {totalCount}</div>
+        <div>エナジー: {state.player.energy}</div>
+        <div>登録語彙数: {vocabCount}</div>
+        <div>今日のセッション数: {totalCount}</div>
       </div>
 
       <div className="timer-display">
         <span className="timer-time">
           {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}
         </span>
-        <div className="timer-mode">{isBreak ? 'Break' : 'Work'}</div>
+        <div className="timer-mode">{isBreak ? '休憩' : '作業'}</div>
       </div>
 
       <div className="timer-progress">
@@ -85,10 +85,10 @@ export default function TimerTab() {
       {!running && (
         <div className="timer-buttons">
           <button type="button" onClick={startWork}>
-            Start 25 min
+            25分作業スタート
           </button>
           <button type="button" onClick={startBreak}>
-            Start 5 min break
+            5分休憩スタート
           </button>
         </div>
       )}
@@ -96,11 +96,11 @@ export default function TimerTab() {
       {log && <div className="timer-log">{log}</div>}
 
       {farmUnlocked && (
-        <div className="timer-unlock">Farm unlocked.</div>
+        <div className="timer-unlock">ファーム機能が解放されました。</div>
       )}
 
       <div className="timer-recent">
-        <div className="recent-label">Latest words</div>
+        <div className="recent-label">最近追加した単語</div>
         <ul>
           {state.vocabs
             .slice()

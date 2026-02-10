@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>パズルオーブ – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="puzzle-orb.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="po-container">
+    <h1 class="po-title">パズルオーブ</h1>
+
+    <div class="po-hud">
+      <div class="po-meter">
+        <span class="po-label">敵HP</span>
+        <div class="po-hp-bar">
+          <div id="po-enemy-hp-inner" class="po-hp-inner"></div>
+        </div>
+        <span id="po-enemy-hp-text" class="po-meter-value">0 / 0</span>
+      </div>
+      <div class="po-meter">
+        <span class="po-label">ターン</span>
+        <span id="po-turn" class="po-meter-value">1</span>
+      </div>
+      <div class="po-meter">
+        <span class="po-label">最後のコンボ</span>
+        <span id="po-last-combo" class="po-meter-value">0</span>
+      </div>
+    </div>
+
+    <div class="po-board-wrap">
+      <div id="po-board" class="po-board" aria-label="パズル盤面"></div>
+      <div id="po-message" class="po-message"></div>
+    </div>
+
+    <p class="po-help">
+      オーブをなぞって 1 個だけ移動させ、縦か横に<strong>3 個以上同じ色をそろえる</strong>と消えます。<br>
+      1 手のあいだに連続して消えると、コンボ数に応じて敵にダメージが入ります。
+    </p>
+
+    <a href="/index.html" class="po-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="puzzle-orb.js"></script>
+</body>
+</html>
+

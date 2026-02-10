@@ -124,12 +124,12 @@ export default function BattleTab({ onNavigateToTimer }) {
   if (energy <= 0 && !inBattle) {
     return (
       <div className="battle-tab">
-        <h2>OXWORD BATTLE</h2>
+        <h2>OXWORD BATTLE（語彙バトル）</h2>
         <div className="battle-energy-block">
-          No energy. Complete a timer session to restore energy.
+          エナジーが足りません。タイマーセッションを完了して回復させてください。
         </div>
         <button type="button" onClick={onNavigateToTimer}>
-          Go to Timer tab
+          タイマータブへ移動
         </button>
       </div>
     );
@@ -139,15 +139,15 @@ export default function BattleTab({ onNavigateToTimer }) {
     const canBattle = deckCards.length >= 3;
     return (
       <div className="battle-tab">
-        <h2>OXWORD BATTLE</h2>
-        <div className="battle-hud">Energy: {energy}</div>
+        <h2>OXWORD BATTLE（語彙バトル）</h2>
+        <div className="battle-hud">エナジー: {energy}</div>
         {!canBattle && (
           <div className="battle-energy-block">
-            Need at least 3 vocab words. Complete timer sessions first.
+            まずはタイマーで単語を3つ以上登録してください。
           </div>
         )}
         <button type="button" onClick={startBattle} disabled={!canBattle}>
-          Start Battle (-1 energy)
+          バトル開始（エナジー -1）
         </button>
       </div>
     );
@@ -156,10 +156,10 @@ export default function BattleTab({ onNavigateToTimer }) {
   if (energyBlocked) {
     return (
       <div className="battle-tab">
-        <h2>OXWORD BATTLE</h2>
-        <div className="battle-energy-block">No energy. Complete a timer session.</div>
+        <h2>OXWORD BATTLE（語彙バトル）</h2>
+        <div className="battle-energy-block">エナジーが足りません。タイマーセッションを完了してください。</div>
         <button type="button" onClick={() => setEnergyBlocked(false)}>
-          Back
+          戻る
         </button>
       </div>
     );
@@ -167,16 +167,16 @@ export default function BattleTab({ onNavigateToTimer }) {
 
   return (
     <div className="battle-tab">
-      <h2>OXWORD BATTLE</h2>
+      <h2>OXWORD BATTLE（語彙バトル）</h2>
       <div className="battle-hud">
-        <span>HP: {playerHp}/20</span>
-        <span>Enemy: {enemyHp}/20</span>
+        <span>自分HP: {playerHp}/20</span>
+        <span>敵HP: {enemyHp}/20</span>
       </div>
       <div className="battle-log">{battleLog}</div>
 
       {quiz ? (
         <div className="battle-quiz">
-          <p>What relates to &quot;{quiz.term}&quot;?</p>
+          <p>「{quiz.term}」に近い意味なのはどちら？</p>
           <button type="button" onClick={() => answerQuiz('a')}>
             {quiz.a}
           </button>

@@ -13,21 +13,21 @@ export default function App() {
   return (
     <div className={`app ${farmUnlocked && hasFarm ? 'farm-unlocked' : ''}`}>
       <header className="app-header">
-        <h1>Lex Vocab</h1>
+        <h1>Lex Vocab（語彙トレーナー）</h1>
         <nav>
           <button
             type="button"
             className={tab === 'timer' ? 'active' : ''}
             onClick={() => setTab('timer')}
           >
-            Timer
+            タイマー
           </button>
           <button
             type="button"
             className={tab === 'battle' ? 'active' : ''}
             onClick={() => setTab('battle')}
           >
-            Battle
+            バトル
           </button>
         </nav>
       </header>

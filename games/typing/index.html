@@ -134,7 +134,7 @@
 
   <div class="ty-wrap">
     <h1 class="ty-title">タイピング</h1>
-    <p class="ty-subtitle">表示された文字をローマ字で入力しよう</p>
+    <p class="ty-subtitle">日本語の意味を見て、対応する英単語を入力しよう</p>
 
     <div class="ty-stats" id="stats">
       <span>問題 <strong id="currentNum">1</strong> / <strong id="totalNum">10</strong></span>
@@ -145,6 +145,7 @@
     <div class="ty-phrase-wrap">
       <div class="ty-phrase" id="phraseDisplay"></div>
     </div>
+    <p class="ty-subtitle" id="tyWordHint" style="margin-top:-8px;margin-bottom:12px;"></p>
 
     <div class="ty-input-wrap">
       <input type="text" class="ty-input" id="input" placeholder="ここに入力..." autocomplete="off" autocapitalize="off" spellcheck="false" />
@@ -166,24 +167,39 @@
   <script src="/assets/header.js"></script>
   <script>
 (function () {
-  var PHRASES = [
-    'konnichiwa', 'ohayou', 'arigatou', 'sayounara', 'sumimasen',
-    'itadakimasu', 'gochisousama', 'otsukaresama', 'ganbatte', 'omedetou',
-    'yoroshiku', 'douzo', 'doumo', 'ja ne', 'mata ne',
-    'nihongo', 'genki', 'sukoshi', 'daijoubu', 'wakarimasu',
-    'tabemasu', 'nomimasu', 'ikimasu', 'kimasu', 'kaerimasu',
-    'ashita', 'kyou', 'kinou', 'ima', 'sorekara',
-    'typing', 'game', 'practice', 'speed', 'accuracy'
+  var VOCABS = [
+    { term: 'apple', jp: 'りんご' },
+    { term: 'water', jp: 'みず' },
+    { term: 'teacher', jp: '先生' },
+    { term: 'student', jp: '生徒' },
+    { term: 'family', jp: '家族' },
+    { term: 'friend', jp: '友だち' },
+    { term: 'morning', jp: '朝' },
+    { term: 'night', jp: '夜' },
+    { term: 'happy', jp: 'しあわせな' },
+    { term: 'study', jp: '勉強する' },
+    { term: 'game', jp: 'ゲーム' },
+    { term: 'music', jp: '音楽' },
+    { term: 'coffee', jp: 'コーヒー' },
+    { term: 'library', jp: '図書館' },
+    { term: 'school', jp: '学校' },
+    { term: 'station', jp: '駅' },
+    { term: 'computer', jp: 'コンピューター' },
+    { term: 'window', jp: '窓' },
+    { term: 'future', jp: '未来' },
+    { term: 'dream', jp: '夢' }
   ];
 
   var PHRASE_COUNT = 10;
   var state = {
-    phrases: [],
+    words: [],
     index: 0,
     startTime: 0,
     timerId: null,
     totalCorrect: 0,
-    totalTyped: 0
+    totalTyped: 0,
+    revealTimerId: null,
+    revealIndex: 0
   };
 
   function shuffle(arr) {
@@ -195,8 +211,12 @@
     return a;
   }
 
+  function currentWord() {
+    return state.words[state.index] || { term: '', jp: '' };
+  }
+
   function startGame() {
-    state.phrases = shuffle(PHRASES).slice(0, PHRASE_COUNT);
+    state.words = shuffle(VOCABS).slice(0, PHRASE_COUNT);
     state.index = 0;
     state.startTime = 0;
     state.totalCorrect = 0;
@@ -222,18 +242,23 @@
   }
 
   function renderPhrase() {
-    var phrase = state.phrases[state.index];
+    var word = currentWord();
+    var phrase = word.term;
     var typed = document.getElementById('input').value;
     var el = document.getElementById('phraseDisplay');
     el.innerHTML = '';
+    var maxVisible = Math.max(state.revealIndex, typed.length);
+
     for (var i = 0; i < phrase.length; i++) {
       var span = document.createElement('span');
       if (i < typed.length) {
         span.textContent = phrase[i];
         span.className = phrase[i] === typed[i] ? 'correct' : 'wrong';
-      } else {
+      } else if (i < maxVisible) {
         span.textContent = phrase[i];
         if (i === typed.length) span.className = 'cursor';
+      } else {
+        span.textContent = '_';
       }
       el.appendChild(span);
     }
@@ -252,17 +277,18 @@
   function nextPhrase() {
     state.index++;
     document.getElementById('input').value = '';
-    if (state.index >= state.phrases.length) {
+    if (state.index >= state.words.length) {
       if (state.timerId) clearInterval(state.timerId);
       var sec = Math.floor((Date.now() - state.startTime) / 1000);
       var acc = state.totalTyped ? Math.round((state.totalCorrect / state.totalTyped) * 100) : 100;
       document.getElementById('resultScore').innerHTML =
-        state.phrases.length + ' 問を <strong>' + sec + '</strong> 秒でクリア！<br>正解率 <strong>' + acc + '%</strong>';
+        state.words.length + ' 問を <strong>' + sec + '</strong> 秒でクリア！<br>正解率 <strong>' + acc + '%</strong>';
       document.getElementById('overlayResult').classList.add('visible');
       return;
     }
     document.getElementById('phraseDisplay').innerHTML = '';
-    var phrase = state.phrases[state.index];
+    var word = currentWord();
+    var phrase = word.term;
     for (var i = 0; i < phrase.length; i++) {
       var span = document.createElement('span');
       span.textContent = phrase[i];
@@ -273,7 +299,8 @@
   }
 
   function onInput() {
-    var phrase = state.phrases[state.index];
+    var word = currentWord();
+    var phrase = word.term;
     var typed = document.getElementById('input').value;
 
     var completedLen = 0;
@@ -298,9 +325,8 @@
   }
 
   document.getElementById('btnStart').addEventListener('click', function () {
-    if (state.index > 0 && state.index < state.phrases.length) return;
+    if (state.index > 0 && state.index < state.words.length) return;
     startGame();
-    state.phrases = shuffle(PHRASES).slice(0, PHRASE_COUNT);
     state.index = 0;
     document.getElementById('btnStart').disabled = true;
     document.getElementById('btnStart').textContent = '入力中...';
@@ -308,7 +334,8 @@
     document.getElementById('input').value = '';
     state.startTime = Date.now();
     runTimer();
-    var phrase = state.phrases[0];
+    var word = currentWord();
+    var phrase = word.term;
     var el = document.getElementById('phraseDisplay');
     el.innerHTML = '';
     for (var i = 0; i < phrase.length; i++) {
@@ -318,14 +345,24 @@
       el.appendChild(span);
     }
     document.getElementById('currentNum').textContent = '1';
+    var wordLabel = document.getElementById('tyWordHint');
+    if (wordLabel) wordLabel.textContent = word.jp + '（' + word.term.length + '文字）';
     document.getElementById('input').focus();
   });
 
   document.getElementById('input').addEventListener('input', function () {
-    if (state.phrases.length === 0) return;
-    var phrase = state.phrases[state.index];
+    if (state.words.length === 0) return;
+    var word = currentWord();
+    var phrase = word.term;
     var typed = this.value;
-    if (typed.length > phrase.length) this.value = typed.slice(0, phrase.length);
+    if (typed.length > phrase.length) typed = typed.slice(0, phrase.length);
+    // 誤入力はその場で打ち消す（先頭から不一致になったところでカット）
+    var fixed = '';
+    for (var i = 0; i < typed.length; i++) {
+      if (phrase[i] !== typed[i]) break;
+      fixed += typed[i];
+    }
+    this.value = fixed;
     onInput();
   });
 

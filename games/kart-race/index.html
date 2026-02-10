@@ -43,7 +43,7 @@
       flex: 1;
       min-height: 0;
       max-height: min(55dvh, 65vh);
-      background: #2d5016;
+      background: #111827;
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.35);
@@ -64,28 +64,21 @@
       flex-shrink: 0;
     }
     .kart-btn {
-      width: 64px;
-      height: 64px;
+      width: 80px;
+      height: 80px;
       border: none;
       border-radius: 50%;
-      background: linear-gradient(180deg, #fff 0%, #e0e0e0 100%);
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
       box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-      font-size: 20px;
+      font-size: 14px;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
       user-select: none;
       font-weight: bold;
-      color: #333;
+      color: #e5e7eb;
     }
     .kart-btn:active { transform: scale(0.92); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
-    .kart-btn.gas {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(180deg, #ff5722 0%, #e64a19 100%);
-      color: #fff;
-      font-size: 14px;
-    }
     .kart-overlay {
       position: fixed;
       inset: 0;
@@ -168,301 +161,228 @@
   var canvas = document.getElementById('kartCanvas');
   var ctx = canvas.getContext('2d');
   var W = 480, H = 320;
-  var cx = W / 2, cy = H / 2;
-  var trackOuterRx = 200, trackOuterRy = 130;
-  var trackWidth = 48;
-  var trackInnerRx = trackOuterRx - trackWidth;
-  var trackInnerRy = trackOuterRy - trackWidth;
+  var LANE_COUNT = 3;
+  var LANE_WIDTH = W / LANE_COUNT;
+  var PLAYER_Y = H - 70;
+  var OBSTACLE_SPEED = 3;
+  var COIN_SPEED = 3;
+  var GAME_TIME = 40; // 秒
 
-  var TOTAL_LAPS = 3;
-  var finishY = cy - trackOuterRy + 8;
-  var finishHalfW = 25;
-
-  var KART_COLORS = ['#E53935', '#1E88E5', '#43A047', '#FB8C00'];
-  var NUM_AI = 3;
-
-  function isOnTrack(px, py) {
-    var dx = (px - cx) / trackOuterRx;
-    var dy = (py - cy) / trackOuterRy;
-    var outer = dx * dx + dy * dy <= 1;
-    var ix = (px - cx) / trackInnerRx;
-    var iy = (py - cy) / trackInnerRy;
-    var inner = ix * ix + iy * iy < 1;
-    return outer && inner;
-  }
-
-  function getTrackAngle(px, py) {
-    return Math.atan2(py - cy, px - cx);
-  }
-
-  function getProgressAngle(px, py) {
-    var a = Math.atan2(py - cy, px - cx);
-    return (a + Math.PI) / (2 * Math.PI);
-  }
-
-  function angleToPoint(angle) {
-    var r = (trackOuterRx + trackInnerRx) / 2;
-    var ry = (trackOuterRy + trackInnerRy) / 2;
-    return { x: cx + r * Math.cos(angle), y: cy + ry * Math.sin(angle) };
-  }
-
-  var karts = [];
   var state = {
     running: false,
-    countdown: 0,
-    playerLap: 0,
-    playerLastCross: -1,
-    finished: [],
-    positions: []
+    time: GAME_TIME,
+    playerLane: 1,
+    distance: 0,
+    score: 0,
+    hit: false,
+    obstacles: [],
+    coins: []
   };
 
-  function createKart(isPlayer, color, index) {
-    var startAngle = -Math.PI / 2;
-    var p = angleToPoint(startAngle);
-    return {
-      x: p.x,
-      y: p.y,
-      prevY: p.y,
-      angle: Math.PI / 2,
-      speed: 0,
-      maxSpeed: isPlayer ? 4.2 : 3.6,
-      accel: 0.18,
-      friction: 0.96,
-      turnSpeed: 0.06,
-      grassFriction: 0.92,
-      isPlayer: isPlayer,
-      color: color,
-      lap: 0,
-      lastCross: -1,
-      progress: 0,
-      aiAngle: startAngle,
-      finished: false
-    };
+  function resetGame() {
+    state.running = false;
+    state.time = GAME_TIME;
+    state.playerLane = 1;
+    state.distance = 0;
+    state.score = 0;
+    state.hit = false;
+    state.obstacles = [];
+    state.coins = [];
+    document.getElementById('kartLap').textContent = '距離: 0 m';
+    document.getElementById('kartPos').textContent = 'コイン: 0 枚';
   }
 
-  function resetKarts() {
-    karts = [];
-    karts.push(createKart(true, '#E53935', 0));
-    for (var i = 0; i < NUM_AI; i++) {
-      var a = (i + 1) * 0.08;
-      var p = angleToPoint(-Math.PI / 2 - a);
-      var k = createKart(false, KART_COLORS[i + 1], i + 1);
-      k.x = p.x;
-      k.y = p.y;
-      k.aiAngle = -Math.PI / 2 - a;
-      karts.push(k);
-    }
-    state.playerLap = 0;
-    state.playerLastCross = -1;
-    state.finished = [];
-    state.positions = [];
-  }
-
-  function crossFinishLine(kart, isPlayer) {
-    if (Math.abs(kart.x - cx) > finishHalfW) return;
-    var crossed = kart.prevY > finishY && kart.y <= finishY;
-    if (!crossed) return;
-    if (kart.lastCross === state.countdown) return;
-    kart.lastCross = state.countdown;
-    kart.lap++;
-    if (kart.lap >= TOTAL_LAPS) {
-      kart.finished = true;
-      state.finished.push(isPlayer ? 'player' : kart);
-    }
-  }
-
-  function updatePositions() {
-    var list = [];
-    for (var i = 0; i < karts.length; i++) {
-      var k = karts[i];
-      if (k.finished) {
-        var order = state.finished.indexOf(k.isPlayer ? 'player' : k) + 1;
-        list.push({ kart: k, score: 1000 * k.lap + order, finished: true, order: order });
-      } else {
-        var prog = k.lap * 1000 + k.progress * 1000;
-        list.push({ kart: k, score: prog, finished: false });
+  function spawnRow() {
+    var laneForObstacle = Math.floor(Math.random() * LANE_COUNT);
+    for (var i = 0; i < LANE_COUNT; i++) {
+      if (i === laneForObstacle) {
+        state.obstacles.push({ lane: i, y: -40 });
+      } else if (Math.random() < 0.4) {
+        state.coins.push({ lane: i, y: -40 });
       }
     }
-    list.sort(function (a, b) {
-      if (a.finished && b.finished) return a.order - b.order;
-      if (a.finished) return -1;
-      if (b.finished) return 1;
-      return b.score - a.score;
+  }
+
+  function laneX(lane) {
+    return lane * LANE_WIDTH + LANE_WIDTH / 2;
+  }
+
+  function updateGame() {
+    if (!state.running) return;
+
+    state.time -= 1 / 60;
+    if (state.time <= 0) {
+      state.time = 0;
+      finishGame(true);
+      return;
+    }
+
+    state.distance += 0.5;
+
+    if (Math.random() < 0.03) spawnRow();
+
+    state.obstacles.forEach(function (o) { o.y += OBSTACLE_SPEED; });
+    state.coins.forEach(function (c) { c.y += COIN_SPEED; });
+
+    var px = laneX(state.playerLane);
+    var py = PLAYER_Y;
+
+    state.obstacles = state.obstacles.filter(function (o) {
+      var dx = Math.abs(laneX(o.lane) - px);
+      var dy = Math.abs(o.y - py);
+      if (dy < 30 && dx < LANE_WIDTH * 0.4) {
+        state.hit = true;
+        finishGame(false);
+        return false;
+      }
+      return o.y < H + 40;
     });
-    state.positions = list;
+
+    state.coins = state.coins.filter(function (c) {
+      var dx = Math.abs(laneX(c.lane) - px);
+      var dy = Math.abs(c.y - py);
+      if (dy < 26 && dx < LANE_WIDTH * 0.3) {
+        state.score += 1;
+        return false;
+      }
+      return c.y < H + 40;
+    });
+
+    document.getElementById('kartLap').textContent = '距離: ' + Math.floor(state.distance) + ' m';
+    document.getElementById('kartPos').textContent = 'コイン: ' + state.score + ' 枚';
   }
 
-  function getPlayerRank() {
-    var playerKart = karts[0];
-    for (var i = 0; i < state.positions.length; i++) {
-      if (state.positions[i].kart === playerKart) return i + 1;
-    }
-    return 1;
+  function finishGame(isClear) {
+    if (!state.running) return;
+    state.running = false;
+    var title = isClear ? 'ゴール！' : 'クラッシュ！';
+    var msg = isClear
+      ? '直線コースを走り切った！ 距離 ' + Math.floor(state.distance) + ' m、コイン ' + state.score + ' 枚'
+      : '障害物にぶつかってしまった… 距離 ' + Math.floor(state.distance) + ' m、コイン ' + state.score + ' 枚';
+    document.getElementById('finishTitle').textContent = title;
+    document.getElementById('finishMsg').textContent = msg;
+    document.getElementById('overlayFinish').classList.add('visible');
   }
 
-  function updateKart(kart, dt) {
-    if (kart.finished) return;
-    var onTrack = isOnTrack(kart.x, kart.y);
-    var friction = onTrack ? kart.friction : kart.grassFriction;
-    if (kart.isPlayer && state.running) {
-      var acc = 0;
-      if (keys.up) acc += kart.accel;
-      if (keys.down) acc -= kart.accel * 0.8;
-      kart.speed += acc;
-      if (keys.left) kart.angle -= kart.turnSpeed * (1 + Math.abs(kart.speed) * 0.05);
-      if (keys.right) kart.angle += kart.turnSpeed * (1 + Math.abs(kart.speed) * 0.05);
-    } else if (!kart.isPlayer) {
-      kart.speed += kart.accel * 0.7;
-      kart.aiAngle += 0.015 + kart.speed * 0.003;
-      if (kart.aiAngle > Math.PI) kart.aiAngle -= 2 * Math.PI;
-      var target = angleToPoint(kart.aiAngle);
-      var dx = target.x - kart.x, dy = target.y - kart.y;
-      var wantAngle = Math.atan2(dy, dx) + Math.PI / 2;
-      var da = wantAngle - kart.angle;
-      while (da > Math.PI) da -= 2 * Math.PI;
-      while (da < -Math.PI) da += 2 * Math.PI;
-      kart.angle += da * 0.1;
-    }
-    kart.speed *= friction;
-    if (kart.speed > kart.maxSpeed) kart.speed = kart.maxSpeed;
-    if (kart.speed < -kart.maxSpeed * 0.5) kart.speed = -kart.maxSpeed * 0.5;
-    kart.prevY = kart.y;
-    var vx = Math.sin(kart.angle) * kart.speed;
-    var vy = -Math.cos(kart.angle) * kart.speed;
-    kart.x += vx;
-    kart.y += vy;
-    kart.progress = getProgressAngle(kart.x, kart.y);
-    crossFinishLine(kart, kart.isPlayer);
-  }
-
-  var keys = { up: false, down: false, left: false, right: false };
-
-  function drawTrack() {
-    ctx.fillStyle = '#5D4037';
+  function drawBackground() {
+    ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#8D6E63';
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, trackOuterRx, trackOuterRy, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#2d5016';
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, trackInnerRx, trackInnerRy, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, trackOuterRx, trackOuterRy, 0, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, trackInnerRx, trackInnerRy, 0, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(cx - finishHalfW, finishY);
-    ctx.lineTo(cx + finishHalfW, finishY);
-    ctx.stroke();
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 10px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('GOAL', cx, finishY - 6);
+    for (var i = 0; i < LANE_COUNT; i++) {
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(i * LANE_WIDTH + 4, 0, LANE_WIDTH - 8, H);
+    }
+    ctx.strokeStyle = 'rgba(148,163,184,0.6)';
+    ctx.lineWidth = 2;
+    for (var j = 1; j < LANE_COUNT; j++) {
+      var x = j * LANE_WIDTH;
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
   }
 
-  function drawKart(kart) {
+  function drawPlayer() {
+    var x = laneX(state.playerLane);
+    var y = PLAYER_Y;
     ctx.save();
-    ctx.translate(kart.x, kart.y);
-    ctx.rotate(kart.angle);
-    var w = 14, h = 22;
-    ctx.fillStyle = kart.color;
-    ctx.fillRect(-w / 2, -h / 2, w, h);
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(-w / 2, -h / 2, w, h);
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(2, -6, 4, 6);
+    ctx.translate(x, y);
+    ctx.fillStyle = '#e11d48';
+    ctx.fillRect(-14, -20, 28, 40);
+    ctx.fillStyle = '#fee2e2';
+    ctx.fillRect(-10, -10, 20, 16);
     ctx.restore();
+  }
+
+  function drawObjects() {
+    state.obstacles.forEach(function (o) {
+      var x = laneX(o.lane);
+      ctx.fillStyle = '#f97316';
+      ctx.beginPath();
+      ctx.roundRect(x - 16, o.y - 16, 32, 32, 6);
+      ctx.fill();
+    });
+    state.coins.forEach(function (c) {
+      var x = laneX(c.lane);
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(x, c.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+  }
+
+  function drawHUD() {
+    ctx.fillStyle = 'rgba(15,23,42,0.7)';
+    ctx.fillRect(8, 8, 120, 32);
+    ctx.fillRect(W - 128, 8, 120, 32);
+    ctx.fillStyle = '#e5e7eb';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('TIME', 14, 20);
+    ctx.fillText('SCORE', W - 122, 20);
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(Math.ceil(state.time) + 's', 14, 34);
+    ctx.fillText(state.score, W - 122, 34);
   }
 
   function draw() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    drawTrack();
-    for (var i = 0; i < karts.length; i++) drawKart(karts[i]);
+    drawBackground();
+    drawObjects();
+    drawPlayer();
+    drawHUD();
   }
 
-  function gameLoop() {
-    if (!state.running) {
-      draw();
-      requestAnimationFrame(gameLoop);
-      return;
-    }
-    state.countdown++;
-    var dt = 1;
-    for (var i = 0; i < karts.length; i++) updateKart(karts[i], dt);
-    updatePositions();
-
-    var playerKart = karts[0];
-    document.getElementById('kartLap').textContent = (playerKart.lap + 1) + ' / ' + TOTAL_LAPS + ' 周';
-    document.getElementById('kartPos').textContent = '順位: ' + getPlayerRank() + ' 位';
-
-    if (playerKart.finished) {
-      state.running = false;
-      document.getElementById('finishTitle').textContent = 'ゴール！';
-      var rank = getPlayerRank();
-      var msg = rank === 1 ? '1位でゴール！ おめでとう！' : rank + '位でゴール！';
-      document.getElementById('finishMsg').textContent = msg;
-      document.getElementById('overlayFinish').classList.add('visible');
-      draw();
-      return;
-    }
-
+  function loop() {
+    updateGame();
     draw();
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(loop);
   }
 
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowUp') { keys.up = true; e.preventDefault(); }
-    if (e.key === 'ArrowDown') { keys.down = true; e.preventDefault(); }
-    if (e.key === 'ArrowLeft') { keys.left = true; e.preventDefault(); }
-    if (e.key === 'ArrowRight') { keys.right = true; e.preventDefault(); }
-  });
-  document.addEventListener('keyup', function (e) {
-    if (e.key === 'ArrowUp') keys.up = false;
-    if (e.key === 'ArrowDown') keys.down = false;
-    if (e.key === 'ArrowLeft') keys.left = false;
-    if (e.key === 'ArrowRight') keys.right = false;
-  });
+  function moveLeft() {
+    if (!state.running) return;
+    state.playerLane = Math.max(0, state.playerLane - 1);
+  }
 
-  document.getElementById('btnGas').addEventListener('mousedown', function () { keys.up = true; });
-  document.getElementById('btnGas').addEventListener('mouseup', function () { keys.up = false; });
-  document.getElementById('btnGas').addEventListener('mouseleave', function () { keys.up = false; });
-  document.getElementById('btnGas').addEventListener('touchstart', function (e) { e.preventDefault(); keys.up = true; }, { passive: false });
-  document.getElementById('btnGas').addEventListener('touchend', function (e) { e.preventDefault(); keys.up = false; }, { passive: false });
-  document.getElementById('btnLeft').addEventListener('mousedown', function () { keys.left = true; });
-  document.getElementById('btnLeft').addEventListener('mouseup', function () { keys.left = false; });
-  document.getElementById('btnLeft').addEventListener('mouseleave', function () { keys.left = false; });
-  document.getElementById('btnLeft').addEventListener('touchstart', function (e) { e.preventDefault(); keys.left = true; }, { passive: false });
-  document.getElementById('btnLeft').addEventListener('touchend', function (e) { e.preventDefault(); keys.left = false; }, { passive: false });
-  document.getElementById('btnRight').addEventListener('mousedown', function () { keys.right = true; });
-  document.getElementById('btnRight').addEventListener('mouseup', function () { keys.right = false; });
-  document.getElementById('btnRight').addEventListener('mouseleave', function () { keys.right = false; });
-  document.getElementById('btnRight').addEventListener('touchstart', function (e) { e.preventDefault(); keys.right = true; }, { passive: false });
-  document.getElementById('btnRight').addEventListener('touchend', function (e) { e.preventDefault(); keys.right = false; }, { passive: false });
+  function moveRight() {
+    if (!state.running) return;
+    state.playerLane = Math.min(LANE_COUNT - 1, state.playerLane + 1);
+  }
+
+  document.getElementById('btnLeft').addEventListener('click', function () {
+    moveLeft();
+  });
+  document.getElementById('btnRight').addEventListener('click', function () {
+    moveRight();
+  });
+  document.getElementById('btnGas').addEventListener('click', function () {
+    if (!state.running) {
+      document.getElementById('overlay').classList.remove('visible');
+      resetGame();
+      state.running = true;
+    }
+  });
 
   document.getElementById('btnStart').addEventListener('click', function () {
     document.getElementById('overlay').classList.remove('visible');
-    resetKarts();
+    resetGame();
     state.running = true;
   });
 
   document.getElementById('btnRetry').addEventListener('click', function () {
     document.getElementById('overlayFinish').classList.remove('visible');
-    resetKarts();
+    resetGame();
     state.running = true;
   });
 
-  resetKarts();
   document.getElementById('overlay').classList.add('visible');
-  gameLoop();
+  resetGame();
+  loop();
 })();
   </script>
 </body>

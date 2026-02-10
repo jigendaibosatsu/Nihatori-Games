@@ -165,30 +165,8 @@
   var GROUND_Y = H - TILE - player.h;
   var LEVEL_WIDTH = 1200;
 
-  var platforms = [
-    { x: 0, y: H - TILE, w: LEVEL_WIDTH + 100, h: TILE },
-    { x: 120, y: H - TILE - 64, w: 80, h: 16 },
-    { x: 240, y: H - TILE - 96, w: 80, h: 16 },
-    { x: 360, y: H - TILE - 48, w: 48, h: 16 },
-    { x: 480, y: H - TILE - 80, w: 96, h: 16 },
-    { x: 600, y: H - TILE - 64, w: 80, h: 16 },
-    { x: 720, y: H - TILE - 112, w: 64, h: 16 },
-    { x: 840, y: H - TILE - 48, w: 96, h: 16 },
-    { x: 960, y: H - TILE - 80, w: 80, h: 16 },
-    { x: 1080, y: H - TILE - 64, w: 80, h: 16 }
-  ];
-
-  var enemies = [
-    { x: 160, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 120, max: 220 },
-    { x: 280, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 260, max: 360 },
-    { x: 420, y: H - TILE - 64, w: 24, h: 24, vx: -1.5, min: 400, max: 520 },
-    { x: 550, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 520, max: 620 },
-    { x: 680, y: H - TILE - 96, w: 24, h: 24, vx: -1.5, min: 660, max: 760 },
-    { x: 800, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 780, max: 900 },
-    { x: 920, y: H - TILE - 64, w: 24, h: 24, vx: -1.5, min: 900, max: 1000 },
-    { x: 1050, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 1020, max: 1120 }
-  ];
-
+  var platforms = [];
+  var enemies = [];
   var goal = { x: LEVEL_WIDTH - 48, y: H - TILE - 48, w: 32, h: 48 };
   var gameState = 'start';
   var cameraX = 0;
@@ -345,26 +323,53 @@
     }
   }
 
-  var initialEnemies = [
-    { x: 160, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 120, max: 220 },
-    { x: 280, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 260, max: 360 },
-    { x: 420, y: H - TILE - 64, w: 24, h: 24, vx: -1.5, min: 400, max: 520 },
-    { x: 550, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 520, max: 620 },
-    { x: 680, y: H - TILE - 96, w: 24, h: 24, vx: -1.5, min: 660, max: 760 },
-    { x: 800, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 780, max: 900 },
-    { x: 920, y: H - TILE - 64, w: 24, h: 24, vx: -1.5, min: 900, max: 1000 },
-    { x: 1050, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 1020, max: 1120 }
-  ];
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function generateStage() {
+    platforms.length = 0;
+    enemies.length = 0;
+
+    platforms.push({ x: 0, y: H - TILE, w: LEVEL_WIDTH + 100, h: TILE });
+
+    var x = 120;
+    var maxX = LEVEL_WIDTH - 120;
+    while (x < maxX) {
+      var gap = randomInt(80, 140);
+      var width = randomInt(60, 110);
+      var heightOffset = randomInt(0, 3);
+      var y = H - TILE - 48 - heightOffset * 24;
+      platforms.push({ x: x, y: y, w: width, h: 16 });
+
+      if (Math.random() < 0.6) {
+        var ex = x + width / 2 - 12;
+        var ey = y - 24;
+        var patrol = width - 16;
+        enemies.push({
+          x: ex,
+          y: ey,
+          w: 24,
+          h: 24,
+          vx: Math.random() < 0.5 ? -1.4 : 1.4,
+          min: x + 8,
+          max: x + width - 8
+        });
+      }
+
+      x += width + gap;
+    }
+
+    goal.x = LEVEL_WIDTH - 64;
+    goal.y = H - TILE - 64;
+  }
   function reset() {
     player.x = 48;
     player.y = GROUND_Y;
     player.vx = AUTO_SCROLL;
     player.vy = 0;
     player.onGround = true;
-    enemies.length = 0;
-    initialEnemies.forEach(function (e) {
-      enemies.push({ x: e.x, y: e.y, w: e.w, h: e.h, vx: e.vx, min: e.min, max: e.max });
-    });
+    generateStage();
     gameState = 'play';
   }
 
@@ -419,6 +424,7 @@
     if (e.code === 'Space' || e.code === 'ArrowUp') keys.jump = false;
   });
 
+  generateStage();
   document.getElementById('overlayStart').classList.add('visible');
   requestAnimationFrame(loop);
 })();

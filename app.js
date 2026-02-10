@@ -187,7 +187,7 @@
           var j = Math.floor(Math.random() * (i + 1));
           var tmp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = tmp;
         }
-        return applySearchFilter(shuffled.slice(0, 20));
+        return applySearchFilter(shuffled.slice(0, 3));
       }
       case 'favorites': {
         var fav = loadFavorites();
@@ -338,25 +338,70 @@
     }
     paginationEl.style.display = 'flex';
     var html = '';
+    // 最初のページへ
+    if (currentPage > 1) {
+      html += '<button type="button" class="pagination-btn" data-page="1" aria-label="最初のページへ">« 最初</button>';
+    }
+    // 前のページへ
     if (currentPage > 1) {
       html += '<button type="button" class="pagination-btn" data-page="' + (currentPage - 1) + '" aria-label="前のページ">‹ 前へ</button>';
     }
+    // 現在ページ / 総ページ
     html += '<span class="pagination-info">' + currentPage + ' / ' + totalPages + '</span>';
+    // 次のページへ
     if (currentPage < totalPages) {
       html += '<button type="button" class="pagination-btn" data-page="' + (currentPage + 1) + '" aria-label="次のページ">次へ ›</button>';
     }
+    // 最後のページへ
+    if (currentPage < totalPages) {
+      html += '<button type="button" class="pagination-btn" data-page="' + totalPages + '" aria-label="最後のページへ">最後 »</button>';
+    }
+    // ページ指定ジャンプ
+    html += '' +
+      '<div class="pagination-jump">' +
+        '<label class="pagination-jump-label">' +
+          'ページ' +
+          '<input type="number" min="1" max="' + totalPages + '" value="' + currentPage + '" class="pagination-jump-input" aria-label="ページ番号を入力" />' +
+          '<span class="pagination-jump-total"> / ' + totalPages + '</span>' +
+        '</label>' +
+        '<button type="button" class="pagination-btn pagination-jump-btn">移動</button>' +
+      '</div>';
+
     paginationEl.innerHTML = html;
-    paginationEl.querySelectorAll('.pagination-btn').forEach(function (btn) {
+
+    function goToPage(p) {
+      var page = parseInt(p, 10);
+      if (isNaN(page)) return;
+      if (page < 1) page = 1;
+      if (page > totalPages) page = totalPages;
+      if (page === currentPage) return;
+      setUrlTab(tabId, false, page);
+      setActiveTab(tabId);
+      renderPage(tabId);
+      window.scrollTo(0, 0);
+    }
+
+    paginationEl.querySelectorAll('.pagination-btn[data-page]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var p = parseInt(btn.getAttribute('data-page'), 10);
         if (!isNaN(p) && p >= 1) {
-          setUrlTab(tabId, false, p);
-          setActiveTab(tabId);
-          renderPage(tabId);
-          window.scrollTo(0, 0);
+          goToPage(p);
         }
       });
     });
+
+    var jumpInput = paginationEl.querySelector('.pagination-jump-input');
+    var jumpBtn = paginationEl.querySelector('.pagination-jump-btn');
+    if (jumpBtn && jumpInput) {
+      jumpBtn.addEventListener('click', function () {
+        goToPage(jumpInput.value);
+      });
+      jumpInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          goToPage(jumpInput.value);
+        }
+      });
+    }
   }
 
   function renderSnsPage() {

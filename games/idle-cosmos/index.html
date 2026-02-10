@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>図鑑完成だけの放置宇宙</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./idle-cosmos.css">
+</head>
+<body>
+  <div class="ic-root">
+    <header class="ic-header">
+      <div class="ic-header-left">
+        <div class="ic-logo">∞ Idle Cosmos Archive</div>
+        <div class="ic-caption">何も操作せず、宇宙の発見ログだけを眺める図鑑ゲーム。</div>
+      </div>
+      <div class="ic-header-right">
+        <div class="ic-stat">
+          <span class="ic-stat-label">経過時間</span>
+          <span id="ic-elapsed" class="ic-stat-value">00:00:00</span>
+        </div>
+        <div class="ic-stat">
+          <span class="ic-stat-label">発見済み現象</span>
+          <span id="ic-discovered" class="ic-stat-value">0 / 0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="ic-main">
+      <section class="ic-main-panel">
+        <section class="ic-now">
+          <div class="ic-now-inner">
+            <div class="ic-now-label">現在観測中の宇宙断面</div>
+            <div id="ic-current-title" class="ic-now-title">観測準備中…</div>
+            <div id="ic-current-flavor" class="ic-now-flavor">
+              画面を開いたまま、もしくは閉じたままでもかまいません。<br>
+              時間だけが、静かに宇宙図鑑を満たしていきます。
+            </div>
+          </div>
+        </section>
+
+        <section class="ic-log">
+          <h2 class="ic-section-title">発見ログ</h2>
+          <p class="ic-section-caption">
+            新しい宇宙現象が検出されるたびに、ここに静かに記録されます。<br>
+            ログは自動で上から積み重なっていきます。
+          </p>
+          <div id="ic-log-list" class="ic-log-list"></div>
+        </section>
+      </section>
+
+      <aside class="ic-side">
+        <section class="ic-panel">
+          <h2 class="ic-panel-title">宇宙図鑑</h2>
+          <p class="ic-panel-text">
+            一度でも検出した現象は、ここに登録されます。<br>
+            目標は「全項目の発見ログを埋めること」だけです。
+          </p>
+          <div id="ic-dex" class="ic-dex"></div>
+        </section>
+
+        <section class="ic-panel">
+          <h2 class="ic-panel-title">遊び方</h2>
+          <ul class="ic-notes">
+            <li>プレイヤーは<strong>何もしません</strong>。クリックやタップは不要です。</li>
+            <li>タブを閉じていても、しばらくするとまとめて発見されます（ゲーム内時間換算）。</li>
+            <li>インディー賞を狙えるくらい、「何もしない体験」の完成度だけを追っています。</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="./idle-cosmos.js"></script>
+</body>
+</html>
+

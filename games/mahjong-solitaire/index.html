@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>上海ソリティア – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="mahjong-solitaire.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="ms-container">
+    <h1 class="ms-title">上海ソリティア</h1>
+
+    <div class="ms-hud">
+      <div class="ms-score">
+        <span class="ms-label">残り牌</span>
+        <span class="ms-value" id="ms-remaining">0</span>
+      </div>
+      <div class="ms-score">
+        <span class="ms-label">ペア数</span>
+        <span class="ms-value" id="ms-pairs">0</span>
+      </div>
+      <div class="ms-score">
+        <span class="ms-label">詰み警告</span>
+        <span class="ms-value" id="ms-status">--- </span>
+      </div>
+    </div>
+
+    <div class="ms-board-wrap">
+      <div id="ms-board" class="ms-board" aria-label="麻雀パズル盤面"></div>
+    </div>
+
+    <div class="ms-controls">
+      <button type="button" class="ms-btn" id="ms-btn-new">新しい局を始める</button>
+    </div>
+
+    <p class="ms-help">
+      同じ柄の牌を 2 枚選ぶと消えます。<br>
+      ただし<strong>左右どちらかが空いている牌だけ</strong>が選択できます（上に重なっている牌は今回は無しの簡易ルール）。<br>
+      すべての牌を取り切れたらクリアです。
+    </p>
+
+    <a href="/index.html" class="ms-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="mahjong-solitaire.js"></script>
+</body>
+</html>
+

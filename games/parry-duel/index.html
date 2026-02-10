@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>パリィデュエル – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="parry-duel.css" />
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="pd-wrap">
+    <h1 class="pd-title">パリィデュエル</h1>
+
+    <div class="pd-hud">
+      <div class="pd-meter">
+        <span class="pd-label">ライフ</span>
+        <div class="pd-hp-bar">
+          <div id="pd-hp-inner" class="pd-hp-inner"></div>
+        </div>
+        <span id="pd-hp-text" class="pd-meter-value">3 / 3</span>
+      </div>
+      <div class="pd-meter">
+        <span class="pd-label">連続パリィ</span>
+        <span id="pd-streak" class="pd-meter-value">0</span>
+      </div>
+      <div class="pd-meter">
+        <span class="pd-label">ベスト</span>
+        <span id="pd-best" class="pd-meter-value">0</span>
+      </div>
+    </div>
+
+    <div class="pd-field">
+      <div class="pd-enemy">
+        <div id="pd-enemy-state" class="pd-enemy-state">待機中</div>
+        <div class="pd-enemy-bar">
+          <div id="pd-timing-bar" class="pd-timing-bar"></div>
+        </div>
+      </div>
+
+      <button type="button" id="pd-btn-parry" class="pd-btn-main">
+        タイミングよくタップしてパリィ！
+      </button>
+
+      <div id="pd-message" class="pd-message"></div>
+    </div>
+
+    <div class="pd-controls">
+      <button type="button" id="pd-btn-restart" class="pd-btn-sub">リトライ</button>
+    </div>
+
+    <p class="pd-help">
+      敵は「ため → 攻撃 → クールダウン」をくり返します。<br>
+      緑色の細いタイミングバーが<strong>中央のゾーン</strong>に来た瞬間にボタンを押すと、完璧なパリィ！<br>
+      早すぎても遅すぎてもダメージを受けます。3 回ミスすると敗北です。
+    </p>
+
+    <a href="/index.html" class="pd-back">← トップへ戻る</a>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script src="parry-duel.js"></script>
+</body>
+</html>
+

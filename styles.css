@@ -711,6 +711,34 @@ body.menu-open {
   color: var(--text-meta);
 }
 
+.pagination-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pagination-jump-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-meta);
+}
+
+.pagination-jump-input {
+  width: 4rem;
+  padding: 4px 6px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid var(--row-border);
+  text-align: center;
+}
+
+.pagination-jump-total {
+  font-size: 12px;
+}
+
 /* ----- サイドバー ----- */
 .sidebar {
   display: none;

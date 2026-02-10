@@ -142,6 +142,17 @@
     return Math.floor(random(min, max + 1));
   }
 
+  function getNearestEnemies(count) {
+    var p = gameState.player;
+    var enemies = gameState.enemies.slice();
+    enemies.sort(function (a, b) {
+      var da = (a.x - p.x) * (a.x - p.x) + (a.y - p.y) * (a.y - p.y);
+      var db = (b.x - p.x) * (b.x - p.x) + (b.y - p.y) * (b.y - p.y);
+      return da - db;
+    });
+    return enemies.slice(0, count);
+  }
+
   // ===== プレイヤー =====
   function updatePlayer() {
     var p = gameState.player;
@@ -301,27 +312,51 @@
       gameState.attackCooldowns.melee = attackSpeed;
     }
     
-    // 投射物攻撃
+    // 投射物攻撃（できるだけ敵の方向へ自動照準）
     if (gameState.attackCooldowns.projectile <= 0) {
       var projectileCount = 1 + gameState.skills.projectileCount;
-      var angleStep = (Math.PI * 2) / projectileCount;
-      
-      for (var i = 0; i < projectileCount; i++) {
-        var angle = (gameState.gameTime * 0.1) + (i * angleStep);
-        var vx = Math.cos(angle) * 4;
-        var vy = Math.sin(angle) * 4;
-        
-        gameState.attacks.push({
-          type: 'projectile',
-          x: p.x,
-          y: p.y,
-          vx: vx,
-          vy: vy,
-          damage: 5 + gameState.skills.attackPower * 3,
-          radius: 8,
-          lifetime: 120,
-          color: '#60a5fa'
+      var damage = 5 + gameState.skills.attackPower * 3;
+      var speed = 4;
+      var targets = getNearestEnemies(projectileCount);
+
+      if (targets.length > 0) {
+        targets.forEach(function (enemy) {
+          var dx = enemy.x - p.x;
+          var dy = enemy.y - p.y;
+          var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          var vx = (dx / dist) * speed;
+          var vy = (dy / dist) * speed;
+          gameState.attacks.push({
+            type: 'projectile',
+            x: p.x,
+            y: p.y,
+            vx: vx,
+            vy: vy,
+            damage: damage,
+            radius: 8,
+            lifetime: 120,
+            color: '#60a5fa'
+          });
         });
+      } else {
+        // 敵がいないときは従来どおり周囲に飛ばしておく
+        var angleStep = (Math.PI * 2) / projectileCount;
+        for (var i = 0; i < projectileCount; i++) {
+          var angle = (gameState.gameTime * 0.1) + (i * angleStep);
+          var vx2 = Math.cos(angle) * speed;
+          var vy2 = Math.sin(angle) * speed;
+          gameState.attacks.push({
+            type: 'projectile',
+            x: p.x,
+            y: p.y,
+            vx: vx2,
+            vy: vy2,
+            damage: damage,
+            radius: 8,
+            lifetime: 120,
+            color: '#60a5fa'
+          });
+        }
       }
       
       gameState.attackCooldowns.projectile = attackSpeed * 2;

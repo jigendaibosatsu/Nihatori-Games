@@ -1,0 +1,223 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body.game-page {
+  padding-top: 48px;
+  padding-bottom: 20px;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #111827 0%, #020617 60%);
+  font-family: "MS PGothic", "Yu Gothic", sans-serif;
+  color: #e5e7eb;
+}
+
+.mb-wrap {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mb-title {
+  font-size: 1.5rem;
+  color: #f97316;
+  margin-bottom: 14px;
+  text-align: center;
+  text-shadow: 0 0 12px rgba(248, 113, 113, 0.6);
+}
+
+.mb-hud {
+  width: 100%;
+  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: 2fr 2fr 1.2fr;
+  gap: 8px;
+}
+
+.mb-meter {
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 10px;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  padding: 6px 8px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mb-label {
+  color: #9ca3af;
+}
+
+.mb-meter-value {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.mb-hp-bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 1);
+  overflow: hidden;
+}
+
+.mb-hp-inner {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  transition: width 0.2s ease-out;
+}
+
+.mb-hp-inner.enemy {
+  background: linear-gradient(90deg, #fb7185, #ef4444);
+}
+
+.mb-field {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.mb-side {
+  background: rgba(15, 23, 42, 0.96);
+  border-radius: 12px;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  padding: 8px 8px 10px;
+}
+
+.mb-subtitle {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.mb-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mb-card {
+  background: radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.08), rgba(15, 23, 42, 1));
+  border-radius: 10px;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.mb-card.you {
+  cursor: pointer;
+}
+
+.mb-card.you:hover {
+  border-color: #f97316;
+}
+
+.mb-card.you.selected {
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.9);
+}
+
+.mb-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.mb-type-rock { background: radial-gradient(circle at 30% 20%, #fee2e2, #b91c1c); }
+.mb-type-scissors { background: radial-gradient(circle at 30% 20%, #e0f2fe, #0369a1); }
+.mb-type-paper { background: radial-gradient(circle at 30% 20%, #dcfce7, #15803d); }
+
+.mb-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mb-card-name {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.mb-card-meta {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.mb-card-tag {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.9);
+}
+
+.mb-message {
+  width: 100%;
+  min-height: 40px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  font-size: 12px;
+  color: #e5e7eb;
+  white-space: pre-line;
+}
+
+.mb-controls {
+  margin-bottom: 8px;
+}
+
+.mb-btn {
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 2px solid #f97316;
+  background: linear-gradient(180deg, #fb923c, #ea580c);
+  color: #111827;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mb-btn:hover {
+  opacity: 0.95;
+}
+
+.mb-help {
+  font-size: 12px;
+  color: #cbd5f5;
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.mb-back {
+  font-size: 14px;
+  color: #93c5fd;
+  text-decoration: none;
+}
+
+.mb-back:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .mb-wrap {
+    padding: 10px;
+  }
+  .mb-field {
+    grid-template-columns: 1fr;
+  }
+}
+

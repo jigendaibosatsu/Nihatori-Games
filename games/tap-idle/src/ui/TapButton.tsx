@@ -19,7 +19,8 @@ export function TapButton() {
         onClick={handleTap}
         aria-label="お金を稼ぐ"
       >
-        稼ぐ
+        <img src="/assets/money/coin_32.png" alt="" className="tap-button-icon" />
+        <span className="tap-button-label">タップ</span>
       </button>
       {floatText && (
         <span key={floatText.key} className="tap-float">

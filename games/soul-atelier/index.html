@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>魂合成アトリエ – Soul Atelier</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./soul-atelier.css">
+</head>
+<body>
+  <div class="sa-root">
+    <header class="sa-header">
+      <div class="sa-header-left">
+        <div class="sa-logo">✧ Soul Atelier ✧</div>
+        <div class="sa-caption">魂を育てて、神話級まで進化させる小さなアトリエ</div>
+      </div>
+      <div class="sa-header-right">
+        <div class="sa-stat">
+          <span class="sa-stat-label">淡い魂</span>
+          <span id="sa-soft" class="sa-stat-value">0</span>
+        </div>
+        <div class="sa-stat">
+          <span class="sa-stat-label">濃い魂</span>
+          <span id="sa-dense" class="sa-stat-value">0</span>
+        </div>
+        <div class="sa-stat">
+          <span class="sa-stat-label">輝く魂</span>
+          <span id="sa-radiant" class="sa-stat-value">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="sa-main">
+      <section class="sa-main-panel">
+        <div class="sa-current-soul">
+          <div class="sa-current-art">
+            <div id="sa-current-rarity" class="sa-tag sa-tag-rarity">Common</div>
+            <div id="sa-current-name" class="sa-current-name">まだ何も生まれていません</div>
+            <div id="sa-current-flavor" class="sa-current-flavor">合成で生まれた魂はここに飾られます。</div>
+          </div>
+        </div>
+
+        <section class="sa-alchemy">
+          <h2 class="sa-section-title">魂合成</h2>
+          <p class="sa-section-caption">
+            下のリソースをタップしてスロットに入れ、「合成する」を押すだけ。<br>
+            レシピは自分で見つけていくスタイルです。
+          </p>
+
+          <div class="sa-slots" id="sa-slots">
+            <button class="sa-slot" data-index="0"><span class="sa-slot-label">スロット1</span><span class="sa-slot-value">空</span></button>
+            <button class="sa-slot" data-index="1"><span class="sa-slot-label">スロット2</span><span class="sa-slot-value">空</span></button>
+            <button class="sa-slot" data-index="2"><span class="sa-slot-label">スロット3</span><span class="sa-slot-value">空</span></button>
+          </div>
+
+          <div class="sa-alchemy-actions">
+            <button id="sa-btn-clear" class="sa-btn secondary" type="button">スロットを空にする</button>
+            <button id="sa-btn-synthesize" class="sa-btn primary" type="button">合成する</button>
+          </div>
+
+          <div id="sa-message" class="sa-message"></div>
+        </section>
+
+        <section class="sa-resources">
+          <h2 class="sa-section-title">魂のかけら</h2>
+          <p class="sa-section-caption">
+            アトリエに灯りをともしておけば、時間とともに魂のかけらが集まります。<br>
+            かけらをタップすると、選択中のスロットに追加されます。
+          </p>
+
+          <div class="sa-resource-list">
+            <button class="sa-chip" data-res="soft">
+              <span class="sa-chip-main">淡い魂</span>
+              <span class="sa-chip-sub">やさしい記憶のかけら</span>
+            </button>
+            <button class="sa-chip" data-res="dense">
+              <span class="sa-chip-main">濃い魂</span>
+              <span class="sa-chip-sub">強い感情が残るかけら</span>
+            </button>
+            <button class="sa-chip" data-res="radiant">
+              <span class="sa-chip-main">輝く魂</span>
+              <span class="sa-chip-sub">神話の気配を帯びたかけら</span>
+            </button>
+          </div>
+
+          <div class="sa-tick-hint">
+            しばらく放置すると、魂のかけらがゆっくり増えていきます。<br>
+            レアな「輝く魂」は、たまにしか現れません。
+          </div>
+        </section>
+      </section>
+
+      <aside class="sa-side">
+        <section class="sa-panel">
+          <h2 class="sa-panel-title">魂図鑑</h2>
+          <p class="sa-panel-text">
+            合成に成功した魂は、ここに記録されます。<br>
+            神話級までコンプリートできるでしょうか。
+          </p>
+          <div id="sa-dex" class="sa-dex"></div>
+        </section>
+
+        <section class="sa-panel">
+          <h2 class="sa-panel-title">アトリエメモ</h2>
+          <ul class="sa-notes">
+            <li>スロットに入れた順番も、レシピに影響します。</li>
+            <li>失敗して生まれる「ひび割れた魂」からも、別のルートが開けるかも。</li>
+            <li>ゆるく眺めるゲームなので、無理に最適化しなくて大丈夫です。</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="./soul-atelier.js"></script>
+</body>
+</html>
+

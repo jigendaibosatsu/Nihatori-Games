@@ -130,27 +130,32 @@
   <script>
 (function () {
   var CARD_TEMPLATES = [
-    { id: 'c1', name: 'スライム', cost: 1, atk: 1, def: 2 },
-    { id: 'c2', name: 'バット', cost: 1, atk: 1, def: 1 },
-    { id: 'c3', name: 'ゴブリン', cost: 2, atk: 2, def: 2 },
-    { id: 'c4', name: 'ウルフ', cost: 2, atk: 2, def: 3 },
-    { id: 'c5', name: 'スケルトン', cost: 2, atk: 2, def: 1 },
-    { id: 'c6', name: 'ナイト', cost: 3, atk: 3, def: 3 },
-    { id: 'c7', name: 'オーク', cost: 3, atk: 3, def: 2 },
-    { id: 'c8', name: 'プリースト', cost: 3, atk: 2, def: 4 },
-    { id: 'c9', name: 'ドラゴン', cost: 4, atk: 4, def: 4 },
-    { id: 'c10', name: 'グリフォン', cost: 4, atk: 3, def: 4 },
-    { id: 'c11', name: 'ヴァンパイア', cost: 4, atk: 4, def: 3 },
-    { id: 'c12', name: 'デーモン', cost: 5, atk: 5, def: 5 },
-    { id: 'c13', name: 'ヒドラ', cost: 5, atk: 5, def: 4 },
-    { id: 'c14', name: 'フェニックス', cost: 6, atk: 5, def: 5 }
+    { id: 'c1', name: 'スライムくん', cost: 1, atk: 1, def: 2, type: 'follower', keyword: null, image: '/assets/characters/slime-kun.png' },
+    { id: 'c2', name: 'バット', cost: 1, atk: 1, def: 1, type: 'follower', keyword: null, image: null },
+    { id: 'c3', name: 'ゴブリン労働者', cost: 2, atk: 2, def: 2, type: 'follower', keyword: 'guard', image: '/assets/characters/ork_128.png' },
+    { id: 'c4', name: '残業ウルフ', cost: 2, atk: 3, def: 2, type: 'follower', keyword: 'haste', image: null },
+    { id: 'c5', name: 'スケルトン', cost: 2, atk: 2, def: 1, type: 'follower', keyword: null, image: null },
+    { id: 'c6', name: 'ナイト係長', cost: 3, atk: 3, def: 3, type: 'follower', keyword: 'guard', image: null },
+    { id: 'c7', name: 'オーク先輩', cost: 3, atk: 3, def: 2, type: 'follower', keyword: null, image: null },
+    { id: 'c8', name: 'プリースト新人', cost: 3, atk: 2, def: 4, type: 'follower', keyword: null, image: null },
+    { id: 'c9', name: 'ドラゴン部長', cost: 4, atk: 4, def: 4, type: 'follower', keyword: 'guard', image: null },
+    { id: 'c10', name: 'グリフォン上司', cost: 4, atk: 3, def: 4, type: 'follower', keyword: null, image: null },
+    { id: 'c11', name: 'ヴァンパイア営業', cost: 4, atk: 4, def: 3, type: 'follower', keyword: 'haste', image: null },
+    { id: 'c12', name: 'デーモン社長', cost: 5, atk: 5, def: 5, type: 'follower', keyword: 'guard', image: null },
+    { id: 'c13', name: 'ヒドラ重役', cost: 5, atk: 5, def: 4, type: 'follower', keyword: null, image: null },
+    { id: 'c14', name: 'フェニックス役員', cost: 6, atk: 5, def: 5, type: 'follower', keyword: 'haste', image: '/assets/characters/phenix_32.png' },
+    // 呪文カード
+    { id: 's1', name: '残業命令', cost: 2, type: 'spell', spell: 'burn', value: 3 },
+    { id: 's2', name: 'コーヒーブレイク', cost: 2, type: 'spell', spell: 'heal', value: 3 },
+    { id: 's3', name: '総務の圧', cost: 3, type: 'spell', spell: 'aoe', value: 2 }
   ];
 
   function makeDeck() {
     var d = [];
     CARD_TEMPLATES.forEach(function (t) {
-      d.push({ id: t.id + '-' + d.length, name: t.name, cost: t.cost, atk: t.atk, def: t.def });
-      d.push({ id: t.id + '-' + d.length, name: t.name, cost: t.cost, atk: t.atk, def: t.def });
+      if (t.type === 'spell') return;
+      d.push({ id: t.id + '-' + d.length, name: t.name, cost: t.cost, atk: t.atk, def: t.def, type: 'follower', keyword: t.keyword || null, image: t.image || null });
+      d.push({ id: t.id + '-' + d.length, name: t.name, cost: t.cost, atk: t.atk, def: t.def, type: 'follower', keyword: t.keyword || null, image: t.image || null });
     });
     for (var i = d.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
@@ -268,10 +273,20 @@
     if (!state.isPlayerTurn) manaDisplay.textContent = '相手のターン';
 
     playerHandEl.innerHTML = state.playerHand.map(function (c, i) {
-      var canPlay = state.isPlayerTurn && state.playerMana >= c.cost && countOnBoard(state.playerBoard) < BOARD_SIZE;
+      var canPlayFollower = c.type !== 'spell' && state.isPlayerTurn && state.playerMana >= c.cost && countOnBoard(state.playerBoard) < BOARD_SIZE;
+      var canPlaySpell = c.type === 'spell' && state.isPlayerTurn && state.playerMana >= c.cost;
+      var canPlay = canPlayFollower || canPlaySpell;
       var cls = 'sv-card' + (state.selectedCard === i && state.attackSource === null ? ' selected' : '') + (canPlay ? '' : ' disabled');
+      var stats = c.type === 'spell'
+        ? '<span class="cost">' + c.cost + '</span>呪文'
+        : '<span class="cost">' + c.cost + '</span><span class="atk">' + c.atk + '</span>/<span class="def">' + c.def + '</span>';
+      var keywordLabel = '';
+      if (c.keyword === 'guard') keywordLabel = 'ブロッカー';
+      if (c.keyword === 'haste') keywordLabel = 'スピード';
       return '<div class="' + cls + '" data-hand-index="' + i + '">' +
-        '<span class="cost">' + c.cost + '</span>' + c.name + '<br><span class="atk">' + c.atk + '</span>/<span class="def">' + c.def + '</span></div>';
+        stats + '<br>' + c.name +
+        (keywordLabel ? '<br><span class="card-skill">' + keywordLabel + '</span>' : '') +
+      '</div>';
     }).join('');
 
     playerBoardEl.innerHTML = Array(BOARD_SIZE).fill(0).map(function (_, i) {
@@ -281,7 +296,10 @@
         var isSelectedAttacker = state.attackSource === i;
         var cantAttack = state.attackSource === null && !c.canAttack;
         return '<div class="sv-slot has-card' + (cantAttack ? ' sv-cant-attack' : '') + (isSelectedAttacker ? ' sv-attacker-selected' : '') + '" data-board-index="' + i + '" data-side="player"' + (canSelectAttacker ? ' data-can-attack="1"' : '') + '>' +
-          '<div class="card-inner">' + c.name + ' <span class="atk">' + c.atk + '</span>/<span class="def">' + c.def + '</span></div></div>';
+          '<div class="card-inner">' + c.name + ' <span class="atk">' + c.atk + '</span>/<span class="def">' + c.def + '</span>' +
+          (c.keyword === 'guard' ? '<br><span style="font-size:10px;color:#fbbf24;">ブロッカー</span>' : '') +
+          (c.keyword === 'haste' ? '<br><span style="font-size:10px;color:#38bdf8;">スピード</span>' : '') +
+          '</div></div>';
       }
       var canPlace = state.isPlayerTurn && state.selectedCard !== null && typeof state.selectedCard === 'number' && state.playerHand[state.selectedCard] && state.playerMana >= state.playerHand[state.selectedCard].cost;
       return '<div class="sv-slot' + (canPlace ? ' can-place' : '') + '" data-board-index="' + i + '" data-side="player">空</div>';
@@ -292,7 +310,9 @@
       if (c) {
         var isAttackTarget = state.isPlayerTurn && state.attackSource !== null;
         return '<div class="sv-slot has-card" data-board-index="' + i + '" data-side="enemy">' +
-          '<div class="card-inner">' + c.name + ' <span class="atk">' + c.atk + '</span>/<span class="def">' + c.def + '</span></div></div>';
+          '<div class="card-inner">' + c.name + ' <span class="atk">' + c.atk + '</span>/<span class="def">' + c.def + '</span>' +
+          (c.keyword === 'guard' ? '<br><span style="font-size:10px;color:#fbbf24;">ブロッカー</span>' : '') +
+          '</div></div>';
       }
       return '<div class="sv-slot" data-board-index="' + i + '" data-side="enemy">空</div>';
     }).join('');
@@ -300,9 +320,44 @@
 
   function playCard(handIndex, boardIndex) {
     var c = state.playerHand[handIndex];
-    if (!c || state.playerMana < c.cost || state.playerBoard[boardIndex] || countOnBoard(state.playerBoard) >= BOARD_SIZE) return;
+    if (!c || state.playerMana < c.cost) return;
+
+    // 呪文カードは盤面を使わず即時効果
+    if (c.type === 'spell') {
+      if (c.spell === 'burn') {
+        state.enemyHp -= c.value;
+        log(c.name + 'で相手リーダーに' + c.value + 'ダメージ');
+      } else if (c.spell === 'heal') {
+        state.playerHp = Math.min(20, state.playerHp + c.value);
+        log(c.name + 'で自分のHPを' + c.value + '回復');
+      } else if (c.spell === 'aoe') {
+        for (var i = 0; i < BOARD_SIZE; i++) {
+          var t = state.enemyBoard[i];
+          if (t) {
+            t.def -= c.value;
+            if (t.def <= 0) state.enemyBoard[i] = null;
+          }
+        }
+        log(c.name + 'で相手フォロワー全体に' + c.value + 'ダメージ');
+      }
+      state.playerMana -= c.cost;
+      state.playerHand.splice(handIndex, 1);
+      state.selectedCard = null;
+      checkWin();
+      render();
+      return;
+    }
+
+    if (state.playerBoard[boardIndex] || countOnBoard(state.playerBoard) >= BOARD_SIZE) return;
     state.playerHand.splice(handIndex, 1);
-    state.playerBoard[boardIndex] = { name: c.name, cost: c.cost, atk: c.atk, def: c.def, canAttack: false };
+    state.playerBoard[boardIndex] = {
+      name: c.name,
+      cost: c.cost,
+      atk: c.atk,
+      def: c.def,
+      canAttack: !!(c.keyword === 'haste'),
+      keyword: c.keyword || null
+    };
     state.playerMana -= c.cost;
     state.selectedCard = null;
     log(c.name + 'を召喚');
@@ -314,6 +369,20 @@
     var attacker = board[attackerBoardIndex];
     if (!attacker || !attacker.canAttack) return;
     if (targetSide === 'enemy') {
+      // まずは相手盤面にブロッカーがいるかチェック
+      var mustBlock = false;
+      for (var g = 0; g < BOARD_SIZE; g++) {
+        var guard = state.enemyBoard[g];
+        if (guard && guard.keyword === 'guard') {
+          mustBlock = true;
+          break;
+        }
+      }
+      if (mustBlock && targetIndex === -1) {
+        // ブロッカーがいる間はリーダーに攻撃できない
+        log('ブロッカーがいるため、先にフォロワーを倒そう');
+        return;
+      }
       if (targetIndex === -1) {
         state.enemyHp -= attacker.atk;
         log(attacker.name + 'が相手リーダーに' + attacker.atk + 'ダメージ');
@@ -360,6 +429,17 @@
       var f = playerFollowers[i];
       if (attacker.atk >= f.def) canKill.push(f);
       if (f.atk >= attacker.def) threats.push(f);
+    }
+
+    // 盤面にプレイヤー側のブロッカーがいる場合は、基本的にそこを優先して殴る
+    var guards = playerFollowers.filter(function (f) {
+      var card = state.playerBoard[f.slot];
+      return card && card.keyword === 'guard';
+    });
+
+    if (guards.length > 0) {
+      guards.sort(function (a, b) { return b.def - a.def; });
+      return { face: false, slot: guards[0].slot };
     }
 
     if (pattern === 'aggressive') {

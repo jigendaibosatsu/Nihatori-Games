@@ -115,6 +115,24 @@
       text-align: center;
       animation: cc-flip 0.5s ease;
     }
+    .cc-card-art {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 8px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: radial-gradient(circle at 30% 20%, #fff9c4 0%, #fdd835 30%, #4a2c6a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(255,213,79,0.6);
+    }
+    .cc-card-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
     .cc-card-show.rare { border-color: #42a5f5; box-shadow: 0 0 20px rgba(66,165,245,0.4); }
     .cc-card-show.super { border-color: #ab47bc; box-shadow: 0 0 25px rgba(171,71,188,0.5); }
     .cc-card-show.legend { border-color: #ffd54f; box-shadow: 0 0 30px rgba(255,213,79,0.6); animation: cc-flip 0.5s ease, cc-shine 2s ease infinite; }
@@ -163,6 +181,23 @@
       font-size: 12px;
     }
     .cc-col-card.has { border-color: #7e57c2; background: rgba(94,53,177,0.3); }
+    .cc-col-img-wrap {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 4px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: radial-gradient(circle at 30% 20%, #fff9c4 0%, #fdd835 40%, #4a2c6a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cc-col-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
     .cc-col-card .name { font-weight: bold; margin-bottom: 2px; color: #fff; }
     .cc-col-card .name.empty { color: #666; }
     .cc-col-card .count { font-size: 11px; color: #b39ddb; margin-top: 4px; }
@@ -196,6 +231,9 @@
       <div class="cc-reveal-area" id="ccRevealArea">
         <div class="cc-reveal-msg" id="ccRevealMsg"></div>
         <div class="cc-card-show" id="ccCardShow">
+          <div class="cc-card-art">
+            <img id="ccCardImg" src="/assets/money/coin_32.png" alt="" />
+          </div>
           <div class="cc-card-name" id="ccCardName">???</div>
           <div class="cc-card-rarity common" id="ccCardRarity">???</div>
         </div>
@@ -217,43 +255,48 @@
   var PACK_COST = 100;
   var CARDS_PER_PACK = 5;
   var START_COINS = 500;
+  var DEFAULT_CARD_IMAGE = '/assets/money/coin_32.png';
 
   var CARD_POOL = [
-    { id: 'c1', name: 'スライム', rarity: 'common' },
-    { id: 'c2', name: 'バット', rarity: 'common' },
-    { id: 'c3', name: 'ゴブリン', rarity: 'common' },
-    { id: 'c4', name: 'ウルフ', rarity: 'common' },
-    { id: 'c5', name: 'スケルトン', rarity: 'common' },
-    { id: 'c6', name: 'キノコン', rarity: 'common' },
-    { id: 'c7', name: 'ハニービー', rarity: 'common' },
-    { id: 'c8', name: 'ゴースト', rarity: 'common' },
-    { id: 'c9', name: 'トード', rarity: 'common' },
-    { id: 'c10', name: 'ラット', rarity: 'common' },
-    { id: 'c11', name: 'メタルスライム', rarity: 'rare' },
-    { id: 'c12', name: 'ウィスプ', rarity: 'rare' },
-    { id: 'c13', name: 'サハギン', rarity: 'rare' },
-    { id: 'c14', name: 'マンドラ', rarity: 'rare' },
-    { id: 'c15', name: 'フェニックス', rarity: 'rare' },
-    { id: 'c16', name: 'ウィザード', rarity: 'rare' },
-    { id: 'c17', name: 'ナイト', rarity: 'rare' },
-    { id: 'c18', name: 'ヴァンパイア', rarity: 'rare' },
-    { id: 'c19', name: 'ドラゴン', rarity: 'super' },
-    { id: 'c20', name: 'キングスライム', rarity: 'super' },
-    { id: 'c21', name: 'デーモン', rarity: 'super' },
-    { id: 'c22', name: 'ユニコーン', rarity: 'super' },
-    { id: 'c23', name: 'ヒドラ', rarity: 'super' },
-    { id: 'c24', name: '伝説の勇者', rarity: 'legend' },
-    { id: 'c25', name: '光の精霊', rarity: 'legend' },
-    { id: 'c26', name: '闇の帝王', rarity: 'legend' },
-    { id: 'c27', name: '星龍神', rarity: 'legend' },
-    { id: 'c28', name: '創世神', rarity: 'legend' },
-    { id: 'c29', name: '時を超える者', rarity: 'legend' },
-    { id: 'c30', name: '???', rarity: 'legend' }
+    { id: 'c1', name: 'スライムくん', rarity: 'common', image: '/assets/characters/slime-kun.png' },
+    { id: 'c2', name: 'コウモリ', rarity: 'common', image: null },
+    { id: 'c3', name: 'ゴブリン', rarity: 'common', image: '/assets/characters/ork_128.png' },
+    { id: 'c4', name: 'オオカミ', rarity: 'common', image: null },
+    { id: 'c5', name: 'スケルトン', rarity: 'common', image: null },
+    { id: 'c6', name: 'キノコン', rarity: 'common', image: null },
+    { id: 'c7', name: 'ハニービー', rarity: 'common', image: null },
+    { id: 'c8', name: 'ゴースト', rarity: 'common', image: null },
+    { id: 'c9', name: 'ヒキガエル', rarity: 'common', image: null },
+    { id: 'c10', name: 'どぶねずみ', rarity: 'common', image: null },
+    { id: 'c11', name: 'メタルスライム', rarity: 'rare', image: '/assets/characters/slime.png' },
+    { id: 'c12', name: 'ウィスプ', rarity: 'rare', image: null },
+    { id: 'c13', name: 'サハギン', rarity: 'rare', image: null },
+    { id: 'c14', name: 'マンドラゴラ', rarity: 'rare', image: null },
+    { id: 'c15', name: 'フェニックス', rarity: 'rare', image: '/assets/characters/phenix_32.png' },
+    { id: 'c16', name: 'ウィザード', rarity: 'rare', image: null },
+    { id: 'c17', name: 'ナイト', rarity: 'rare', image: null },
+    { id: 'c18', name: 'ヴァンパイア', rarity: 'rare', image: null },
+    { id: 'c19', name: 'ドラゴン', rarity: 'super', image: null },
+    { id: 'c20', name: 'キングスライム', rarity: 'super', image: '/assets/characters/slime.png' },
+    { id: 'c21', name: '魔王デーモン', rarity: 'super', image: null },
+    { id: 'c22', name: '聖獣ユニコーン', rarity: 'super', image: null },
+    { id: 'c23', name: 'ヒドラ', rarity: 'super', image: null },
+    { id: 'c24', name: '伝説の勇者（王冠）', rarity: 'legend', image: '/assets/decorations/crown_gold.png' },
+    { id: 'c25', name: '光の精霊（王冠）', rarity: 'legend', image: '/assets/decorations/crown_silver.png' },
+    { id: 'c26', name: '闇の帝王（王冠）', rarity: 'legend', image: '/assets/decorations/crown_gold.png' },
+    { id: 'c27', name: '星龍神', rarity: 'legend', image: '/assets/decorations/crown_gold.png' },
+    { id: 'c28', name: '創世神', rarity: 'legend', image: '/assets/decorations/crown_gold.png' },
+    { id: 'c29', name: '時を超える者', rarity: 'legend', image: '/assets/decorations/crown_gold.png' },
+    { id: 'c30', name: '？？？（ひみつの王冠）', rarity: 'legend', image: '/assets/decorations/crown_gold.png' }
   ];
 
   var RARITY_WEIGHT = { common: 55, rare: 30, super: 10, legend: 5 };
   var RARITY_LABEL = { common: 'ノーマル', rare: 'レア', super: 'スーパーレア', legend: '伝説' };
   var RARITY_MSG = { common: '', rare: 'レア！！', super: 'スーパーレア！！！', legend: '★ 伝説のカード！！ ★' };
+
+  function getCardImage(card) {
+    return (card && card.image) || DEFAULT_CARD_IMAGE;
+  }
 
   function pickCard() {
     var r = Math.random() * 100;
@@ -305,6 +348,10 @@
     document.getElementById('ccCardRarity').textContent = RARITY_LABEL[card.rarity];
     document.getElementById('ccCardRarity').className = 'cc-card-rarity ' + card.rarity;
     document.getElementById('ccCardShow').className = 'cc-card-show ' + card.rarity;
+    var imgEl = document.getElementById('ccCardImg');
+    if (imgEl) {
+      imgEl.src = getCardImage(card);
+    }
     state.revealIndex++;
     document.getElementById('ccNextBtn').textContent = state.revealIndex >= state.packCards.length ? 'パックを閉じる' : '次のカード';
     document.getElementById('ccCoins').textContent = state.coins;
@@ -337,8 +384,11 @@
       var cell = document.createElement('div');
       cell.className = 'cc-col-card has ' + (c.rarity === 'legend' ? 'legend' : '');
       if (count === 0) cell.classList.remove('has');
+      var nameText = count > 0 ? c.name : '???';
+      var imgSrc = getCardImage(c);
       cell.innerHTML =
-        '<div class="name' + (count > 0 ? '' : ' empty') + '">' + (count > 0 ? c.name : '???') + '</div>' +
+        '<div class="cc-col-img-wrap"><img src="' + imgSrc + '" alt="" /></div>' +
+        '<div class="name' + (count > 0 ? '' : ' empty') + '">' + nameText + '</div>' +
         '<div class="cc-card-rarity ' + c.rarity + '">' + RARITY_LABEL[c.rarity] + '</div>' +
         (count > 0 ? '<div class="count">×' + count + '</div>' : '');
       grid.appendChild(cell);

@@ -173,6 +173,29 @@
 | `noboku-kun.png` | のぼくくん | 全ゲーム |
 | `slime-kun.png` | スライムくん | 全ゲーム |
 
+## アクセサリアセット (`/assets/decorations/` および `/assets/characters/accessories/`)
+
+王冠やヒゲなど、キャラクターやカードの見た目を飾る小物用のアセットを配置します。
+
+### 共通デコレーション (`/assets/decorations/`)
+
+| ファイル名 | 説明 | 想定使用例 |
+|-----------|------|-----------|
+| `crown_gold.png` | 金の王冠 | カードコレクションのレアカード、ボスキャラの装飾など |
+| `crown_silver.png` | 銀の王冠 | レア度中くらいのカード装飾など |
+| `mustache_simple.png` | シンプルなヒゲ | キャラクター顔への付けヒゲ、ギャグカード用など |
+
+※ 実際の画像ファイルは `/assets/decorations/` ディレクトリに配置してください。
+
+### キャラクター用アクセサリ (`/assets/characters/accessories/`)
+
+| ファイル名 | 説明 | 想定使用例 |
+|-----------|------|-----------|
+| `crown_small.png` | 小さめの王冠 | ウーパーなど小さなキャラ用の頭飾り |
+| `mustache_small.png` | 小さめのヒゲ | ウーパー・モンスターへの付けヒゲ |
+
+※ キャラクター専用サイズのアクセサリは `/assets/characters/accessories/` にまとめておき、複数ゲームから共有して使う想定です。
+
 ## 使用方法
 
 ### JavaScript
