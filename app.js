@@ -6,8 +6,10 @@
 (function () {
   'use strict';
 
-  var TAB_IDS = ['top', 'games', 'hobby', 'posts', 'trending', 'recommended', 'updates', 'random', 'favorites', 'sns'];
+  var TAB_IDS = ['top', 'games', 'favorites', 'hobby', 'posts', 'trending', 'recommended', 'updates', 'random', 'sns'];
   var TAB_PARAM = 'tab';
+  var SEARCH_PARAM = 'q';
+  var currentSearchQuery = '';
   var SWIPE_THRESHOLD = 50;
 
   /**
@@ -85,6 +87,11 @@
 
   var PAGE_PARAM = 'page';
 
+  function getSearchFromUrl() {
+    var params = new URLSearchParams(window.location.search);
+    return params.get(SEARCH_PARAM) || '';
+  }
+
   function getTabFromUrl() {
     var params = new URLSearchParams(window.location.search);
     var tab = params.get(TAB_PARAM) || 'top';
@@ -104,6 +111,11 @@
       url.searchParams.set(PAGE_PARAM, String(page));
     } else {
       url.searchParams.delete(PAGE_PARAM);
+    }
+    if (currentSearchQuery && currentSearchQuery.trim() !== '') {
+      url.searchParams.set(SEARCH_PARAM, currentSearchQuery.trim());
+    } else {
+      url.searchParams.delete(SEARCH_PARAM);
     }
     var target = url.pathname + '?' + url.searchParams.toString();
     if (replace) {
@@ -133,24 +145,41 @@
     return (b.trendingScore ?? 0) - (a.trendingScore ?? 0);
   }
 
+  function matchesSearch(item, q) {
+    if (!q) return true;
+    q = q.toLowerCase();
+    if (item.title && item.title.toLowerCase().indexOf(q) >= 0) return true;
+    if (item.category && item.category.toLowerCase().indexOf(q) >= 0) return true;
+    if (item.tag && String(item.tag).toLowerCase().indexOf(q) >= 0) return true;
+    return false;
+  }
+
+  function applySearchFilter(list) {
+    if (!currentSearchQuery) return list;
+    var q = currentSearchQuery;
+    return list.filter(function (i) { return matchesSearch(i, q); });
+  }
+
   function getItemsForTab(tabId) {
     var items = feedData.items || [];
     var sortFn = byNewsOrder;
     switch (tabId) {
       case 'games':
-        return items.filter(function (i) { return i.type === 'game'; }).sort(sortFn);
+        return applySearchFilter(items.filter(function (i) { return i.type === 'game'; }).sort(sortFn));
       case 'hobby':
-        return items.filter(function (i) { return i.category === 'hobby'; }).sort(sortFn);
+        return applySearchFilter(items.filter(function (i) { return i.category === 'hobby'; }).sort(sortFn));
       case 'posts':
-        return items.filter(function (i) { return i.type === 'post'; }).sort(sortFn);
+        return applySearchFilter(items.filter(function (i) { return i.type === 'post'; }).sort(sortFn));
       case 'trending':
-        return items.slice().sort(byTrendingScore);
+        return applySearchFilter(items.slice().sort(byTrendingScore));
       case 'recommended':
-        return items.filter(function (i) { return i.recommended === true; }).sort(sortFn);
+        return applySearchFilter(items.filter(function (i) { return i.recommended === true; }).sort(sortFn));
       case 'updates':
-        return items
-          .filter(function (i) { return i.tag === '更新' || i.updating === true; })
-          .sort(byPublishedAt);
+        return applySearchFilter(
+          items
+            .filter(function (i) { return i.tag === '更新' || i.updating === true; })
+            .sort(byPublishedAt)
+        );
       case 'random': {
         var pool = items.filter(function (i) { return !hasImage(i); });
         var shuffled = pool.slice();
@@ -158,18 +187,18 @@
           var j = Math.floor(Math.random() * (i + 1));
           var tmp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = tmp;
         }
-        return shuffled.slice(0, 20);
+        return applySearchFilter(shuffled.slice(0, 20));
       }
       case 'favorites': {
         var fav = loadFavorites();
         var ids = Object.keys(fav).filter(function (id) { return fav[id] && fav[id].favorite; });
-        return items
+        return applySearchFilter(items
           .filter(function (i) { return ids.indexOf(i.id) >= 0; })
-          .sort(byNewsOrder);
+          .sort(byNewsOrder));
       }
       case 'top':
       default:
-        return items.slice().sort(sortFn);
+        return applySearchFilter(items.slice().sort(sortFn));
     }
   }
 
@@ -511,6 +540,11 @@
     loadFeed(function () {
       var tabId = getTabFromUrl();
       var page = getPageFromUrl();
+      currentSearchQuery = getSearchFromUrl();
+      var searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        searchInput.value = currentSearchQuery;
+      }
       setActiveTab(tabId);
       setUrlTab(tabId, true, page);
       renderPage(tabId);
@@ -523,8 +557,48 @@
       });
     });
 
+    var searchInput = document.getElementById('search-input');
+    var searchButton = document.getElementById('search-button');
+    var searchClear = document.getElementById('search-clear');
+
+    function applySearch(replace) {
+      currentSearchQuery = searchInput ? searchInput.value.trim() : '';
+      var tabId = getTabFromUrl();
+      setUrlTab(tabId, !!replace, 1);
+      setActiveTab(tabId);
+      renderPage(tabId);
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          applySearch(false);
+        }
+      });
+    }
+    if (searchButton) {
+      searchButton.addEventListener('click', function () {
+        applySearch(false);
+      });
+    }
+    if (searchClear) {
+      searchClear.addEventListener('click', function () {
+        if (searchInput) searchInput.value = '';
+        currentSearchQuery = '';
+        var tabId = getTabFromUrl();
+        setUrlTab(tabId, false, 1);
+        setActiveTab(tabId);
+        renderPage(tabId);
+      });
+    }
+
     window.addEventListener('popstate', function () {
       var tabId = getTabFromUrl();
+      currentSearchQuery = getSearchFromUrl();
+      var searchInputEl = document.getElementById('search-input');
+      if (searchInputEl) {
+        searchInputEl.value = currentSearchQuery;
+      }
       setActiveTab(tabId);
       renderPage(tabId);
     });

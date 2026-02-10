@@ -326,6 +326,46 @@ body.menu-open {
   border-bottom-color: var(--tab-active);
 }
 
+/* ----- 検索バー ----- */
+.search-bar {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 4px 16px 0;
+}
+
+.search-inner {
+  display: flex;
+  gap: 4px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--row-border);
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--tab-active);
+}
+
+.search-button {
+  padding: 6px 10px;
+  border-radius: 16px;
+  border: 1px solid var(--row-border);
+  background: #fff;
+  color: var(--tab-inactive);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.search-clear {
+  background: #f5f5f5;
+}
+
 /* ----- レイアウト（メイン＋サイドバー）・幅を狭く ----- */
 .layout {
   max-width: 720px;

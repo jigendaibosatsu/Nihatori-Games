@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Dungeon Auto-Dig Colony</title>
+    <meta
+      name="description"
+      content="Dungeon Auto-Dig Colony は、ドワーフとコボルドが自動で掘り進める放置採掘ゲームです。鉱石を集めてコロニーを拡張しよう。"
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="site-header"></div>
+
+    <main id="app">
+      <header class="game-header">
+        <h1 class="game-title">Dungeon Auto-Dig Colony</h1>
+        <p class="game-subtitle">ドワーフとコボルドの自動採掘コロニー</p>
+      </header>
+
+      <section class="game-layout">
+        <section id="left-panel" class="panel panel-left">
+          <div class="depth-card">
+            <div class="depth-row">
+              <span>現在の深さ</span>
+              <span id="depth-current">0 m</span>
+            </div>
+            <div class="depth-row">
+              <span>到達最深部</span>
+              <span id="depth-max">0 m</span>
+            </div>
+            <div class="depth-biome">
+              <span class="depth-biome-label">地層</span>
+              <div class="depth-biome-color" id="biome-color"></div>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-inner" id="dig-progress"></div>
+            </div>
+          </div>
+
+          <div class="miners-card">
+            <h2 class="section-title">採掘班</h2>
+            <ul id="miners-list" class="miners-list"></ul>
+          </div>
+        </section>
+
+        <section id="right-panel" class="panel panel-right">
+          <div class="resources-card">
+            <h2 class="section-title">鉱物インベントリ</h2>
+            <ul id="resources-list" class="resources-list"></ul>
+            <div class="resources-total">
+              総価値: <span id="resources-total">0</span> G
+            </div>
+          </div>
+
+          <div class="upgrades-card">
+            <h2 class="section-title">アップグレード</h2>
+            <div id="upgrades-list" class="upgrades-list"></div>
+          </div>
+
+          <div class="encyclopedia-card">
+            <button id="open-encyclopedia" class="btn btn-encyclopedia">
+              鉱物図鑑を開く
+            </button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div id="encyclopedia-overlay" class="encyclopedia-overlay" hidden>
+      <div class="encyclopedia-backdrop" id="encyclopedia-backdrop"></div>
+      <div class="encyclopedia-modal">
+        <header class="encyclopedia-header">
+          <h2>鉱物図鑑</h2>
+          <button id="close-encyclopedia" class="btn btn-close">×</button>
+        </header>
+        <div class="encyclopedia-meta">
+          完成度: <span id="encyclopedia-completion">0%</span>
+        </div>
+        <div id="encyclopedia-grid" class="encyclopedia-grid"></div>
+      </div>
+    </div>
+
+    <script src="./js/util.js"></script>
+    <script src="./js/minerTypes.js"></script>
+    <script src="./js/depth.js"></script>
+    <script src="./js/minerals.js"></script>
+    <script src="./js/state.js"></script>
+    <script src="./js/miners.js"></script>
+    <script src="./js/ui.js"></script>
+    <script src="./main.js"></script>
+  </body>
+</html>
+
