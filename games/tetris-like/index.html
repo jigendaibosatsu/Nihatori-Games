@@ -24,7 +24,7 @@
       align-items: center;
       justify-content: center;
       width: 100%;
-      max-width: 520px;
+      max-width: 360px;
       padding: 8px;
       min-height: 0;
     }
@@ -38,22 +38,27 @@
       font-size: 14px;
       flex-shrink: 0;
     }
+    .tet-plate-info { font-size: 12px; color: #778da9; }
     .tet-main {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      justify-content: center;
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       min-height: 0;
       width: 100%;
     }
     .tet-canvas-wrap {
-      flex: 0 0 auto;
+      flex: 1;
+      width: 100%;
+      min-height: 200px;
       background: #0d1b2a;
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       border: 2px solid #415a77;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     #tetCanvas {
       display: block;
@@ -61,48 +66,12 @@
       height: 100%;
       object-fit: contain;
     }
-    .tet-side {
-      flex: 0 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      font-size: 12px;
-    }
-    .tet-next-wrap {
-      background: #0d1b2a;
-      border-radius: 8px;
-      padding: 8px;
-      border: 2px solid #415a77;
-    }
-    .tet-next-label { margin-bottom: 4px; color: #778da9; }
-    #tetNextCanvas { display: block; background: #1b263b; border-radius: 4px; }
-    .tet-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+    .tet-howto {
+      font-size: 11px;
+      color: #778da9;
       margin-top: 8px;
-      justify-content: center;
-      align-items: center;
-      flex-shrink: 0;
+      text-align: center;
     }
-    .tet-btn {
-      width: 52px;
-      height: 52px;
-      border: none;
-      border-radius: 10px;
-      background: linear-gradient(180deg, #415a77 0%, #1b263b 100%);
-      color: #e0e1dd;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      font-size: 18px;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      user-select: none;
-      font-weight: bold;
-    }
-    .tet-btn:active { transform: scale(0.95); }
-    .tet-btn.rotate { font-size: 14px; width: 56px; }
-    .tet-btn.down { background: linear-gradient(180deg, #e63946 0%, #c1121f 100%); color: #fff; }
     .tet-overlay {
       position: fixed;
       inset: 0;
@@ -141,9 +110,6 @@
     }
     .tet-back { display: inline-block; margin-top: 12px; color: #778da9; font-size: 14px; text-decoration: none; }
     .tet-back:hover { text-decoration: underline; color: #e0e1dd; }
-    @media (max-width: 400px) {
-      .tet-side { display: none; }
-    }
   </style>
 </head>
 <body class="game-page">
@@ -153,31 +119,20 @@
     <h1 class="tet-title">ブロック落とし</h1>
     <div class="tet-hud">
       <span>スコア: <strong id="tetScore">0</strong></span>
-      <span>レベル: <strong id="tetLevel">1</strong></span>
+      <span class="tet-plate-info">板の幅: <strong id="tetPlateWidth">10</strong></span>
     </div>
     <div class="tet-main">
       <div class="tet-canvas-wrap">
-        <canvas id="tetCanvas" width="200" height="400"></canvas>
+        <canvas id="tetCanvas" width="160" height="384"></canvas>
       </div>
-      <div class="tet-side">
-        <div class="tet-next-wrap">
-          <div class="tet-next-label">NEXT</div>
-          <canvas id="tetNextCanvas" width="80" height="80"></canvas>
-        </div>
-      </div>
-    </div>
-    <div class="tet-controls">
-      <button type="button" class="tet-btn" id="btnLeft">←</button>
-      <button type="button" class="tet-btn rotate" id="btnRotate">回転</button>
-      <button type="button" class="tet-btn" id="btnRight">→</button>
-      <button type="button" class="tet-btn down" id="btnDown">↓</button>
+      <p class="tet-howto">タップでブロックを落とす。放置すると積み上がる。はみ出ると板が縮む</p>
     </div>
   </div>
 
   <div class="tet-overlay" id="overlay">
     <div class="tet-overlay-box">
       <h2>スタート</h2>
-      <p>左右で移動、回転で回転、↓で落下。一列揃うと消えるよ！</p>
+      <p>タップでブロックを落とす。板からはみ出ると板が縮む。乗せられなくなったらゲームオーバー！</p>
       <button type="button" class="btn" id="btnStart">スタート</button>
       <a href="/index.html" class="tet-back">← トップへ戻る</a>
     </div>
@@ -195,31 +150,32 @@
   <script src="/assets/header.js"></script>
   <script>
 (function () {
-  var COLS = 10, ROWS = 20;
-  var CELL = 20;
-  var canvas = document.getElementById('tetCanvas');
-  var nextCanvas = document.getElementById('tetNextCanvas');
-  var ctx = canvas.getContext('2d');
-  var nextCtx = nextCanvas.getContext('2d');
+  var COLS = 10;
+  var ROWS = 30;
+  var CELL = 16;
+  var FALL_AREA_ROWS = 22;  // 上の考えるスペース（大きい）
+  var STACK_VIEW_ROWS = 2;  // 上から2段だけ見える
+  var PLATE_MIN = 2;
 
+  var canvas = document.getElementById('tetCanvas');
+  var ctx = canvas.getContext('2d');
+
+  // ブロックは横長（1x1, 1x2, 1x3）
   var SHAPES = [
-    [[1,1,1,1]],
-    [[1,1],[1,1]],
-    [[0,1,0],[1,1,1]],
-    [[0,1,1],[1,1,0]],
-    [[1,1,0],[0,1,1]],
-    [[1,0,0],[1,1,1]],
-    [[0,0,1],[1,1,1]]
+    [[1]],
+    [[1,1]],
+    [[1,1,1]]
   ];
   var COLORS = ['#00f5ff','#ffd60a','#9d4edd','#06d6a0','#ef476f','#118ab2','#ff9f1c'];
 
   var grid = [];
   var piece = null;
-  var nextPiece = null;
-  var score = 0, level = 1, lines = 0;
+  var score = 0;
   var state = { running: false, gameOver: false };
-  var dropInterval = 1000;
+  var plateLeft = 0, plateRight = COLS;
+  var dropInterval = 900;
   var lastDrop = 0;
+  var stackTop = ROWS;
 
   function initGrid() {
     grid = [];
@@ -227,6 +183,9 @@
       grid[r] = [];
       for (var c = 0; c < COLS; c++) grid[r][c] = 0;
     }
+    plateLeft = 0;
+    plateRight = COLS;
+    stackTop = ROWS;
   }
 
   function randomPiece() {
@@ -234,23 +193,28 @@
     var s = SHAPES[id];
     var mat = [];
     for (var r = 0; r < s.length; r++) {
-      mat[r] = [];
-      for (var c = 0; c < s[r].length; c++) mat[r][c] = s[r][c];
+      mat[r] = s[r].slice();
     }
     return { matrix: mat, color: COLORS[id], id: id };
   }
 
+  function getBlockWidth(p) {
+    return p ? p.matrix[0].length : 0;
+  }
+
   function spawn() {
-    piece = nextPiece || randomPiece();
-    nextPiece = randomPiece();
-    piece.x = Math.floor((COLS - piece.matrix[0].length) / 2);
-    piece.y = 0;
-    if (collides(piece)) {
+    piece = randomPiece();
+    var w = getBlockWidth(piece);
+    var maxX = plateRight - w;
+    if (maxX <= plateLeft) {
       state.gameOver = true;
       state.running = false;
       document.getElementById('gameOverScore').textContent = 'スコア: ' + score;
       document.getElementById('overlayGameOver').classList.add('visible');
+      return;
     }
+    piece.x = plateLeft + Math.floor(Math.random() * (maxX - plateLeft));
+    piece.y = 0;
   }
 
   function collides(p, dx, dy) {
@@ -269,6 +233,7 @@
 
   function merge() {
     var mat = piece.matrix;
+    var w = getBlockWidth(piece);
     for (var r = 0; r < mat.length; r++) {
       for (var c = 0; c < mat[r].length; c++) {
         if (mat[r][c]) {
@@ -277,61 +242,31 @@
         }
       }
     }
-  }
+    if (piece.y + mat.length - 1 < stackTop) stackTop = piece.y;
 
-  function clearLines() {
-    var cleared = 0;
-    var r = ROWS - 1;
-    while (r >= 0) {
-      var full = true;
-      for (var c = 0; c < COLS; c++) if (!grid[r][c]) { full = false; break; }
-      if (full) {
-        grid.splice(r, 1);
-        grid.unshift([]);
-        for (var c = 0; c < COLS; c++) grid[0][c] = 0;
-        cleared++;
-      } else r--;
+    var overhangL = Math.max(0, plateLeft - piece.x);
+    var overhangR = Math.max(0, (piece.x + w) - plateRight);
+    if (overhangL > 0) plateLeft = plateLeft + overhangL;
+    if (overhangR > 0) plateRight = plateRight - overhangR;
+
+    if (plateRight - plateLeft < PLATE_MIN) {
+      state.gameOver = true;
+      state.running = false;
+      document.getElementById('gameOverScore').textContent = 'スコア: ' + score;
+      document.getElementById('overlayGameOver').classList.add('visible');
     }
-    if (cleared > 0) {
-      var pts = [0, 100, 300, 500, 800];
-      score += (pts[cleared] || 800) * level;
-      lines += cleared;
-      level = Math.floor(lines / 10) + 1;
-      dropInterval = Math.max(100, 1000 - (level - 1) * 80);
-      document.getElementById('tetScore').textContent = score;
-      document.getElementById('tetLevel').textContent = level;
-    }
+    document.getElementById('tetPlateWidth').textContent = plateRight - plateLeft;
   }
 
-  function rotatePiece() {
+  function tapDrop() {
     if (!piece || state.gameOver) return;
-    var mat = piece.matrix;
-    var newMat = [];
-    for (var c = 0; c < mat[0].length; c++) {
-      newMat[c] = [];
-      for (var r = mat.length - 1; r >= 0; r--) newMat[c].push(mat[r][c]);
-    }
-    var old = piece.matrix;
-    piece.matrix = newMat;
-    if (collides(piece)) piece.matrix = old;
-  }
-
-  function move(dx) {
-    if (!piece || state.gameOver) return;
-    if (!collides(piece, dx, 0)) piece.x += dx;
-  }
-
-  function softDrop() {
-    if (!piece || state.gameOver) return;
-    if (!collides(piece, 0, 1)) {
+    while (!collides(piece, 0, 1)) {
       piece.y++;
       score += 1;
-      document.getElementById('tetScore').textContent = score;
-    } else {
-      merge();
-      clearLines();
-      spawn();
     }
+    merge();
+    spawn();
+    document.getElementById('tetScore').textContent = score;
   }
 
   function tick() {
@@ -339,27 +274,47 @@
     var now = Date.now();
     if (now - lastDrop > dropInterval) {
       lastDrop = now;
-      if (!collides(piece, 0, 1)) piece.y++;
-      else {
+      if (!collides(piece, 0, 1)) {
+        piece.y++;
+      } else {
         merge();
-        clearLines();
         spawn();
       }
+      document.getElementById('tetScore').textContent = score;
     }
   }
 
   function draw() {
-    ctx.fillStyle = '#0d1b2a';
-    ctx.fillRect(0, 0, COLS * CELL, ROWS * CELL);
+    var cw = COLS * CELL;
+    var fallAreaH = FALL_AREA_ROWS * CELL;
+    var stackAreaH = STACK_VIEW_ROWS * CELL;
+    var ch = fallAreaH + stackAreaH;
 
-    for (var r = 0; r < ROWS; r++) {
+    ctx.fillStyle = '#0d1b2a';
+    ctx.fillRect(0, 0, cw, ch);
+
+    var viewTop = Math.max(0, stackTop - FALL_AREA_ROWS);
+
+    ctx.fillStyle = 'rgba(27, 38, 59, 0.5)';
+    ctx.fillRect(0, 0, cw, fallAreaH);
+    ctx.fillStyle = '#0d1b2a';
+    ctx.fillRect(0, fallAreaH, cw, stackAreaH);
+
+    function rowToY(r) {
+      var local = r - viewTop;
+      if (local < FALL_AREA_ROWS) return local * CELL;
+      return fallAreaH + (local - FALL_AREA_ROWS) * CELL;
+    }
+
+    for (var r = viewTop; r < viewTop + FALL_AREA_ROWS + STACK_VIEW_ROWS && r < ROWS; r++) {
       for (var c = 0; c < COLS; c++) {
         if (grid[r][c]) {
           ctx.fillStyle = grid[r][c];
-          ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
+          var y = rowToY(r);
+          ctx.fillRect(c * CELL + 1, y + 1, CELL - 2, CELL - 2);
           ctx.strokeStyle = 'rgba(255,255,255,0.2)';
           ctx.lineWidth = 1;
-          ctx.strokeRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
+          ctx.strokeRect(c * CELL + 1, y + 1, CELL - 2, CELL - 2);
         }
       }
     }
@@ -369,88 +324,46 @@
       for (var r = 0; r < mat.length; r++) {
         for (var c = 0; c < mat[r].length; c++) {
           if (mat[r][c]) {
-            ctx.fillStyle = piece.color;
-            var x = (piece.x + c) * CELL + 1, y = (piece.y + r) * CELL + 1;
-            ctx.fillRect(x, y, CELL - 2, CELL - 2);
-            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-            ctx.strokeRect(x, y, CELL - 2, CELL - 2);
+            var gy = piece.y + r;
+            if (gy >= viewTop && gy < viewTop + FALL_AREA_ROWS + STACK_VIEW_ROWS) {
+              ctx.fillStyle = piece.color;
+              var y = rowToY(gy);
+              ctx.fillRect((piece.x + c) * CELL + 1, y + 1, CELL - 2, CELL - 2);
+              ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+              ctx.strokeRect((piece.x + c) * CELL + 1, y + 1, CELL - 2, CELL - 2);
+            }
           }
         }
       }
     }
-  }
 
-  function drawNext() {
-    nextCtx.fillStyle = '#1b263b';
-    nextCtx.fillRect(0, 0, 80, 80);
-    if (!nextPiece) return;
-    var mat = nextPiece.matrix;
-    var cell = 16;
-    var ox = (80 - mat[0].length * cell) / 2, oy = (80 - mat.length * cell) / 2;
-    for (var r = 0; r < mat.length; r++) {
-      for (var c = 0; c < mat[r].length; c++) {
-        if (mat[r][c]) {
-          nextCtx.fillStyle = nextPiece.color;
-          nextCtx.fillRect(ox + c * cell + 1, oy + r * cell + 1, cell - 2, cell - 2);
-        }
-      }
-    }
+    ctx.fillStyle = 'rgba(65, 90, 119, 0.8)';
+    ctx.fillRect(plateLeft * CELL, ch - 4, (plateRight - plateLeft) * CELL, 4);
   }
 
   function gameLoop() {
     tick();
     draw();
-    drawNext();
     if (state.running) requestAnimationFrame(gameLoop);
   }
 
-  var keys = { left: false, right: false, down: false, rotate: false };
-  var keyRepeat = { left: 0, right: 0, down: 0 };
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowLeft') { keys.left = true; e.preventDefault(); }
-    if (e.key === 'ArrowRight') { keys.right = true; e.preventDefault(); }
-    if (e.key === 'ArrowDown') { keys.down = true; e.preventDefault(); }
-    if (e.key === 'ArrowUp' || e.key === 'x' || e.key === 'X') { keys.rotate = true; e.preventDefault(); }
-    if (e.key === ' ') { e.preventDefault(); if (piece && !state.gameOver) { while (!collides(piece, 0, 1)) { piece.y++; score += 2; } merge(); clearLines(); spawn(); document.getElementById('tetScore').textContent = score; } }
+  canvas.addEventListener('click', function (e) {
+    e.preventDefault();
+    tapDrop();
   });
-  document.addEventListener('keyup', function (e) {
-    if (e.key === 'ArrowLeft') keys.left = false;
-    if (e.key === 'ArrowRight') keys.right = false;
-    if (e.key === 'ArrowDown') keys.down = false;
-    if (e.key === 'ArrowUp' || e.key === 'x' || e.key === 'X') keys.rotate = false;
-  });
-
-  setInterval(function () {
-    if (!state.running || state.gameOver) return;
-    if (keys.left) { keyRepeat.left++; if (keyRepeat.left % 3 === 1) move(-1); }
-    else keyRepeat.left = 0;
-    if (keys.right) { keyRepeat.right++; if (keyRepeat.right % 3 === 1) move(1); }
-    else keyRepeat.right = 0;
-    if (keys.down) { keyRepeat.down++; if (keyRepeat.down % 2 === 1) softDrop(); }
-    else keyRepeat.down = 0;
-    if (keys.rotate) { rotatePiece(); keys.rotate = false; }
-  }, 50);
-
-  document.getElementById('btnLeft').addEventListener('mousedown', function () { move(-1); });
-  document.getElementById('btnLeft').addEventListener('touchstart', function (e) { e.preventDefault(); move(-1); }, { passive: false });
-  document.getElementById('btnRight').addEventListener('mousedown', function () { move(1); });
-  document.getElementById('btnRight').addEventListener('touchstart', function (e) { e.preventDefault(); move(1); }, { passive: false });
-  document.getElementById('btnRotate').addEventListener('mousedown', function () { rotatePiece(); });
-  document.getElementById('btnRotate').addEventListener('touchstart', function (e) { e.preventDefault(); rotatePiece(); }, { passive: false });
-  document.getElementById('btnDown').addEventListener('mousedown', function () { softDrop(); });
-  document.getElementById('btnDown').addEventListener('touchstart', function (e) { e.preventDefault(); softDrop(); }, { passive: false });
+  canvas.addEventListener('touchstart', function (e) {
+    e.preventDefault();
+    tapDrop();
+  }, { passive: false });
 
   document.getElementById('btnStart').addEventListener('click', function () {
     document.getElementById('overlay').classList.remove('visible');
     initGrid();
-    score = 0; level = 1; lines = 0;
-    dropInterval = 1000;
+    score = 0;
     state.running = true;
     state.gameOver = false;
     document.getElementById('tetScore').textContent = '0';
-    document.getElementById('tetLevel').textContent = '1';
-    nextPiece = randomPiece();
+    document.getElementById('tetPlateWidth').textContent = COLS;
     spawn();
     lastDrop = Date.now();
     gameLoop();
@@ -460,13 +373,11 @@
     document.getElementById('overlayGameOver').classList.remove('visible');
     document.getElementById('overlay').classList.remove('visible');
     initGrid();
-    score = 0; level = 1; lines = 0;
-    dropInterval = 1000;
+    score = 0;
     state.running = true;
     state.gameOver = false;
     document.getElementById('tetScore').textContent = '0';
-    document.getElementById('tetLevel').textContent = '1';
-    nextPiece = randomPiece();
+    document.getElementById('tetPlateWidth').textContent = COLS;
     spawn();
     lastDrop = Date.now();
     gameLoop();
@@ -475,7 +386,6 @@
   document.getElementById('overlay').classList.add('visible');
   initGrid();
   draw();
-  drawNext();
 })();
   </script>
 </body>

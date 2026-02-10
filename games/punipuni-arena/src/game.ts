@@ -558,7 +558,7 @@ export function setupInput(gs: GameState): void {
   );
 }
 
-let lastSpawnTime = 0;
+let lastSpawnTime = -9999; // 最初のティックで即スポーン
 
 export function gameLoop(gs: GameState, time: number): void {
   const delta = time - gs.lastTime;

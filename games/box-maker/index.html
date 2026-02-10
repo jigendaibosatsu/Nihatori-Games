@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>宝箱コレクター – Nihatori Games</title>
+  <title>宝石コレクター – Nihatori Games</title>
   <link rel="stylesheet" href="/styles.css" />
   <style>
     * { box-sizing: border-box; }
@@ -31,8 +31,8 @@
       width: 160px;
       height: 160px;
       margin: 0 auto 24px;
-      background: linear-gradient(145deg, #d4a574 0%, #8b5a2b 100%);
-      border: 4px solid #5c4033;
+      background: linear-gradient(145deg, #a78bfa 0%, #7c3aed 50%, #5b21b6 100%);
+      border: 4px solid #6d28d9;
       border-radius: 16px;
       box-shadow: 0 6px 0 #3d2914, 0 8px 20px rgba(0,0,0,0.2);
       cursor: pointer;
@@ -90,13 +90,13 @@
   <div id="site-header"></div>
 
   <div class="bm-wrap">
-    <h1 class="bm-title">宝箱コレクター</h1>
-    <p class="bm-howto">タップで宝箱をあける。下の「かう」で買うと、その分だけ毎秒自動でたからが増える。</p>
+    <h1 class="bm-title">宝石コレクター</h1>
+    <p class="bm-howto">タップで宝石を採掘。下の「かう」で買うと、その分だけ毎秒自動で宝石が増える。</p>
     <div class="bm-score" id="score">0</div>
-    <div class="bm-per-sec" id="perSec">0 宝箱/秒（自動）</div>
+    <div class="bm-per-sec" id="perSec">0 宝石/秒（自動）</div>
 
     <button type="button" class="bm-click-area" id="clickBtn">
-      宝箱を<br>あける
+      宝石を<br>採掘
     </button>
 
     <div class="bm-shop">
@@ -115,13 +115,13 @@
   var clickPower = 1;
   var lastTime = 0;
 
-  /* 各項目: name, 効果説明, cps(1こあたりの宝箱/秒), 初回コスト */
+  /* 各項目: name, 効果説明, cps(1こあたりの宝石/秒), 初回コスト */
   var buildings = [
-    { id: 'hand', name: 'つるはし', desc: '1こで +1/秒', cps: 1, baseCost: 5 },
-    { id: 'robot', name: '探検隊', desc: '1こで +5/秒', cps: 5, baseCost: 50 },
-    { id: 'factory', name: '発掘所', desc: '1こで +25/秒', cps: 25, baseCost: 250 },
-    { id: 'ship', name: '宝探し船', desc: '1こで +100/秒', cps: 100, baseCost: 1500 },
-    { id: 'portal', name: '魔法の扉', desc: '1こで +500/秒', cps: 500, baseCost: 7000 }
+    { id: 'hand', name: '採掘道具', desc: '1こで +1/秒', cps: 1, baseCost: 5 },
+    { id: 'robot', name: '鉱夫', desc: '1こで +5/秒', cps: 5, baseCost: 50 },
+    { id: 'factory', name: '宝石工房', desc: '1こで +25/秒', cps: 25, baseCost: 250 },
+    { id: 'ship', name: '大型採掘船', desc: '1こで +100/秒', cps: 100, baseCost: 1500 },
+    { id: 'portal', name: 'クリスタル鉱脈', desc: '1こで +500/秒', cps: 500, baseCost: 7000 }
   ];
   var owned = {};
   buildings.forEach(function (b) { owned[b.id] = 0; });
@@ -181,8 +181,8 @@
   var shopListEl = document.getElementById('shopList');
 
   function renderScore() {
-    scoreEl.textContent = format(boxes) + ' 宝箱';
-    perSecEl.textContent = format(totalCps()) + ' 宝箱/秒';
+    scoreEl.textContent = format(boxes) + ' 宝石';
+    perSecEl.textContent = format(totalCps()) + ' 宝石/秒';
   }
 
   function renderShop() {

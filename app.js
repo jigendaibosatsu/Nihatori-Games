@@ -74,26 +74,38 @@
     var tb = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
     return tb - ta;
   }
+  var TAG_ORDER = { 'アップデート': 3, '更新': 2, '新作': 1 };
+  function tagRank(item) {
+    if (item.tag && TAG_ORDER[item.tag]) return TAG_ORDER[item.tag];
+    return item.updating ? 2 : item.isNew ? 1 : 0;
+  }
+  function byNewsOrder(a, b) {
+    var ra = tagRank(a);
+    var rb = tagRank(b);
+    if (rb !== ra) return rb - ra;
+    return byPublishedAt(a, b);
+  }
   function byTrendingScore(a, b) {
     return (b.trendingScore ?? 0) - (a.trendingScore ?? 0);
   }
 
   function getItemsForTab(tabId) {
     var items = feedData.items || [];
+    var sortFn = byNewsOrder;
     switch (tabId) {
       case 'games':
-        return items.filter(function (i) { return i.type === 'game'; }).sort(byPublishedAt);
+        return items.filter(function (i) { return i.type === 'game'; }).sort(sortFn);
       case 'hobby':
-        return items.filter(function (i) { return i.category === 'hobby'; }).sort(byPublishedAt);
+        return items.filter(function (i) { return i.category === 'hobby'; }).sort(sortFn);
       case 'posts':
-        return items.filter(function (i) { return i.type === 'post'; }).sort(byPublishedAt);
+        return items.filter(function (i) { return i.type === 'post'; }).sort(sortFn);
       case 'trending':
         return items.slice().sort(byTrendingScore);
       case 'recommended':
-        return items.filter(function (i) { return i.recommended === true; }).sort(byPublishedAt);
+        return items.filter(function (i) { return i.recommended === true; }).sort(sortFn);
       case 'top':
       default:
-        return items.slice().sort(byPublishedAt);
+        return items.slice().sort(sortFn);
     }
   }
 
@@ -134,6 +146,10 @@
     return AXOLOTL_THUMBS[idx];
   }
 
+  function hasImage(item) {
+    return item && item.image && typeof item.image === 'string' && item.image.trim() !== '';
+  }
+
   function imageSrc(itemImage, itemId) {
     if (itemImage && typeof itemImage === 'string' && itemImage.trim() !== '') return itemImage.trim();
     return getRandomAxolotlThumb(itemId) || imagePlaceholderSvg(400, 225);
@@ -142,6 +158,13 @@
   function imageSrcRow(itemImage, itemId) {
     if (itemImage && typeof itemImage === 'string' && itemImage.trim() !== '') return itemImage.trim();
     return getRandomAxolotlThumb(itemId) || imagePlaceholderSvg(100, 70);
+  }
+
+  function formatHeadline(item) {
+    if (item.type !== 'game') return item.title || '';
+    var tag = item.tag || (item.updating ? '更新' : item.isNew ? '新作' : null);
+    if (tag) return '[' + tag + '] ' + (item.title || '');
+    return item.title || '';
   }
 
   function escapeHtml(s) {
@@ -154,17 +177,22 @@
   function renderHero(item) {
     var url = item.url || '#';
     var src = imageSrc(item.image, item.id);
+    var noImg = !hasImage(item);
+    var thumbClass = noImg ? ' hero-thumb-placeholder' : '';
+    var prepOverlay = noImg ? '<span class="thumb-prep-text">準備中</span>' : '';
     var timeStr = formatTime(item);
+    var updatingBadge = item.updating === true ? '<span class="badge-updating">更新中</span>' : '';
     var newBadge = showNewBadge(item) ? '<span class="badge-new">NEW</span>' : '';
     var commentStr = (item.commentCount != null && item.commentCount > 0) ? 'コメント' + item.commentCount : '';
-    var metaParts = [timeStr, newBadge, commentStr].filter(Boolean);
+    var metaParts = [timeStr, updatingBadge, newBadge, commentStr].filter(Boolean);
     return (
       '<a href="' + escapeHtml(url) + '">' +
-        '<div class="hero-image-wrap">' +
+        '<div class="hero-image-wrap' + thumbClass + '">' +
           '<img src="' + escapeHtml(src) + '" alt="" loading="eager" />' +
+          prepOverlay +
         '</div>' +
         '<div class="hero-body">' +
-          '<h2 class="hero-title">' + escapeHtml(item.title) + '</h2>' +
+          '<h2 class="hero-title hero-title-news">' + escapeHtml(formatHeadline(item)) + '</h2>' +
           '<div class="hero-meta">' + metaParts.join(' ') + '</div>' +
         '</div>' +
       '</a>'
@@ -174,15 +202,20 @@
   function renderRow(item) {
     var url = item.url || '#';
     var src = imageSrcRow(item.image, item.id);
+    var noImg = !hasImage(item);
+    var thumbClass = noImg ? ' row-thumb-placeholder' : '';
+    var prepOverlay = noImg ? '<span class="thumb-prep-text">準備中</span>' : '';
     var timeStr = formatTime(item);
-    var metaStr = (item.category || '') + (item.category && timeStr ? ' · ' : '') + timeStr;
+    var updatingBadge = item.updating === true ? '<span class="badge-updating">更新中</span> ' : '';
+    var metaStr = updatingBadge + (item.category || '') + (item.category && timeStr ? ' · ' : '') + timeStr;
     return (
       '<a class="article-row" href="' + escapeHtml(url) + '">' +
-        '<div class="row-thumb">' +
+        '<div class="row-thumb' + thumbClass + '">' +
           '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" />' +
+          prepOverlay +
         '</div>' +
         '<div class="row-body">' +
-          '<h3 class="row-title">' + escapeHtml(item.title) + '</h3>' +
+          '<h3 class="row-title row-title-news">' + escapeHtml(formatHeadline(item)) + '</h3>' +
           '<div class="row-meta">' + escapeHtml(metaStr) + '</div>' +
         '</div>' +
       '</a>'

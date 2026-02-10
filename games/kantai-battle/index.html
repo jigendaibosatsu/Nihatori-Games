@@ -453,8 +453,8 @@
         return;
       }
       var a = attacks[idx];
-      // すでに轟沈している艦は攻撃しない
-      if (!a.attacker || a.attacker.hp <= 0) {
+      // すでに轟沈している艦は攻撃しない／攻撃対象がすでに沈没済みもスキップ
+      if (!a.attacker || a.attacker.hp <= 0 || !a.target || a.target.hp <= 0) {
         idx++;
         doNext();
         return;

@@ -12,26 +12,30 @@
 
   var url = placeholder.getAttribute('data-src') || '/components/header.html';
 
+  var AXOLOTL_LIGHT = [
+    '/assets/characters/axolotl/axo_nomal.png',
+    '/assets/characters/axolotl/axo_albino.png',
+    '/assets/characters/axolotl/axo_gold.png',
+    '/assets/characters/axolotl/axo_copper.png',
+    '/assets/characters/axolotl/axo_yellow.png',
+    '/assets/characters/axolotl/axo_dalmatian.png',
+    '/assets/characters/axolotl/axo_chimera.png'
+  ];
+  var AXOLOTL_DARK = AXOLOTL_LIGHT;
+
+  function getRandomAxolotlLogo() {
+    var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var list = dark ? AXOLOTL_DARK : AXOLOTL_LIGHT;
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
   function initLogo(container) {
-    var img = container ? container.querySelector('.site-logo .logo-img') : document.querySelector('.site-logo .logo-img');
-    var fallback = container ? container.querySelector('.site-logo .logo-fallback') : document.querySelector('.site-logo .logo-fallback');
-    if (!img || !fallback) return;
-    function showFallback() {
-      img.setAttribute('hidden', '');
-      fallback.removeAttribute('hidden');
-    }
+    var img = container ? container.querySelector('.site-logo .logo-axo') : document.querySelector('.site-logo .logo-axo');
+    if (!img) return;
+    img.src = getRandomAxolotlLogo();
     img.onerror = function () {
-      showFallback();
+      img.src = '/assets/characters/axolotl/axo_nomal.png';
     };
-    img.onload = function () {
-      img.removeAttribute('hidden');
-      fallback.setAttribute('hidden', '');
-    };
-    if (img.complete && img.naturalWidth > 0) {
-      fallback.setAttribute('hidden', '');
-    } else if (img.complete) {
-      img.onerror();
-    }
   }
 
   function closeMenu() {
@@ -52,15 +56,15 @@
     var links = [
       { href: '/about.html', text: 'このサイトについて' },
       { href: '/roadmap.html', text: '開発ロードマップ' },
-      { href: '/games/punipuni-arena/', text: 'PuniPuni Arena' },
+      { href: '/games/punipuni-arena/', text: 'ヘナヘナアリーナ' },
       { href: '/games/baba-nuki/', text: 'ババ抜き' },
       { href: '/games/omikuji/', text: 'おみくじ' },
-      { href: '/games/mini-dq/', text: '小さな冒険' },
+      { href: '/games/mini-dq/', text: '洞窟の果てへ' },
       { href: '/games/jump-action/', text: 'ジャンプアクション' },
       { href: '/games/megami-like/', text: '悪魔契約' },
-      { href: '/games/box-maker/', text: 'ボックスメーカー' },
+      { href: '/games/box-maker/', text: '宝箱コレクター' },
       { href: '/games/sv-like/', text: 'シャチクバース' },
-      { href: '/games/poke-like/', text: 'ポケもんバトル' },
+      { href: '/games/poke-like/', text: 'ポンコツケモノバトル' },
       { href: '/games/poke-town/', text: 'まちあるき' },
       { href: '/games/mystery/', text: '推理ゲーム' },
       { href: '/games/punipuni/', text: 'ウパ揃え' },
@@ -68,6 +72,10 @@
       { href: '/games/japan-war-b/', text: '合戦B' },
       { href: '/games/election/', text: '選挙で当選！' },
       { href: '/games/kart-race/', text: 'カートレース' },
+      { href: '/games/horse-race/', text: '競馬ゲーム' },
+      { href: '/games/lex-vocab/', text: 'Lex Vocab' },
+      { href: '/games/tap-idle/', text: 'タップ放置ビジネス' },
+      { href: '/games/word-battle/', text: '英単語カードバトル' },
       { href: '/games/table-tennis/', text: '卓球' },
       { href: '/games/tetris-like/', text: 'ブロック落とし' },
       { href: '/games/power-pro/', text: 'きゅーと野球' },
@@ -82,6 +90,8 @@
       { href: '/games/kantai-battle/', text: '艦隊バトル' },
       { href: '/games/art-escape/', text: '芸大脱出サバイバル' },
       { href: '/games/axolotl-shop/', text: 'ウーパールーパーショップ' },
+      { href: '/games/axolotl-cafe/', text: 'ウーパールーパーカフェ' },
+      { href: '/games/stack-blocks/', text: 'ブロック積み上げ' },
       { href: '/games/smash-battle/', text: 'スマッシュバトル' },
       { href: '/games/grow-island/', text: 'Grow 島' },
       { href: '/games/unscrew/', text: 'ネジ外し' }
@@ -155,7 +165,8 @@
       initMobileDrawer();
     })
     .catch(function () {
-      placeholder.innerHTML = '<header class="site-header"><div class="header-inner"><a href="/" class="site-logo">NIHATORI</a><div class="header-actions"><button type="button" class="btn-icon btn-search" aria-label="検索">🔍</button><button type="button" class="btn-icon btn-menu" aria-label="メニュー">☰</button></div></div></header>';
+      placeholder.innerHTML = '<header class="site-header"><div class="header-inner"><a href="/" class="site-logo"><img class="logo-axo" src="/assets/characters/axolotl/axo_nomal.png" alt="" width="32" height="32" /><span class="logo-text">ニハトリ</span></a><div class="header-actions"><button type="button" class="btn-icon btn-search" aria-label="検索">🔍</button><button type="button" class="btn-icon btn-menu" aria-label="メニュー">☰</button></div></div></header>';
+      initLogo(placeholder);
       initMobileDrawer();
     });
 })();

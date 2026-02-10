@@ -16,7 +16,9 @@
 
 ### ゲームアイコン
 - **axolotl-shop.png** - ウーパールーパーショップ
+- **axolotl-cafe.png** - ウーパールーパーカフェ
 - **mine-tap.png** - 穴掘りタップゲー
+- **stack-blocks.png** - ブロック積み上げ
 - **kassen.png** - 合戦ゲーム
 - **shachikuverse.png** - シャチクバース
 

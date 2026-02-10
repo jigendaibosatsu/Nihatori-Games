@@ -3074,11 +3074,13 @@
   }
 
   function checkMutationShop() {
-    // ミューテーションショップ: 最大4匹の未固定（ミューテーション）個体をランダムに生成
+    // ミューテーション: ごく稀に1匹だけ生体ショップに入荷（生体タブに統合表示）
     state.mutationShopItems = [];
     
-    // 4匹をランダムに生成
-    for (var i = 0; i < 4; i++) {
+    // 5%の確率で1匹のみ入荷
+    if (Math.random() >= 0.05) return;
+    
+    (function addOneMutation() {
       // タイプをランダムに選択（全タイプから、固定化の有無に関わらず）
       var selectedType = AXO_TYPES[Math.floor(Math.random() * AXO_TYPES.length)];
       
@@ -3129,11 +3131,11 @@
         chimeraTypes: chimeraTypes,
         sex: sex
       });
-    }
+    })();
     
     state.mutationShopAvailable = true;
-    state.mutationShopSeenThisPeriod = false;  // 新規入荷なので!を表示
-    logLine('【ミューテーションショップ】4匹の未固定個体が入荷しました！メニューボタン!を確認してください。');
+    state.mutationShopSeenThisPeriod = false;
+    logLine('【生体ショップ】稀に未固定個体が1匹入荷しました。ショップの生体タブを確認してください。');
     
     // ショップの在庫状態を日ごとに更新（品切れの可能性）
     state.shopStockDaily = {};
@@ -3722,28 +3724,6 @@
     }
   }
   
-  function openMutationShopOverlay() {
-    if (!state.mutationShopAvailable || !state.mutationShopItems || state.mutationShopItems.length === 0) {
-      logLine('現在ミューテーションショップに出ている個体はありません。');
-      return;
-    }
-    // ショップオーバーレイを開いて、ミューテーションショップ表示に切り替え
-    var tabsEl = $('axBuyTabs');
-    tabsEl.innerHTML = '';
-    
-    // ミューテーションショップ専用のタブ表示
-    var mutationTab = document.createElement('button');
-    mutationTab.type = 'button';
-    mutationTab.className = 'ax-buy-tab';
-    mutationTab.textContent = 'ミューテーション';
-    mutationTab.dataset.tab = 'mutation';
-    mutationTab.classList.add('active');
-    tabsEl.appendChild(mutationTab);
-    
-    showBuyTypeList('mutation');
-    $('axOverlayBuy').classList.add('visible');
-  }
-
   function nextMonth() {
     state.month += 1;
     applyAutoEquipment();
@@ -5021,22 +5001,6 @@
     tabsEl.appendChild(creatureTab);
     showBuyTypeList('creature');
     
-    // ミューテーションが売られている時だけタブを追加（!付き）
-    checkMutationShop();
-    if (state.mutationShopAvailable && state.mutationShopItems && state.mutationShopItems.length > 0) {
-      var mutationTab = document.createElement('button');
-      mutationTab.type = 'button';
-      mutationTab.className = 'ax-buy-tab';
-      mutationTab.textContent = 'ミューテーション !';
-      mutationTab.dataset.tab = 'mutation';
-      mutationTab.addEventListener('click', function () {
-        tabsEl.querySelectorAll('.ax-buy-tab').forEach(function (t) { t.classList.remove('active'); });
-        mutationTab.classList.add('active');
-        showBuyTypeList('mutation');
-      });
-      tabsEl.appendChild(mutationTab);
-    }
-    
     // 設備タブ
     var equipmentTab = document.createElement('button');
     equipmentTab.type = 'button';
@@ -5222,10 +5186,6 @@
         card.appendChild(btns);
         list.appendChild(card);
       })();
-    } else if (tabType === 'mutation') {
-      // ミューテーションタブ：ミューテーションショップの個体のみ
-      fillBuyTypeList('mutation');
-      return;
     } else {
       // 生体タブ：固定化された種類のうち、今月の品揃えのみ表示（毎月変わる）
       var stockThisMonth = getShopStockForMonth();
@@ -5257,6 +5217,88 @@
             price: problemPrice
           });
         }
+      }
+      // 稀に入荷したミューテーション（未固定）個体を生体タブに統合表示
+      if (state.mutationShopAvailable && state.mutationShopItems && state.mutationShopItems.length > 0) {
+        state.mutationShopItems.forEach(function(item) {
+          var card = document.createElement('div');
+          card.className = 'ax-buy-type-card ax-buy-type-btn';
+          var ageBand = item.age <= 3 ? 1 : (item.age <= 6 ? 3 : (item.age <= 12 ? 5 : 7));
+          var shopIconSize = getShopIconSizeFromBand(ageBand);
+          if (item.type === 'chimera') {
+            var fakeAx = { id: 0, type: 'chimera', chimeraTypes: item.chimeraTypes || ['nomal', 'marble'] };
+            var sprite = createChimeraCanvasSprite(fakeAx, shopIconSize);
+            sprite.classList.add('ax-idle');
+            sprite.dataset.bobIntervalMs = '500';
+            sprite.dataset.bobIndex = '0';
+            sprite.dataset.bobLastStep = '0';
+            sprite.style.width = shopIconSize + 'px';
+            sprite.style.height = shopIconSize + 'px';
+            card.appendChild(sprite);
+          } else {
+            var img = document.createElement('img');
+            img.src = typeImagePath(item.type);
+            img.alt = '';
+            img.className = 'ax-buy-type-img ax-axolotl-img ax-idle';
+            img.dataset.bobIntervalMs = '500';
+            img.dataset.bobIndex = '0';
+            img.dataset.bobLastStep = '0';
+            img.width = shopIconSize;
+            img.height = shopIconSize;
+            img.style.width = shopIconSize + 'px';
+            img.style.height = shopIconSize + 'px';
+            card.appendChild(img);
+          }
+          var nameSpan = document.createElement('span');
+          nameSpan.className = 'ax-buy-type-name';
+          var problemLabel = '';
+          if (item.problemFlags && item.problemFlags.injured) problemLabel = '【欠損】';
+          else if (item.problemFlags && item.problemFlags.sick) problemLabel = '【病気】';
+          nameSpan.textContent = problemLabel + typeLabel(item.type) + ' (' + item.age + 'ヶ月) 【稀】';
+          card.appendChild(nameSpan);
+          var priceSpan = document.createElement('span');
+          priceSpan.className = 'ax-buy-type-price';
+          priceSpan.textContent = formatMoney(item.price);
+          card.appendChild(priceSpan);
+          var btnRow = document.createElement('div');
+          btnRow.className = 'ax-buy-btn-row';
+          btnRow.style.display = 'flex';
+          btnRow.style.gap = '6px';
+          btnRow.style.justifyContent = 'center';
+          btnRow.style.marginTop = '6px';
+          var detailBtn = document.createElement('button');
+          detailBtn.type = 'button';
+          detailBtn.className = 'ax-btn ax-buy-detail-btn';
+          detailBtn.textContent = '詳細';
+          detailBtn.style.fontSize = '10px';
+          detailBtn.style.padding = '4px 8px';
+          detailBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var stats = getRandomShopStats();
+            if (item.problemFlags && (item.problemFlags.injured || item.problemFlags.sick)) stats.health = Math.min(stats.health, 50);
+            var detailText = '<p><strong>価格:</strong> ' + formatMoney(item.price) + '</p>';
+            detailText += '<p><strong>詳細（個体差あり）:</strong><br>空腹: ' + stats.hunger + '% 健康: ' + stats.health + '% サイズ: 約' + formatSize(calculateSizeFromAge(item.age)) + '</p>';
+            if (item.problemFlags && item.problemFlags.injured) detailText += '<p><strong>状態:</strong> 欠損</p>';
+            else if (item.problemFlags && item.problemFlags.sick) detailText += '<p><strong>状態:</strong> 病気</p>';
+            detailText += '<p>治療や世話で回復の余地があります。未固定種（ミューテーション）です。</p>';
+            openShopDetail(typeLabel(item.type) + '（稀に入荷）', detailText);
+          });
+          btnRow.appendChild(detailBtn);
+          var buyBtn = document.createElement('button');
+          buyBtn.type = 'button';
+          buyBtn.className = 'ax-btn ax-buy-buy-btn';
+          buyBtn.textContent = '購入';
+          buyBtn.style.fontSize = '10px';
+          buyBtn.style.padding = '4px 8px';
+          if (state.money < item.price) buyBtn.disabled = true;
+          buyBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            doBuyMutation(item.type, item.age, item.price, item.problemFlags, item.chimeraTypes);
+          });
+          btnRow.appendChild(buyBtn);
+          card.appendChild(btnRow);
+          list.appendChild(card);
+        });
       }
     }
   }

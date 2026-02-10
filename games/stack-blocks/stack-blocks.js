@@ -32,7 +32,9 @@
     currentX: CANVAS_WIDTH / 2,
     movingLeft: false,
     movingRight: false,
-    cameraY: 0  // 表示している世界の上端のY（これより下が画面内）
+    cameraY: 0,
+    effectiveBaseWidth: 200,  // ミスごとに短くなる
+    missCount: 0
   };
 
   // ===== Canvas設定 =====
@@ -106,8 +108,10 @@
   }
 
   function generateNextBlock() {
-    var width = BASE_WIDTH + Math.random() * 100 - 50; // ベース幅±50
-    width = Math.max(60, Math.min(300, width)); // 最小60、最大300
+    // 長さもランダム（細いもの含む）。ミスで短くなったベース幅を反映
+    var base = state.effectiveBaseWidth || 200;
+    var width = base + (Math.random() * 80 - 40); // ベース±40
+    width = Math.max(50, Math.min(CANVAS_WIDTH - 40, width));
     return width;
   }
 
@@ -316,14 +320,17 @@
     var topBlock = state.blocks[state.blocks.length - 1];
     var secondBlock = state.blocks[state.blocks.length - 2];
 
-    // はみ出し量を計算
     var overhangLeft = Math.max(0, secondBlock.x - topBlock.x);
     var overhangRight = Math.max(0, (topBlock.x + topBlock.width) - (secondBlock.x + secondBlock.width));
+    var maxOverhang = topBlock.width * 0.3;
 
-    // はみ出しが大きすぎる場合はゲームオーバー
-    var maxOverhang = topBlock.width * 0.3; // 30%以上はみ出したらゲームオーバー
     if (overhangLeft > maxOverhang || overhangRight > maxOverhang) {
-      gameOver();
+      // ミス: 次のブロックが短くなる
+      state.missCount++;
+      state.effectiveBaseWidth = Math.max(50, (state.effectiveBaseWidth || 200) - 25);
+      if (state.effectiveBaseWidth <= 50) {
+        gameOver();
+      }
     }
   }
 
@@ -355,6 +362,8 @@
     state.blockCount = 0;
     state.currentX = CANVAS_WIDTH / 2;
     state.cameraY = 0;
+    state.effectiveBaseWidth = 200;
+    state.missCount = 0;
 
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('gameOverScreen').classList.add('hidden');
