@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  var TAB_IDS = ['top', 'games', 'hobby', 'posts', 'trending', 'recommended'];
+  var TAB_IDS = ['top', 'games', 'hobby', 'posts', 'trending', 'recommended', 'updates', 'random', 'favorites', 'sns'];
   var TAB_PARAM = 'tab';
   var SWIPE_THRESHOLD = 50;
 
@@ -38,6 +38,50 @@
   };
 
   var feedData = { items: [] };
+
+  var FAVORITES_KEY = 'nihatori-favorites-v1';
+
+  function loadFavorites() {
+    try {
+      var raw = window.localStorage.getItem(FAVORITES_KEY);
+      if (!raw) return {};
+      var parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveFavorites(map) {
+    try {
+      window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(map || {}));
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  function recordClick(id) {
+    if (!id) return;
+    var fav = loadFavorites();
+    var entry = fav[id] || { favorite: false, clicks: 0, lastPlayedAt: 0 };
+    entry.clicks = (entry.clicks || 0) + 1;
+    entry.lastPlayedAt = Date.now();
+    fav[id] = entry;
+    saveFavorites(fav);
+  }
+
+  function toggleFavorite(id) {
+    if (!id) return;
+    var fav = loadFavorites();
+    var entry = fav[id] || { favorite: false, clicks: 0, lastPlayedAt: 0 };
+    entry.favorite = !entry.favorite;
+    if (!entry.favorite && !entry.clicks && !entry.lastPlayedAt) {
+      delete fav[id];
+    } else {
+      fav[id] = entry;
+    }
+    saveFavorites(fav);
+  }
 
   var PAGE_PARAM = 'page';
 
@@ -103,6 +147,26 @@
         return items.slice().sort(byTrendingScore);
       case 'recommended':
         return items.filter(function (i) { return i.recommended === true; }).sort(sortFn);
+      case 'updates':
+        return items
+          .filter(function (i) { return i.tag === '更新' || i.updating === true; })
+          .sort(byPublishedAt);
+      case 'random': {
+        var pool = items.filter(function (i) { return !hasImage(i); });
+        var shuffled = pool.slice();
+        for (var i = shuffled.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = tmp;
+        }
+        return shuffled.slice(0, 20);
+      }
+      case 'favorites': {
+        var fav = loadFavorites();
+        var ids = Object.keys(fav).filter(function (id) { return fav[id] && fav[id].favorite; });
+        return items
+          .filter(function (i) { return ids.indexOf(i.id) >= 0; })
+          .sort(byNewsOrder);
+      }
       case 'top':
       default:
         return items.slice().sort(sortFn);
@@ -179,20 +243,26 @@
     var src = imageSrc(item.image, item.id);
     var noImg = !hasImage(item);
     var thumbClass = noImg ? ' hero-thumb-placeholder' : '';
-    var prepOverlay = noImg ? '<span class="thumb-prep-text">準備中</span>' : '';
+    var prepOverlay = noImg ? '<span class="thumb-prep-text">画像準備中</span>' : '';
     var timeStr = formatTime(item);
     var updatingBadge = item.updating === true ? '<span class="badge-updating">更新中</span>' : '';
     var newBadge = showNewBadge(item) ? '<span class="badge-new">NEW</span>' : '';
     var commentStr = (item.commentCount != null && item.commentCount > 0) ? 'コメント' + item.commentCount : '';
     var metaParts = [timeStr, updatingBadge, newBadge, commentStr].filter(Boolean);
+    var fav = loadFavorites();
+    var favEntry = item.id ? fav[item.id] : null;
+    var isFav = !!(favEntry && favEntry.favorite);
+    var favMark = item.id
+      ? '<span class="fav-toggle' + (isFav ? ' is-fav' : '') + '" data-id="' + escapeHtml(item.id) + '" aria-label="お気に入り"> ' + (isFav ? '★' : '☆') + '</span>'
+      : '';
     return (
-      '<a href="' + escapeHtml(url) + '">' +
+      '<a href="' + escapeHtml(url) + '" class="hero-link" data-id="' + escapeHtml(item.id || '') + '">' +
         '<div class="hero-image-wrap' + thumbClass + '">' +
           '<img src="' + escapeHtml(src) + '" alt="" loading="eager" />' +
           prepOverlay +
         '</div>' +
         '<div class="hero-body">' +
-          '<h2 class="hero-title hero-title-news">' + escapeHtml(formatHeadline(item)) + '</h2>' +
+          '<h2 class="hero-title hero-title-news">' + favMark + escapeHtml(formatHeadline(item)) + '</h2>' +
           '<div class="hero-meta">' + metaParts.join(' ') + '</div>' +
         '</div>' +
       '</a>'
@@ -204,18 +274,24 @@
     var src = imageSrcRow(item.image, item.id);
     var noImg = !hasImage(item);
     var thumbClass = noImg ? ' row-thumb-placeholder' : '';
-    var prepOverlay = noImg ? '<span class="thumb-prep-text">準備中</span>' : '';
+    var prepOverlay = noImg ? '<span class="thumb-prep-text">画像準備中</span>' : '';
     var timeStr = formatTime(item);
     var updatingBadge = item.updating === true ? '<span class="badge-updating">更新中</span> ' : '';
     var metaStr = updatingBadge + (item.category || '') + (item.category && timeStr ? ' · ' : '') + timeStr;
+    var fav = loadFavorites();
+    var favEntry = item.id ? fav[item.id] : null;
+    var isFav = !!(favEntry && favEntry.favorite);
+    var favMark = item.id
+      ? '<span class="fav-toggle' + (isFav ? ' is-fav' : '') + '" data-id="' + escapeHtml(item.id) + '" aria-label="お気に入り"> ' + (isFav ? '★' : '☆') + '</span>'
+      : '';
     return (
-      '<a class="article-row" href="' + escapeHtml(url) + '">' +
+      '<a class="article-row" href="' + escapeHtml(url) + '" data-id="' + escapeHtml(item.id || '') + '">' +
         '<div class="row-thumb' + thumbClass + '">' +
           '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" />' +
           prepOverlay +
         '</div>' +
         '<div class="row-body">' +
-          '<h3 class="row-title row-title-news">' + escapeHtml(formatHeadline(item)) + '</h3>' +
+          '<h3 class="row-title row-title-news">' + favMark + escapeHtml(formatHeadline(item)) + '</h3>' +
           '<div class="row-meta">' + escapeHtml(metaStr) + '</div>' +
         '</div>' +
       '</a>'
@@ -254,7 +330,69 @@
     });
   }
 
+  function renderSnsPage() {
+    var skeleton = document.getElementById('page-skeleton');
+    var tabPage = document.getElementById('tab-page');
+    var heroCard = document.getElementById('hero-card');
+    var articleList = document.getElementById('article-list');
+    var paginationEl = document.getElementById('pagination');
+    if (!tabPage || !heroCard || !articleList) return;
+
+    if (skeleton) {
+      skeleton.setAttribute('aria-hidden', 'true');
+      skeleton.classList.add('hidden');
+    }
+    tabPage.removeAttribute('hidden');
+
+    heroCard.innerHTML =
+      '<article class="hero-card">' +
+        '<div class="hero-body">' +
+          '<h2 class="hero-title">SNS</h2>' +
+          '<div class="hero-meta">最新情報や日々の制作ログはSNSでも発信中です。</div>' +
+          '<div class="sns-links">' +
+            '<a href="https://x.com/Nihatori_Zeroh" target="_blank" rel="noopener" class="sns-link">X (Twitter)</a>' +
+            '<a href="https://www.instagram.com/nihatori_zeroh/" target="_blank" rel="noopener" class="sns-link">Instagram</a>' +
+          '</div>' +
+        '</div>' +
+      '</article>';
+    heroCard.style.display = '';
+    articleList.innerHTML = '';
+    if (paginationEl) {
+      paginationEl.innerHTML = '';
+      paginationEl.style.display = 'none';
+    }
+  }
+
+  function attachFeedInteractions() {
+    // 記事クリックで「よく遊ぶ」情報を記録
+    document.querySelectorAll('.hero-link[data-id], .article-row[data-id]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = el.getAttribute('data-id');
+        if (id) recordClick(id);
+      });
+    });
+
+    // お気に入りトグル
+    document.querySelectorAll('.fav-toggle[data-id]').forEach(function (el) {
+      el.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var id = el.getAttribute('data-id');
+        if (!id) return;
+        toggleFavorite(id);
+        var currentTab = getTabFromUrl();
+        setActiveTab(currentTab);
+        renderPage(currentTab);
+      });
+    });
+  }
+
   function renderPage(tabId) {
+    if (tabId === 'sns') {
+      renderSnsPage();
+      return;
+    }
+
     var items = getItemsForTab(tabId);
     var currentPage = getPageFromUrl();
     var totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
@@ -295,6 +433,7 @@
       articleList.innerHTML = pageItems.map(renderRow).join('');
     }
     renderPagination(items.length, currentPage, tabId);
+    attachFeedInteractions();
   }
 
   function setActiveTab(tabId) {

@@ -414,7 +414,6 @@ body.menu-open {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Dela Gothic One', sans-serif;
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.9);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
@@ -513,8 +512,43 @@ body.menu-open {
 
 .hero-title-news,
 .row-title-news {
-  font-family: 'Dela Gothic One', sans-serif;
   font-weight: 400;
+}
+
+.fav-toggle {
+  display: inline-block;
+  margin-right: 4px;
+  color: #bbb;
+  font-size: 0.9rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fav-toggle.is-fav {
+  color: #facc15;
+}
+
+.sns-links {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sns-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  text-decoration: none;
+  background: var(--body-bg);
+  color: var(--tab-active);
+}
+
+.sns-link:hover {
+  text-decoration: underline;
 }
 
 .article-row .row-thumb img,

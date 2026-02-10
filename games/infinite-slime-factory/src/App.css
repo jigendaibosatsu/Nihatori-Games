@@ -1,0 +1,126 @@
+#root {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.app-root {
+  padding-top: 48px;
+  padding-bottom: 80px;
+}
+
+.app-back {
+  display: block;
+  padding: 10px 14px 0;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.frame {
+  margin: 10px 14px;
+  background: var(--panel);
+  border-radius: 16px;
+  border: 1px solid rgba(124, 245, 255, 0.35);
+  padding: 14px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.6);
+}
+
+.title-main {
+  font-weight: 900;
+  font-size: 20px;
+}
+
+.title-sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.hud {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.grid {
+  margin-top: 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.cell {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--panel-soft);
+  color: var(--text);
+  font-size: 18px;
+}
+
+.cell.filled {
+  background: radial-gradient(circle at 50% 20%, rgba(124, 245, 255, 0.5), rgba(19, 35, 70, 0.95));
+}
+
+.cell.locked {
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--muted);
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn {
+  border-radius: 12px;
+  border: 0;
+  padding: 10px 14px;
+  font-weight: 800;
+  font-size: 14px;
+  background: var(--accent);
+  color: #031018;
+  cursor: pointer;
+}
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
