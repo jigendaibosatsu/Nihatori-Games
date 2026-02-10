@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>小さな冒険 – Nihatori Games</title>
+  <title>洞窟の果てへ – Nihatori Games</title>
   <link rel="stylesheet" href="/styles.css" />
   <style>
     * { box-sizing: border-box; }
@@ -66,6 +66,7 @@
       transition: width 0.3s;
     }
     .rpg-hp-fill.hero { background: linear-gradient(90deg, #0a0 0%, #4f4 100%); }
+    .rpg-hp-fill.rpg-mp-fill { background: linear-gradient(90deg, #08c 0%, #4cf 100%); }
     .rpg-hp-num { font-size: 12px; min-width: 48px; text-align: right; }
     .rpg-log {
       min-height: 80px;
@@ -86,12 +87,12 @@
   <div id="site-header"></div>
 
   <div class="rpg-container">
-    <h1 class="rpg-title">小さな冒険</h1>
+    <h1 class="rpg-title">洞窟の果てへ</h1>
 
     <!-- スタート -->
     <div class="rpg-screen visible" id="screen-start">
       <div class="rpg-box">
-        <p class="rpg-msg">洞窟の入口に立っている。奥からスライムの気配がする……。</p>
+        <p class="rpg-msg">洞窟の入口に立っている。奥からウーパーの気配がする……。</p>
         <button type="button" class="rpg-btn" id="btn-start">冒険を始める</button>
       </div>
     </div>
@@ -99,16 +100,21 @@
     <!-- 戦闘 -->
     <div class="rpg-screen" id="screen-battle">
       <div class="rpg-box">
-        <p class="rpg-msg" id="battle-enemy-name">スライムがあらわれた！</p>
+        <p class="rpg-msg" id="battle-enemy-name">ウーパーがあらわれた！</p>
         <div class="rpg-hp-row">
           <span class="rpg-hp-label">敵</span>
           <div class="rpg-hp-bar"><div class="rpg-hp-fill" id="enemy-hp-fill" style="width:100%"></div></div>
           <span class="rpg-hp-num" id="enemy-hp-num">10/10</span>
         </div>
         <div class="rpg-hp-row">
-          <span class="rpg-hp-label">ゆうしゃ</span>
+          <span class="rpg-hp-label">主人公</span>
           <div class="rpg-hp-bar"><div class="rpg-hp-fill hero" id="hero-hp-fill" style="width:100%"></div></div>
           <span class="rpg-hp-num" id="hero-hp-num">20/20</span>
+        </div>
+        <div class="rpg-hp-row">
+          <span class="rpg-hp-label">MP</span>
+          <div class="rpg-hp-bar"><div class="rpg-hp-fill rpg-mp-fill" id="hero-mp-fill" style="width:100%"></div></div>
+          <span class="rpg-hp-num" id="hero-mp-num">5/5</span>
         </div>
         <div class="rpg-log" id="battle-log"></div>
         <div class="rpg-actions" id="battle-actions">
@@ -129,7 +135,7 @@
     <!-- ゲームオーバー -->
     <div class="rpg-screen" id="screen-gameover">
       <div class="rpg-box">
-        <p class="rpg-msg">ゆうしゃは たおれた……。</p>
+        <p class="rpg-msg">主人公は たおれた……。やり直すと強くなる。</p>
         <button type="button" class="rpg-btn" id="btn-retry">やり直す</button>
         <a href="/index.html" class="rpg-back">トップへ戻る</a>
       </div>
@@ -139,19 +145,24 @@
   <script src="/assets/header.js"></script>
   <script>
 (function () {
+  var heroBase = { hp: 20, maxHp: 20, mp: 5, maxMp: 5, atk: 4, matk: 8 };
   var hero = { hp: 20, maxHp: 20, mp: 5, maxMp: 5, atk: 4, matk: 8 };
+  var retryCount = 0;
   var enemies = [
-    { name: 'スライム', hp: 10, maxHp: 10, atk: 2 },
-    { name: 'ホイミスライム', hp: 15, maxHp: 15, atk: 3 }
+    { name: 'ウーパー', hp: 10, maxHp: 10, atk: 2 },
+    { name: 'カッパ', hp: 15, maxHp: 15, atk: 3 },
+    { name: 'ペンギン', hp: 20, maxHp: 20, atk: 4 }
   ];
+  var CAVE_PROGRESS_CHANCE = 0.1;
   var enemyIndex = 0;
   var currentEnemy = null;
   var isPlayerTurn = true;
 
-  var screens = { start: 'screen-start', battle: 'screen-battle', clear: 'screen-clear', gameover: 'screen-gameover' };
   var logEl = document.getElementById('battle-log');
   var heroHpFill = document.getElementById('hero-hp-fill');
   var heroHpNum = document.getElementById('hero-hp-num');
+  var heroMpFill = document.getElementById('hero-mp-fill');
+  var heroMpNum = document.getElementById('hero-mp-num');
   var enemyHpFill = document.getElementById('enemy-hp-fill');
   var enemyHpNum = document.getElementById('enemy-hp-num');
   var enemyNameEl = document.getElementById('battle-enemy-name');
@@ -165,7 +176,9 @@
 
   function log(msg) {
     if (!logEl) return;
-    logEl.textContent = (logEl.textContent ? logEl.textContent + '\n' : '') + msg;
+    var line = document.createElement('div');
+    line.textContent = msg;
+    logEl.appendChild(line);
     logEl.scrollTop = logEl.scrollHeight;
   }
 
@@ -175,6 +188,20 @@
     heroHpNum.textContent = hero.hp + '/' + hero.maxHp;
   }
 
+  function setHeroMp() {
+    var p = Math.max(0, (hero.mp / hero.maxMp) * 100);
+    heroMpFill.style.width = p + '%';
+    heroMpNum.textContent = hero.mp + '/' + hero.maxMp;
+  }
+
+  function applyRetryBonus() {
+    retryCount++;
+    hero.maxHp = heroBase.maxHp + retryCount * 3;
+    hero.maxMp = heroBase.maxMp + retryCount;
+    hero.atk = heroBase.atk + retryCount;
+    hero.matk = heroBase.matk + retryCount * 2;
+  }
+
   function setEnemyHp() {
     if (!currentEnemy) return;
     var p = Math.max(0, (currentEnemy.hp / currentEnemy.maxHp) * 100);
@@ -182,14 +209,16 @@
     enemyHpNum.textContent = currentEnemy.hp + '/' + currentEnemy.maxHp;
   }
 
-  function startBattle() {
+  function startBattle(fromRetry) {
+    if (fromRetry) applyRetryBonus();
     enemyIndex = 0;
     hero.hp = hero.maxHp;
     hero.mp = hero.maxMp;
     setHeroHp();
+    setHeroMp();
     currentEnemy = { name: enemies[0].name, hp: enemies[0].maxHp, maxHp: enemies[0].maxHp, atk: enemies[0].atk };
     enemyNameEl.textContent = currentEnemy.name + 'があらわれた！';
-    logEl.textContent = '';
+    logEl.innerHTML = '';
     log(currentEnemy.name + 'が あらわれた！');
     setEnemyHp();
     isPlayerTurn = true;
@@ -203,7 +232,7 @@
     dmg = Math.max(1, dmg);
     currentEnemy.hp -= dmg;
     currentEnemy.hp = Math.max(0, currentEnemy.hp);
-    log('ゆうしゃの 攻撃！ ' + currentEnemy.name + 'に' + dmg + 'のダメージ！');
+    log('主人公の 攻撃！ ' + currentEnemy.name + 'に' + dmg + 'のダメージ！');
     setEnemyHp();
     if (currentEnemy.hp <= 0) {
       log(currentEnemy.name + 'を たおした！');
@@ -226,6 +255,7 @@
     log('メラ！ ' + currentEnemy.name + 'に' + dmg + 'のダメージ！');
     setEnemyHp();
     setHeroHp();
+    setHeroMp();
     if (currentEnemy.hp <= 0) {
       log(currentEnemy.name + 'を たおした！');
       isPlayerTurn = false;
@@ -243,7 +273,7 @@
     dmg = Math.max(1, dmg);
     hero.hp -= dmg;
     hero.hp = Math.max(0, hero.hp);
-    log(currentEnemy.name + 'の 攻撃！ ゆうしゃに' + dmg + 'のダメージ！');
+    log(currentEnemy.name + 'の 攻撃！ 主人公に' + dmg + 'のダメージ！');
     setHeroHp();
     if (hero.hp <= 0) {
       showScreen('screen-gameover');
@@ -256,20 +286,31 @@
   }
 
   function nextEnemyOrClear() {
-    enemyIndex++;
-    if (enemyIndex >= enemies.length) {
-      document.getElementById('clear-msg').textContent = '洞窟を抜けた！ おめでとう！';
-      showScreen('screen-clear');
-      return;
+    if (Math.random() >= CAVE_PROGRESS_CHANCE) {
+      log('奥へ進めなかった。同じ敵がもう一匹……！');
+      currentEnemy = {
+        name: enemies[enemyIndex].name,
+        hp: enemies[enemyIndex].maxHp,
+        maxHp: enemies[enemyIndex].maxHp,
+        atk: enemies[enemyIndex].atk
+      };
+    } else {
+      enemyIndex++;
+      if (enemyIndex >= enemies.length) {
+        document.getElementById('clear-msg').textContent = '洞窟を抜けた！ おめでとう！';
+        showScreen('screen-clear');
+        return;
+      }
+      currentEnemy = {
+        name: enemies[enemyIndex].name,
+        hp: enemies[enemyIndex].maxHp,
+        maxHp: enemies[enemyIndex].maxHp,
+        atk: enemies[enemyIndex].atk
+      };
+      log('奥へ進んだ！');
+      log(currentEnemy.name + 'が あらわれた！');
     }
-    currentEnemy = {
-      name: enemies[enemyIndex].name,
-      hp: enemies[enemyIndex].maxHp,
-      maxHp: enemies[enemyIndex].maxHp,
-      atk: enemies[enemyIndex].atk
-    };
     enemyNameEl.textContent = currentEnemy.name + 'があらわれた！';
-    log(currentEnemy.name + 'が あらわれた！');
     setEnemyHp();
     isPlayerTurn = true;
     battleActions.querySelectorAll('.rpg-btn').forEach(function (b) {
@@ -277,8 +318,8 @@
     });
   }
 
-  document.getElementById('btn-start').addEventListener('click', startBattle);
-  document.getElementById('btn-retry').addEventListener('click', startBattle);
+  document.getElementById('btn-start').addEventListener('click', function () { startBattle(false); });
+  document.getElementById('btn-retry').addEventListener('click', function () { startBattle(true); });
   battleActions.addEventListener('click', function (e) {
     var cmd = e.target.dataset.cmd;
     if (cmd === 'attack') doAttack();

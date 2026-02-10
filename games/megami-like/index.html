@@ -33,6 +33,7 @@
     .smt-hp .label { min-width: 72px; }
     .smt-hp .bar { flex: 1; height: 12px; background: #333; border-radius: 4px; overflow: hidden; }
     .smt-hp .fill { height: 100%; background: linear-gradient(90deg, #800 0%, #c44 100%); transition: width 0.2s; }
+    .smt-hp .fill.ally { background: linear-gradient(90deg, #084 0%, #4c8 100%); }
     .smt-hp .fill.mp { background: linear-gradient(90deg, #248 0%, #48c 100%); }
     .smt-hp .num { min-width: 44px; text-align: right; font-size: 11px; color: #aaa; }
     .smt-log {
@@ -128,16 +129,16 @@
   var talkResultShown = false;
 
   var enemyPool = [
-    { name: 'ピクシー', hp: 12, maxHp: 12, atk: 2, recruit: true, macca: 5 },
-    { name: 'スライム', hp: 15, maxHp: 15, atk: 3, recruit: true, macca: 8 },
-    { name: 'ゴブリン', hp: 18, maxHp: 18, atk: 4, recruit: true, macca: 10 },
-    { name: 'ジャックフロスト', hp: 22, maxHp: 22, atk: 5, recruit: true, macca: 15 }
+    { name: 'ウーパー', hp: 12, maxHp: 12, atk: 2, recruit: true, macca: 5 },
+    { name: 'カッパ', hp: 15, maxHp: 15, atk: 3, recruit: true, macca: 8 },
+    { name: 'ペンギン', hp: 18, maxHp: 18, atk: 4, recruit: true, macca: 10 },
+    { name: 'ヘナ', hp: 22, maxHp: 22, atk: 5, recruit: true, macca: 15 }
   ];
   var demonTemplates = [
-    { name: 'ピクシー', hp: 12, maxHp: 12, atk: 3 },
-    { name: 'スライム', hp: 15, maxHp: 15, atk: 4 },
-    { name: 'ゴブリン', hp: 18, maxHp: 18, atk: 5 },
-    { name: 'ジャックフロスト', hp: 22, maxHp: 22, atk: 6 }
+    { name: 'ウーパー', hp: 12, maxHp: 12, atk: 3 },
+    { name: 'カッパ', hp: 15, maxHp: 15, atk: 4 },
+    { name: 'ペンギン', hp: 18, maxHp: 18, atk: 5 },
+    { name: 'ヘナ', hp: 22, maxHp: 22, atk: 6 }
   ];
 
   var logEl = document.getElementById('battle-log');
@@ -155,7 +156,9 @@
 
   function log(msg) {
     if (!logEl) return;
-    logEl.textContent = (logEl.textContent ? logEl.textContent + '\n' : '') + msg;
+    var line = document.createElement('div');
+    line.textContent = msg;
+    logEl.appendChild(line);
     logEl.scrollTop = logEl.scrollHeight;
   }
 
@@ -179,7 +182,7 @@
     heroMpNumEl.textContent = hero.mp + '/' + hero.maxMp;
     demonHpsEl.innerHTML = demons.map(function (d, i) {
       var p = Math.max(0, (d.hp / d.maxHp) * 100);
-      return '<div class="smt-hp"><span class="label">' + d.name + '</span><div class="bar"><div class="fill" style="width:' + p + '%"></div></div><span class="num">' + d.hp + '/' + d.maxHp + '</span></div>';
+      return '<div class="smt-hp"><span class="label">' + d.name + '</span><div class="bar"><div class="fill ally" style="width:' + p + '%"></div></div><span class="num">' + d.hp + '/' + d.maxHp + '</span></div>';
     }).join('');
   }
 
@@ -197,7 +200,7 @@
     var t = enemyPool[idx];
     currentEnemy = { name: t.name, hp: t.maxHp, maxHp: t.maxHp, atk: t.atk, recruit: t.recruit, macca: t.macca };
     encounterEl.textContent = currentEnemy.name + 'があらわれた！';
-    logEl.textContent = '';
+    logEl.innerHTML = '';
     log(currentEnemy.name + 'が あらわれた！');
     isPlayerTurn = true;
     talkChoices.classList.remove('visible');
@@ -251,6 +254,13 @@
     currentEnemy.hp -= dmg;
     currentEnemy.hp = Math.max(0, currentEnemy.hp);
     log('主人公の 攻撃！ ' + currentEnemy.name + 'に' + dmg + 'のダメージ！');
+    for (var i = 0; i < demons.length; i++) {
+      if (demons[i].hp <= 0) continue;
+      var edmg = Math.floor(Math.random() * 2) + demons[i].atk;
+      currentEnemy.hp -= edmg;
+      currentEnemy.hp = Math.max(0, currentEnemy.hp);
+      log(demons[i].name + 'の 攻撃！ ' + currentEnemy.name + 'に' + edmg + 'のダメージ！');
+    }
     updateBars();
     if (currentEnemy.hp <= 0) { winBattle(); return; }
     isPlayerTurn = false;
@@ -266,6 +276,13 @@
     currentEnemy.hp -= dmg;
     currentEnemy.hp = Math.max(0, currentEnemy.hp);
     log('主人公の 魔法！ ' + currentEnemy.name + 'に' + dmg + 'のダメージ！');
+    for (var i = 0; i < demons.length; i++) {
+      if (demons[i].hp <= 0) continue;
+      var edmg = Math.floor(Math.random() * 2) + demons[i].atk;
+      currentEnemy.hp -= edmg;
+      currentEnemy.hp = Math.max(0, currentEnemy.hp);
+      log(demons[i].name + 'の 攻撃！ ' + currentEnemy.name + 'に' + edmg + 'のダメージ！');
+    }
     updateBars();
     if (currentEnemy.hp <= 0) { winBattle(); return; }
     isPlayerTurn = false;

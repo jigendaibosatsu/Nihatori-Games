@@ -39,7 +39,13 @@
     }
   };
 
-  // 敵タイプ
+  // 敵タイプ（ウーパーテクスチャ使用）
+  var ENEMY_IMGS = {
+    normal: '/assets/characters/axolotl/axo_nomal.png',
+    fast: '/assets/characters/axolotl/axo_black.png',
+    tank: '/assets/characters/axolotl/axo_superblack.png'
+  };
+  var enemyImgCache = {};
   var ENEMY_TYPES = {
     normal: {
       name: '通常敵',
@@ -555,12 +561,24 @@
       ctx.fillText(tower.level, tower.x, tower.y);
     });
     
-    // 敵
+    // 敵（ウーパーテクスチャ）
     gameState.enemies.forEach(function(enemy) {
-      ctx.fillStyle = enemy.color;
-      ctx.beginPath();
-      ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-      ctx.fill();
+      var imgSrc = ENEMY_IMGS[enemy.type] || ENEMY_IMGS.normal;
+      var img = enemyImgCache[imgSrc];
+      if (img && img.complete && img.naturalWidth) {
+        var s = enemy.radius * 2;
+        ctx.drawImage(img, enemy.x - s/2, enemy.y - s/2, s, s);
+      } else {
+        if (!img) {
+          img = new Image();
+          img.src = imgSrc;
+          enemyImgCache[imgSrc] = img;
+        }
+        ctx.fillStyle = enemy.color;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
       
       // HPバー
       var barWidth = enemy.radius * 2;
@@ -721,9 +739,14 @@
     });
   }
 
+  function isPaused() {
+    var towerInfo = document.getElementById('overlayTowerInfo');
+    return towerInfo && towerInfo.classList.contains('visible');
+  }
+
   // ===== ゲームループ =====
   function gameLoop() {
-    if (gameState.state === 'playing' || gameState.waveInProgress) {
+    if (!isPaused() && (gameState.state === 'playing' || gameState.waveInProgress)) {
       updateTowers();
       updateEnemies();
       updateProjectiles();

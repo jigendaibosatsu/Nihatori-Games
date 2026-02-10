@@ -3,7 +3,10 @@
 
   // ===== 定数定義 =====
   var STORAGE_KEY = 'axolotl-cafe-save';
-  var GACHA_COST = 500;
+  function getGachaCost() {
+    var count = state.gachaPullCount || 0;
+    return 100 * (count + 1);
+  }
   var MAX_POOP_DISPLAY = 20;
   var POOP_BASE_RATE = 5.0; // 秒
   var COMPOST_REQUIRED_BASE = 10; // うんこ10個で肥料1個
@@ -92,6 +95,7 @@
     
     // ガチャ
     gachaPoints: 0,
+    gachaPullCount: 0,
     
     // 図鑑
     managerEncyclopedia: {}
@@ -386,12 +390,14 @@
 
   // ===== ガチャシステム =====
   function pullGacha() {
-    if (state.coins < GACHA_COST) {
+    var cost = getGachaCost();
+    if (state.coins < cost) {
       alert('コインが足りません！');
       return null;
     }
     
-    state.coins -= GACHA_COST;
+    state.coins -= cost;
+    state.gachaPullCount = (state.gachaPullCount || 0) + 1;
     
     // 排出テーブルから抽選
     var totalWeight = 0;
@@ -542,7 +548,13 @@
     updateTankVisual();
     
     // ボタン有効/無効
-    $('btnGacha').disabled = state.coins < GACHA_COST;
+    $('btnGacha').disabled = state.coins < getGachaCost();
+    var gc = $('gachaCost');
+    if (gc) gc.textContent = '¥' + getGachaCost();
+    var gp = $('btnGachaPull');
+    if (gp) gp.textContent = '1回引く (¥' + getGachaCost() + ')';
+    var gachaDesc = document.getElementById('gachaDesc');
+    if (gachaDesc) gachaDesc.textContent = getGachaCost() + 'コインでウーパーを引けます（回数で価格上昇）';
   }
 
   function updateTankVisual() {

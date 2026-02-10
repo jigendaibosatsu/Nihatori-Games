@@ -1,0 +1,129 @@
+/**
+ * PuniPuni Arena - Centralized configuration
+ * All thresholds, cooldowns, and damage multipliers are tunable here.
+ */
+
+export const CONFIG = {
+  // Fixed timestep (60 Hz)
+  FIXED_DT_MS: 1000 / 60,
+  TARGET_FPS: 60,
+
+  // Arena
+  ARENA_WIDTH: 800,
+  ARENA_HEIGHT: 600,
+  ARENA_PADDING: 40,
+
+  // Character (PuniPuni)
+  CHARACTER_RADIUS: 28,
+  CHARACTER_HP: 100,
+  CHARACTER_ATK: 12,
+  CHARACTER_DEF: 5,
+  CHARACTER_SPEED: 4,
+  CHARACTER_CONDITION: 1.0,
+  CONDITION_MIN: 0.5,
+  CONDITION_MAX: 1.5,
+  ENERGY_MAX: 100,
+  ENERGY_GAIN_PER_HIT: 5,
+  ENERGY_DECAY_RATE: 0.2,
+
+  // Damage formula: max(1, (ATK * skillMult * condition) - (DEF * 0.7)) * rand(0.9..1.1)
+  DAMAGE_DEF_MULT: 0.7,
+  DAMAGE_RAND_MIN: 0.9,
+  DAMAGE_RAND_MAX: 1.1,
+
+  // State priority (higher = more priority): HITSTUN > DOWN > STONE > GIANT > SPIN > HYPER > ATTACK > MOVE > IDLE
+  STATES: {
+    IDLE: 0,
+    MOVE: 1,
+    ATTACK: 2,
+    HYPER: 3,
+    SPIN: 4,
+    GIANT_CHARGE: 5,
+    GIANT_SLAM: 6,
+    STONE: 7,
+    DOWN: 8,
+    HITSTUN: 9,
+  } as const,
+
+  // Normal Attack
+  ATTACK_STARTUP_MS: 80,
+  ATTACK_ACTIVE_MS: 100,
+  ATTACK_RECOVERY_MS: 120,
+  ATTACK_MULTIPLIER: 1.0,
+  ATTACK_RANGE: 70,
+
+  // Stone Form (double-click on character)
+  STONE_I_FRAMES_MS: 200,
+  STONE_DURATION_MS: 2500,
+  STONE_DEF_BOOST: 2.0,
+  STONE_SPEED_MULT: 0.3,
+  STONE_COOLDOWN_MS: 8000,
+
+  // Hyper Attack (double-click on empty)
+  HYPER_ENERGY_COST: 50,
+  HYPER_COOLDOWN_MS: 5000,
+  HYPER_DASH_SPEED: 18,
+  HYPER_DURATION_MS: 400,
+  HYPER_MULTIPLIER: 2.5,
+  HYPER_AOE_RADIUS: 80,
+
+  // Multiply (rapid clicks on character)
+  MULTIPLY_CLICKS_NEEDED: 6,
+  MULTIPLY_TIME_WINDOW_MS: 800,
+  MULTIPLY_CLONE_COUNT_MIN: 2,
+  MULTIPLY_CLONE_COUNT_MAX: 5,
+  MULTIPLY_COOLDOWN_MS: 10000,
+  MULTIPLY_CLONE_LIFETIME_MS: 6000,
+  MULTIPLY_CLONE_DAMAGE_MULT: 0.3,
+  MULTIPLY_CLONE_RADIUS: 16,
+
+  // Spin Attack (circular gesture)
+  SPIN_ANGLE_THRESHOLD_DEG: 300,
+  SPIN_TIME_WINDOW_MS: 700,
+  SPIN_DISTANCE_FROM_CHAR: 50,
+  SPIN_DURATION_MS: 1200,
+  SPIN_TICK_MS: 100,
+  SPIN_MULTIPLIER: 0.6,
+  SPIN_AOE_RADIUS: 100,
+  SPIN_COOLDOWN_MS: 6000,
+
+  // Giant Smash (vertical hold + drag)
+  GIANT_HOLD_THRESHOLD_MS: 150,
+  GIANT_VERTICAL_THRESHOLD: 40,
+  GIANT_CHARGE_MS: 600,
+  GIANT_SLAM_MS: 400,
+  GIANT_AOE_RADIUS: 120,
+  GIANT_MULTIPLIER: 3.0,
+  GIANT_COOLDOWN_MS: 12000,
+
+  // Double-click detection
+  DOUBLE_CLICK_THRESHOLD_MS: 250,
+
+  // Gesture thresholds
+  POINTER_CAPTURE_ENABLED: true,
+  SPIN_MIN_DISTANCE: 20,
+  GIANT_MIN_VERTICAL: 40,
+
+  // Enemy
+  ENEMY_SPAWN_INTERVAL_MS: 3000,
+  ENEMY_HP: 30,
+  ENEMY_ATK: 8,
+  ENEMY_DEF: 2,
+  ENEMY_RADIUS: 20,
+  ENEMY_SPEED: 2,
+  ENEMY_KNOCKBACK: 80,
+  ENEMY_DAMAGE_COOLDOWN_MS: 800,
+  ENEMIES_TO_DEFEAT: 15,
+  SURVIVAL_TIME_MS: 60000,
+
+  // Knockback
+  PLAYER_KNOCKBACK: 60,
+  HITSTUN_MS: 400,
+  DOWN_MS: 800,
+
+  // VFX
+  SCREEN_SHAKE_AMOUNT: 4,
+  HIT_FLASH_MS: 80,
+} as const;
+
+export type StateKey = keyof typeof CONFIG.STATES;

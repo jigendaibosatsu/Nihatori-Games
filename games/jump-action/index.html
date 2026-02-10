@@ -120,10 +120,6 @@
       <canvas id="gameCanvas" width="400" height="300"></canvas>
     </div>
     <div class="game-ui">
-      <div class="game-keys">
-        <button type="button" class="game-btn" id="btnLeft" aria-label="左">←</button>
-        <button type="button" class="game-btn" id="btnRight" aria-label="右">→</button>
-      </div>
       <button type="button" class="game-btn jump" id="btnJump" aria-label="ジャンプ">ジャンプ</button>
     </div>
   </div>
@@ -131,7 +127,7 @@
   <div class="game-overlay" id="overlayStart">
     <div class="game-overlay-box">
       <h2>ジャンプアクション</h2>
-      <p>←→で移動、ジャンプで敵の上から踏もう。ゴールを目指せ！</p>
+      <p>画面が自動で進む。ジャンプで敵の上から踏もう。ゴールを目指せ！</p>
       <button type="button" class="btn" id="btnStart">スタート</button>
     </div>
   </div>
@@ -161,26 +157,39 @@
   var H = canvas.height;
   var TILE = 32;
 
-  var keys = { left: false, right: false, jump: false };
-  var player = { x: 48, y: 0, w: 24, h: 28, vx: 0, vy: 0, onGround: false };
+  var keys = { jump: false };
+  var AUTO_SCROLL = 2.5;
+  var player = { x: 48, y: 0, w: 24, h: 28, vx: AUTO_SCROLL, vy: 0, onGround: false };
   var GRAVITY = 0.6;
-  var MOVE_SPEED = 4;
   var JUMP_FORCE = -11;
   var GROUND_Y = H - TILE - player.h;
+  var LEVEL_WIDTH = 1200;
 
   var platforms = [
-    { x: 0, y: H - TILE, w: W, h: TILE },
+    { x: 0, y: H - TILE, w: LEVEL_WIDTH + 100, h: TILE },
     { x: 120, y: H - TILE - 64, w: 80, h: 16 },
     { x: 240, y: H - TILE - 96, w: 80, h: 16 },
-    { x: 360, y: H - TILE - 48, w: 48, h: 16 }
+    { x: 360, y: H - TILE - 48, w: 48, h: 16 },
+    { x: 480, y: H - TILE - 80, w: 96, h: 16 },
+    { x: 600, y: H - TILE - 64, w: 80, h: 16 },
+    { x: 720, y: H - TILE - 112, w: 64, h: 16 },
+    { x: 840, y: H - TILE - 48, w: 96, h: 16 },
+    { x: 960, y: H - TILE - 80, w: 80, h: 16 },
+    { x: 1080, y: H - TILE - 64, w: 80, h: 16 }
   ];
 
   var enemies = [
     { x: 160, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 120, max: 220 },
-    { x: 280, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 260, max: 360 }
+    { x: 280, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 260, max: 360 },
+    { x: 420, y: H - TILE - 64, w: 24, h: 24, vx: -1.5, min: 400, max: 520 },
+    { x: 550, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 520, max: 620 },
+    { x: 680, y: H - TILE - 96, w: 24, h: 24, vx: -1.5, min: 660, max: 760 },
+    { x: 800, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 780, max: 900 },
+    { x: 920, y: H - TILE - 64, w: 24, h: 24, vx: -1.5, min: 900, max: 1000 },
+    { x: 1050, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 1020, max: 1120 }
   ];
 
-  var goal = { x: W - 48, y: H - TILE - 48, w: 32, h: 48 };
+  var goal = { x: LEVEL_WIDTH - 48, y: H - TILE - 48, w: 32, h: 48 };
   var gameState = 'start';
   var cameraX = 0;
 
@@ -234,13 +243,11 @@
 
   function updateCamera() {
     var target = player.x - W * 0.4;
-    cameraX = Math.max(0, Math.min(target, 400));
+    cameraX = Math.max(0, Math.min(target, LEVEL_WIDTH - W));
   }
 
   function updatePlayer(dt) {
-    if (keys.left) player.vx = -MOVE_SPEED;
-    else if (keys.right) player.vx = MOVE_SPEED;
-    else player.vx *= 0.8;
+    player.vx = AUTO_SCROLL;
     if (keys.jump && player.onGround) {
       player.vy = JUMP_FORCE;
       player.onGround = false;
@@ -249,7 +256,7 @@
     player.x += player.vx * (dt / 16);
     player.y += player.vy * (dt / 16);
     player.onGround = false;
-    player.x = Math.max(0, Math.min(player.x, W - player.w - 16));
+    player.x = Math.max(48, Math.min(player.x, LEVEL_WIDTH - player.w - 16));
     if (player.y >= GROUND_Y) {
       player.y = GROUND_Y;
       player.vy = 0;
@@ -275,9 +282,19 @@
             player.vy = 0;
           }
         } else {
-          if (overlapLeft < overlapRight) player.x = p.x - player.w;
-          else player.x = p.x + p.w;
-          player.vx = 0;
+          if (overlapLeft < overlapRight) {
+            if (player.vx > 0 && overlapTop < 24) {
+              player.y = p.y - player.h;
+              player.vy = 0;
+              player.onGround = true;
+            } else {
+              player.x = p.x - player.w;
+              player.vx = 0;
+            }
+          } else {
+            player.x = p.x + p.w;
+            player.vx = 0;
+          }
         }
       }
       if (player.vy > 0 && aabb(player.x, player.y, player.w, player.h, p.x, p.y, p.w, p.h)) {
@@ -328,17 +345,26 @@
     }
   }
 
+  var initialEnemies = [
+    { x: 160, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 120, max: 220 },
+    { x: 280, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 260, max: 360 },
+    { x: 420, y: H - TILE - 64, w: 24, h: 24, vx: -1.5, min: 400, max: 520 },
+    { x: 550, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 520, max: 620 },
+    { x: 680, y: H - TILE - 96, w: 24, h: 24, vx: -1.5, min: 660, max: 760 },
+    { x: 800, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 780, max: 900 },
+    { x: 920, y: H - TILE - 64, w: 24, h: 24, vx: -1.5, min: 900, max: 1000 },
+    { x: 1050, y: H - TILE - 24, w: 24, h: 24, vx: -1.2, min: 1020, max: 1120 }
+  ];
   function reset() {
     player.x = 48;
     player.y = GROUND_Y;
-    player.vx = 0;
+    player.vx = AUTO_SCROLL;
     player.vy = 0;
     player.onGround = true;
     enemies.length = 0;
-    enemies.push(
-      { x: 160, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 120, max: 220 },
-      { x: 280, y: H - TILE - 24, w: 24, h: 24, vx: -1.5, min: 260, max: 360 }
-    );
+    initialEnemies.forEach(function (e) {
+      enemies.push({ x: e.x, y: e.y, w: e.w, h: e.h, vx: e.vx, min: e.min, max: e.max });
+    });
     gameState = 'play';
   }
 
@@ -356,7 +382,7 @@
     ctx.fillStyle = '#5c94fc';
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#8b4513';
-    ctx.fillRect(-cameraX, H - TILE, W + cameraX + 200, TILE);
+    ctx.fillRect(-cameraX, H - TILE, LEVEL_WIDTH + 200, TILE);
     for (var i = 0; i < platforms.length; i++) {
       var p = platforms[i];
       if (p.y < H - TILE) drawBlock(p.x - cameraX, p.y, p.w, p.h);
@@ -380,18 +406,6 @@
     reset();
   });
 
-  document.getElementById('btnLeft').addEventListener('touchstart', function (e) { e.preventDefault(); keys.left = true; });
-  document.getElementById('btnLeft').addEventListener('touchend', function (e) { e.preventDefault(); keys.left = false; });
-  document.getElementById('btnLeft').addEventListener('mousedown', function () { keys.left = true; });
-  document.getElementById('btnLeft').addEventListener('mouseup', function () { keys.left = false; });
-  document.getElementById('btnLeft').addEventListener('mouseleave', function () { keys.left = false; });
-
-  document.getElementById('btnRight').addEventListener('touchstart', function (e) { e.preventDefault(); keys.right = true; });
-  document.getElementById('btnRight').addEventListener('touchend', function (e) { e.preventDefault(); keys.right = false; });
-  document.getElementById('btnRight').addEventListener('mousedown', function () { keys.right = true; });
-  document.getElementById('btnRight').addEventListener('mouseup', function () { keys.right = false; });
-  document.getElementById('btnRight').addEventListener('mouseleave', function () { keys.right = false; });
-
   document.getElementById('btnJump').addEventListener('touchstart', function (e) { e.preventDefault(); keys.jump = true; });
   document.getElementById('btnJump').addEventListener('touchend', function (e) { e.preventDefault(); keys.jump = false; });
   document.getElementById('btnJump').addEventListener('mousedown', function () { keys.jump = true; });
@@ -399,13 +413,9 @@
   document.getElementById('btnJump').addEventListener('mouseleave', function () { keys.jump = false; });
 
   document.addEventListener('keydown', function (e) {
-    if (e.code === 'ArrowLeft') { keys.left = true; e.preventDefault(); }
-    if (e.code === 'ArrowRight') { keys.right = true; e.preventDefault(); }
     if (e.code === 'Space' || e.code === 'ArrowUp') { keys.jump = true; e.preventDefault(); }
   });
   document.addEventListener('keyup', function (e) {
-    if (e.code === 'ArrowLeft') keys.left = false;
-    if (e.code === 'ArrowRight') keys.right = false;
     if (e.code === 'Space' || e.code === 'ArrowUp') keys.jump = false;
   });
 

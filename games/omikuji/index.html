@@ -59,6 +59,20 @@
       border-top: 2px dashed #ddd;
     }
     .omikuji-result.visible { display: block; }
+    .omikuji-loading {
+      display: none;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px dashed #ddd;
+      font-size: 1.1rem;
+      color: #666;
+      animation: omikuji-pulse 0.8s ease-in-out infinite;
+    }
+    .omikuji-loading.visible { display: block; }
+    @keyframes omikuji-pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
     .omikuji-rank {
       font-size: 1.75rem;
       font-weight: 700;
@@ -94,6 +108,7 @@
     <h1 class="omikuji-title">おみくじ</h1>
     <div class="omikuji-box">
       <button type="button" class="omikuji-draw-btn" id="draw-btn">おみくじを引く</button>
+      <div class="omikuji-loading" id="loading">おみくじを引いています…</div>
       <div class="omikuji-result" id="result">
         <p class="omikuji-rank" id="rank"></p>
         <p class="omikuji-message" id="message"></p>
@@ -116,17 +131,26 @@
       ];
 
       var drawBtn = document.getElementById('draw-btn');
+      var loadingEl = document.getElementById('loading');
       var resultEl = document.getElementById('result');
       var rankEl = document.getElementById('rank');
       var messageEl = document.getElementById('message');
+      var TAMEGA_MS = 2500;
 
       function draw() {
-        var i = Math.floor(Math.random() * fortunes.length);
-        var f = fortunes[i];
-        rankEl.textContent = f.rank;
-        rankEl.className = 'omikuji-rank ' + f.class;
-        messageEl.textContent = f.message;
-        resultEl.classList.add('visible');
+        resultEl.classList.remove('visible');
+        loadingEl.classList.add('visible');
+        drawBtn.disabled = true;
+        setTimeout(function () {
+          var i = Math.floor(Math.random() * fortunes.length);
+          var f = fortunes[i];
+          rankEl.textContent = f.rank;
+          rankEl.className = 'omikuji-rank ' + f.class;
+          messageEl.textContent = f.message;
+          loadingEl.classList.remove('visible');
+          resultEl.classList.add('visible');
+          drawBtn.disabled = false;
+        }, TAMEGA_MS);
       }
 
       if (drawBtn) drawBtn.addEventListener('click', draw);

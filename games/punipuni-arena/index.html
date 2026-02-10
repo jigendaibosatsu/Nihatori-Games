@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>PuniPuni Arena – Nihatori Games</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body.game-page {
+      padding-top: 48px;
+      background: linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%);
+      font-family: "MS PGothic", "Yu Gothic", sans-serif;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .arena-wrap {
+      width: 100%;
+      max-width: 800px;
+      padding: 16px;
+    }
+    .arena-title { font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: #a78bfa; }
+    .arena-ui {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    .ui-hp, .ui-energy {
+      background: rgba(0,0,0,0.4);
+      border-radius: 8px;
+      padding: 8px 12px;
+      border: 1px solid #4a3a6a;
+    }
+    .ui-hp .label, .ui-energy .label { font-size: 10px; color: #aaa; }
+    .ui-hp .bar-wrap, .ui-energy .bar-wrap {
+      height: 12px;
+      background: #333;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .ui-hp .bar { height: 100%; background: linear-gradient(90deg, #ef4444, #f87171); transition: width 0.15s; }
+    .ui-energy .bar { height: 100%; background: linear-gradient(90deg, #eab308, #fde047); transition: width 0.15s; }
+    .ui-mid { text-align: center; font-size: 12px; color: #aaa; }
+    .ui-mid .time { font-size: 16px; color: #fff; font-weight: bold; }
+    .debug-panel {
+      background: rgba(0,0,0,0.6);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      font-size: 11px;
+      color: #94a3b8;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+    }
+    .debug-panel .state { grid-column: 1 / -1; color: #a78bfa; font-weight: bold; }
+    .game-canvas-wrap {
+      position: relative;
+      background: #0f0f1e;
+      border: 2px solid #4a3a6a;
+      border-radius: 12px;
+      overflow: hidden;
+      touch-action: none;
+    }
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .overlay h2 { font-size: 2rem; }
+    .overlay.win h2 { color: #22c55e; }
+    .overlay.lose h2 { color: #ef4444; }
+    .overlay .btn {
+      padding: 14px 28px;
+      background: #8b5cf6;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .overlay .btn:hover { background: #7c3aed; }
+    .arena-back { display: inline-block; margin-top: 16px; color: #a78bfa; font-size: 14px; text-decoration: none; }
+  </style>
+</head>
+<body class="game-page">
+  <div id="site-header"></div>
+
+  <div class="arena-wrap">
+    <h1 class="arena-title">PuniPuni Arena</h1>
+
+    <div class="arena-ui">
+      <div class="ui-hp">
+        <div class="label">HP</div>
+        <div class="bar-wrap"><div class="bar" id="hpBar" style="width:100%"></div></div>
+        <div class="value" id="hpValue">100 / 100</div>
+      </div>
+      <div class="ui-mid">
+        <div class="time" id="gameTime">0s</div>
+        <div>敵 <span id="enemiesCount">0 / 15</span></div>
+      </div>
+      <div class="ui-energy">
+        <div class="label">Energy</div>
+        <div class="bar-wrap"><div class="bar" id="energyBar" style="width:0%"></div></div>
+        <div class="value" id="energyVal">0 / 100</div>
+      </div>
+    </div>
+
+    <div class="debug-panel">
+      <div class="state">State: <span id="stateText">IDLE</span></div>
+      <div>Multiply: <span id="cdMultiply">OK</span></div>
+      <div>Stone: <span id="cdStone">OK</span></div>
+      <div>Hyper: <span id="cdHyper">OK</span></div>
+      <div>Spin: <span id="cdSpin">OK</span></div>
+      <div>Giant: <span id="cdGiant">OK</span></div>
+    </div>
+
+    <div class="game-canvas-wrap">
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <div class="overlay win" id="winOverlay">
+      <h2>Victory!</h2>
+      <p>Survived 60 seconds or defeated 15 enemies.</p>
+      <button type="button" class="btn" id="btnRestart">Restart</button>
+    </div>
+    <div class="overlay lose" id="loseOverlay">
+      <h2>Game Over</h2>
+      <p>HP reached 0.</p>
+      <button type="button" class="btn" id="btnRestart">Restart</button>
+    </div>
+
+    <a href="/index.html" class="arena-back">← トップへ戻る</a>
+  </div>
+
+  <script type="module" src="./src/main.ts"></script>
+  <script src="/assets/header.js"></script>
+</body>
+</html>

@@ -92,21 +92,8 @@
       <canvas id="townCanvas" width="384" height="288"></canvas>
     </div>
 
-    <div class="town-keys" id="townKeys">
-      <div class="town-dpad">
-        <div class="town-dpad-row">
-          <span></span>
-          <button type="button" class="town-btn" id="btnUp" aria-label="上">↑</button>
-          <span></span>
-        </div>
-        <div class="town-dpad-row">
-          <button type="button" class="town-btn" id="btnLeft" aria-label="左">←</button>
-          <button type="button" class="town-btn" id="btnDown" aria-label="下">↓</button>
-          <button type="button" class="town-btn" id="btnRight" aria-label="右">→</button>
-        </div>
-      </div>
-      <button type="button" class="town-btn enter" id="btnEnter" style="display:none">入る</button>
-    </div>
+    <p class="town-hint" style="font-size:12px;color:#558b2f;margin-top:8px;">タップで移動したい場所を指定</p>
+    <button type="button" class="town-btn enter" id="btnEnter" style="display:none;margin-top:8px">入る</button>
 
     <div class="town-label" id="placeLabel"></div>
 
@@ -174,6 +161,8 @@
   var screen = 'field';
   var atDoor = null;
   var insideBuilding = null;
+  var movePath = [];
+  var isMoving = false;
 
   var canvas = document.getElementById('townCanvas');
   var ctx = canvas.getContext('2d');
@@ -281,6 +270,92 @@
     drawPlayer();
   }
 
+  function canWalk(gx, gy) {
+    if (screen === 'field') {
+      if (gx < 0 || gx >= MAP_W || gy < 0 || gy >= MAP_H) return false;
+      var t = townMap[gy][gx];
+      return !isTownBlocked(t);
+    } else {
+      if (gx < 0 || gx >= currentMapW || gy < 0 || gy >= currentMapH) return false;
+      var it = getTileAt(currentMap, currentMapW, currentMapH, gx, gy);
+      return it === I_FLOOR || it === I_EXIT;
+    }
+  }
+
+  function bfsPath(start, goal) {
+    var q = [[start.x, start.y]];
+    var came = {};
+    came[start.x + ',' + start.y] = null;
+    var dirs = [[0,-1],[1,0],[0,1],[-1,0]];
+    while (q.length > 0) {
+      var cur = q.shift();
+      var cx = cur[0], cy = cur[1];
+      if (cx === goal.x && cy === goal.y) {
+        var path = [];
+        var k = goal.x + ',' + goal.y;
+        while (k) {
+          var p = k.split(',');
+          path.unshift({ x: parseInt(p[0],10), y: parseInt(p[1],10) });
+          k = came[k];
+        }
+        return path.slice(1);
+      }
+      for (var i = 0; i < dirs.length; i++) {
+        var nx = cx + dirs[i][0], ny = cy + dirs[i][1];
+        var nk = nx + ',' + ny;
+        if (!came[nk] && canWalk(nx, ny)) {
+          came[nk] = cx + ',' + cy;
+          q.push([nx, ny]);
+        }
+      }
+    }
+    return [];
+  }
+
+  function startMoveTo(gx, gy) {
+    if (isMoving) return;
+    if (gx === player.x && gy === player.y) return;
+    if (!canWalk(gx, gy)) return;
+    var path = bfsPath({ x: player.x, y: player.y }, { x: gx, y: gy });
+    if (path.length === 0) return;
+    movePath = path;
+    isMoving = true;
+    stepAlongPath();
+  }
+
+  function stepAlongPath() {
+    if (movePath.length === 0) {
+      isMoving = false;
+      if (screen === 'field') {
+        var cur = townMap[player.y][player.x];
+        if (cur === T_SHOP_DOOR) atDoor = 'shop';
+        else if (cur === T_HOUSE_DOOR) atDoor = 'house';
+        else atDoor = null;
+        var btnEnter = document.getElementById('btnEnter');
+        if (btnEnter) btnEnter.style.display = atDoor ? 'inline-block' : 'none';
+      } else {
+        var it = getTileAt(currentMap, currentMapW, currentMapH, player.x, player.y);
+        if (it === I_EXIT) exitBuilding();
+      }
+      render();
+      return;
+    }
+    var next = movePath.shift();
+    player.x = next.x;
+    player.y = next.y;
+    if (screen !== 'field') {
+      var it = getTileAt(currentMap, currentMapW, currentMapH, player.x, player.y);
+      if (it === I_EXIT) {
+        movePath = [];
+        exitBuilding();
+        isMoving = false;
+        return;
+      }
+    }
+    render();
+    setTimeout(stepAlongPath, 120);
+  }
+
   function tryMove(dx, dy) {
     var nx = player.x + dx;
     var ny = player.y + dy;
@@ -368,26 +443,58 @@
     render();
   }
 
-  document.getElementById('btnUp').addEventListener('click', function () { tryMove(0, -1); });
-  document.getElementById('btnDown').addEventListener('click', function () { tryMove(0, 1); });
-  document.getElementById('btnLeft').addEventListener('click', function () { tryMove(-1, 0); });
-  document.getElementById('btnRight').addEventListener('click', function () { tryMove(1, 0); });
   document.getElementById('btnEnter').addEventListener('click', enterBuilding);
 
-  var keys = {};
-  document.addEventListener('keydown', function (e) {
-    if (keys[e.key]) return;
-    keys[e.key] = true;
-    if (e.key === 'ArrowUp') { tryMove(0, -1); e.preventDefault(); }
-    else if (e.key === 'ArrowDown') { tryMove(0, 1); e.preventDefault(); }
-    else if (e.key === 'ArrowLeft') { tryMove(-1, 0); e.preventDefault(); }
-    else if (e.key === 'ArrowRight') { tryMove(1, 0); e.preventDefault(); }
-    else if (e.key === 'Enter' || e.key === ' ') {
-      if (screen === 'field' && atDoor) enterBuilding();
-      e.preventDefault();
+  canvas.addEventListener('click', function (e) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    var px = (e.clientX - rect.left) * scaleX;
+    var py = (e.clientY - rect.top) * scaleY;
+    var gx = Math.floor(px / TILE);
+    var gy = Math.floor(py / TILE);
+    if (screen === 'field') {
+      var t = townMap[gy] && townMap[gy][gx];
+      if ((t === T_SHOP_DOOR || t === T_HOUSE_DOOR) && player.x === gx && player.y === gy) {
+        enterBuilding();
+        return;
+      }
     }
+    if (screen !== 'field') {
+      var it = getTileAt(currentMap, currentMapW, currentMapH, gx, gy);
+      if (it === I_EXIT && player.x === gx && player.y === gy) {
+        exitBuilding();
+        return;
+      }
+    }
+    startMoveTo(gx, gy);
   });
-  document.addEventListener('keyup', function (e) { keys[e.key] = false; });
+  canvas.addEventListener('touchstart', function (e) {
+    e.preventDefault();
+    var t = e.touches[0];
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    var px = (t.clientX - rect.left) * scaleX;
+    var py = (t.clientY - rect.top) * scaleY;
+    var gx = Math.floor(px / TILE);
+    var gy = Math.floor(py / TILE);
+    if (screen === 'field') {
+      var tt = townMap[gy] && townMap[gy][gx];
+      if ((tt === T_SHOP_DOOR || tt === T_HOUSE_DOOR) && player.x === gx && player.y === gy) {
+        enterBuilding();
+        return;
+      }
+    }
+    if (screen !== 'field') {
+      var it = getTileAt(currentMap, currentMapW, currentMapH, gx, gy);
+      if (it === I_EXIT && player.x === gx && player.y === gy) {
+        exitBuilding();
+        return;
+      }
+    }
+    startMoveTo(gx, gy);
+  }, { passive: false });
 
   render();
 })();

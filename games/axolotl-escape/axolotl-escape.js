@@ -65,6 +65,32 @@
     mouse: { x: 0, y: 0, down: false }
   };
 
+  // ===== テクスチャ =====
+  var IMAGES = {
+    player: null,
+    enemy: null,
+    boss: null
+  };
+
+  function loadImages(cb) {
+    var base = '/assets/characters/axolotl/';
+    var loaded = 0;
+    var total = 3;
+    function onLoad() {
+      loaded++;
+      if (loaded >= total && typeof cb === 'function') cb();
+    }
+    var imgPlayer = new Image();
+    imgPlayer.onload = function () { IMAGES.player = imgPlayer; onLoad(); };
+    imgPlayer.src = base + 'axo_nomal.png';
+    var imgEnemy = new Image();
+    imgEnemy.onload = function () { IMAGES.enemy = imgEnemy; onLoad(); };
+    imgEnemy.src = base + 'axo_black.png';
+    var imgBoss = new Image();
+    imgBoss.onload = function () { IMAGES.boss = imgBoss; onLoad(); };
+    imgBoss.src = base + 'axo_gold.png';
+  }
+
   // ===== Canvas設定 =====
   var canvas = document.getElementById('gameCanvas');
   var ctx = canvas.getContext('2d');
@@ -586,8 +612,14 @@
       ctx.stroke();
       
       // プレイヤー
-      ctx.fillStyle = p.invulnerable > 0 && p.invulnerable % 10 < 5 ? '#888' : '#60a5fa';
-      ctx.fillRect(p.x - p.width / 2, p.y - p.height / 2, p.width, p.height);
+      if (IMAGES.player) {
+        ctx.globalAlpha = p.invulnerable > 0 && p.invulnerable % 10 < 5 ? 0.5 : 1;
+        ctx.drawImage(IMAGES.player, p.x - p.width / 2, p.y - p.height / 2, p.width, p.height);
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.fillStyle = p.invulnerable > 0 && p.invulnerable % 10 < 5 ? '#888' : '#60a5fa';
+        ctx.fillRect(p.x - p.width / 2, p.y - p.height / 2, p.width, p.height);
+      }
       
       // ダッシュ中はエフェクト
       if (p.dashCooldown > p.maxDashCooldown - 10) {
@@ -600,8 +632,13 @@
       
       // 敵
       gameState.enemies.forEach(function(enemy) {
-        ctx.fillStyle = enemy.color;
-        ctx.fillRect(enemy.x - enemy.width / 2, enemy.y - enemy.height / 2, enemy.width, enemy.height);
+        var img = enemy.type === 'boss' ? IMAGES.boss : IMAGES.enemy;
+        if (img) {
+          ctx.drawImage(img, enemy.x - enemy.width / 2, enemy.y - enemy.height / 2, enemy.width, enemy.height);
+        } else {
+          ctx.fillStyle = enemy.color;
+          ctx.fillRect(enemy.x - enemy.width / 2, enemy.y - enemy.height / 2, enemy.width, enemy.height);
+        }
         
         // HPバー
         var barWidth = enemy.width;
@@ -713,6 +750,7 @@
   // ===== 初期化 =====
   function init() {
     loadGame();
+    loadImages();
     generateDungeon();
     initEventListeners();
     showHouse();

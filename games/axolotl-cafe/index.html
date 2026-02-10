@@ -65,7 +65,7 @@
       <button type="button" class="cafe-menu-btn" id="btnGacha">
         <span class="cafe-menu-icon">🎰</span>
         <span class="cafe-menu-label">ガチャ</span>
-        <span class="cafe-menu-cost" id="gachaCost">¥500</span>
+        <span class="cafe-menu-cost" id="gachaCost">¥100</span>
       </button>
       <button type="button" class="cafe-menu-btn" id="btnAssign">
         <span class="cafe-menu-icon">👔</span>
@@ -92,10 +92,10 @@
   <div class="cafe-overlay" id="overlayGacha">
     <div class="cafe-overlay-box">
       <h2>ガチャ</h2>
-      <p style="font-size:12px; margin-bottom:8px;">500コインでウーパーを引けます</p>
+      <p style="font-size:12px; margin-bottom:8px;" id="gachaDesc">100コインでウーパーを引けます（回数で価格上昇）</p>
       <div id="gachaResult" style="min-height:100px; margin-bottom:12px;"></div>
       <div style="display:flex; gap:8px;">
-        <button type="button" class="btn" id="btnGachaPull">1回引く (¥500)</button>
+        <button type="button" class="btn" id="btnGachaPull">1回引く (¥100)</button>
         <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="btnGachaClose">閉じる</button>
       </div>
     </div>

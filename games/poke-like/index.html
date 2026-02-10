@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>ポケもんバトル – Nihatori Games</title>
+  <title>ポンコツケモノバトル – Nihatori Games</title>
   <link rel="stylesheet" href="/styles.css" />
   <style>
     * { box-sizing: border-box; }
@@ -168,12 +168,13 @@
   <div id="site-header"></div>
 
   <div class="poke-wrap">
-    <h1 class="poke-title">ポケもんバトル</h1>
+    <h1 class="poke-title">ポンコツケモノバトル</h1>
 
     <div class="poke-battle">
       <div class="poke-enemy">
         <div class="poke-side-label">てき</div>
         <div class="poke-mon">
+          <img class="poke-mon-img" id="enemyMonImg" src="/assets/characters/axolotl/axo_nomal.png" alt="" style="width:64px;height:64px;object-fit:contain;" />
           <div class="poke-mon-name"><span id="enemyNameText">???</span><span class="lv" id="enemyLv"></span></div>
           <div class="poke-hp-row">
             <div class="poke-hp-bar"><div class="poke-hp-fill" id="enemyHpBar" style="width:100%"></div></div>
@@ -184,6 +185,7 @@
       <div class="poke-player">
         <div class="poke-side-label">みかた</div>
         <div class="poke-mon">
+          <img class="poke-mon-img" id="playerMonImg" src="/assets/characters/axolotl/axo_nomal.png" alt="" style="width:64px;height:64px;object-fit:contain;" />
           <div class="poke-mon-name"><span id="playerNameText">???</span><span class="lv" id="playerLv"></span></div>
           <div class="poke-hp-row">
             <div class="poke-hp-bar"><div class="poke-hp-fill" id="playerHpBar" style="width:100%"></div></div>
@@ -196,7 +198,8 @@
     <div class="poke-msg" id="msg">野生の ??? が あらわれた！</div>
 
     <div class="poke-menu" id="menu">
-      <button type="button" class="poke-btn fight" id="btnFight">たたかう</button>
+      <button type="button" class="poke-btn fight" id="btnFight">戦う</button>
+      <button type="button" class="poke-btn" id="btnCatch">捕まえる</button>
       <button type="button" class="poke-btn" id="btnRun">にげる</button>
     </div>
 
@@ -211,8 +214,8 @@
 
   <div class="poke-overlay" id="overlayStart">
     <div class="poke-overlay-box">
-      <h2>ポケもんバトル</h2>
-      <p>ポケモンをえらんで たたかおう！</p>
+      <h2>ポンコツケモノバトル</h2>
+      <p>ケモノをえらんで たたかおう！ 捕まえることもできる！</p>
       <button type="button" class="poke-overlay-box btn" id="btnStart">はじめる</button>
     </div>
   </div>
@@ -258,13 +261,27 @@
     { name: 'のしかかり', type: 'normal', power: 85 }
   ];
 
+  var MON_IMG = {
+    'ウーパー': '/assets/characters/axolotl/axo_nomal.png',
+    'カッパ': '/assets/characters/axolotl/axo_black.png',
+    'ペンギン': '/assets/characters/axolotl/axo_superblack.png',
+    'ヘナ': '/assets/characters/axolotl/axo_copper.png',
+    'シバ': '/assets/characters/axolotl/axo_dalmatian.png',
+    'ボール': '/assets/characters/axolotl/axo_marble.png',
+    'ムクロ': '/assets/characters/axolotl/axo_albino.png',
+    'コガネ': '/assets/characters/axolotl/axo_gold.png',
+    'クランチ': '/assets/characters/axolotl/axo_chimera.png'
+  };
   var MON_POOL = [
-    { name: 'ヒノアラシ', type: 'fire', hp: 39, atk: 52, def: 43, moves: ['ひのこ', 'たいあたり', 'かえんほうしゃ', 'のしかかり'] },
-    { name: 'ワニノコ', type: 'water', hp: 50, atk: 48, def: 65, moves: ['みずでっぽう', 'たいあたり', 'ハイドロポンプ', 'のしかかり'] },
-    { name: 'キモリ', type: 'grass', hp: 45, atk: 49, def: 65, moves: ['つるのムチ', 'たいあたり', 'ソーラービーム', 'のしかかり'] },
-    { name: 'ピカチュウ', type: 'electric', hp: 35, atk: 55, def: 40, moves: ['でんきショック', 'たいあたり', '10まんボルト', 'のしかかり'] },
-    { name: 'ゼニガメ', type: 'water', hp: 44, atk: 48, def: 65, moves: ['みずでっぽう', 'たいあたり', 'ハイドロポンプ', 'のしかかり'] },
-    { name: 'フシギダネ', type: 'grass', hp: 45, atk: 49, def: 49, moves: ['つるのムチ', 'たいあたり', 'ソーラービーム', 'のしかかり'] }
+    { name: 'ウーパー', type: 'water', hp: 39, atk: 52, def: 43, moves: ['みずでっぽう', 'たいあたり', 'ハイドロポンプ', 'のしかかり'] },
+    { name: 'カッパ', type: 'water', hp: 50, atk: 48, def: 65, moves: ['みずでっぽう', 'たいあたり', 'ハイドロポンプ', 'のしかかり'] },
+    { name: 'ペンギン', type: 'normal', hp: 45, atk: 49, def: 65, moves: ['たいあたり', 'のしかかり'] },
+    { name: 'ヘナ', type: 'grass', hp: 45, atk: 49, def: 65, moves: ['つるのムチ', 'たいあたり', 'ソーラービーム', 'のしかかり'] },
+    { name: 'シバ', type: 'fire', hp: 39, atk: 52, def: 43, moves: ['ひのこ', 'たいあたり', 'かえんほうしゃ', 'のしかかり'] },
+    { name: 'ボール', type: 'electric', hp: 35, atk: 55, def: 40, moves: ['でんきショック', 'たいあたり', '10まんボルト', 'のしかかり'] },
+    { name: 'ムクロ', type: 'normal', hp: 44, atk: 48, def: 65, moves: ['たいあたり', 'のしかかり'] },
+    { name: 'コガネ', type: 'fire', hp: 45, atk: 55, def: 45, moves: ['ひのこ', 'かえんほうしゃ', 'たいあたり'] },
+    { name: 'クランチ', type: 'electric', hp: 50, atk: 60, def: 50, moves: ['でんきショック', '10まんボルト', 'たいあたり'] }
   ];
 
   function getMove(name) {
@@ -309,11 +326,19 @@
     if (msgEl) msgEl.textContent = txt;
   }
 
+  function monImgSrc(name) {
+    return MON_IMG[name] || '/assets/characters/axolotl/axo_nomal.png';
+  }
+
   function renderHp() {
     var p = state.player;
     var e = state.enemy;
     if (!p || !e) return;
     var el;
+    el = document.getElementById('playerMonImg');
+    if (el) el.src = monImgSrc(p.name);
+    el = document.getElementById('enemyMonImg');
+    if (el) el.src = monImgSrc(e.name);
     el = document.getElementById('playerNameText');
     if (el) el.textContent = p.name;
     el = document.getElementById('playerLv');
@@ -339,17 +364,47 @@
     if (menuEl) menuEl.style.display = 'flex';
     if (movesWrap) movesWrap.style.display = 'none';
     var btnFight = document.getElementById('btnFight');
+    var btnCatch = document.getElementById('btnCatch');
     var btnRun = document.getElementById('btnRun');
     if (btnFight) btnFight.disabled = false;
+    if (btnCatch) btnCatch.disabled = false;
     if (btnRun) btnRun.disabled = false;
     setMsg('どうする？');
   }
 
   function setMenuEnabled(enabled) {
     var btnFight = document.getElementById('btnFight');
+    var btnCatch = document.getElementById('btnCatch');
     var btnRun = document.getElementById('btnRun');
     if (btnFight) btnFight.disabled = !enabled;
+    if (btnCatch) btnCatch.disabled = !enabled;
     if (btnRun) btnRun.disabled = !enabled;
+  }
+
+  function doCatch() {
+    if (state.phase !== 'menu' || !state.enemy) return;
+    state.phase = 'busy';
+    setMenuEnabled(false);
+    menuEl.style.display = 'none';
+    if (movesWrap) movesWrap.style.display = 'none';
+    setMsg('モンスターボールを なげた！');
+    var hpRate = state.enemy.hp / state.enemy.maxHp;
+    var catchRate = (1 - hpRate) * 0.5 + Math.random() * 0.4;
+    var caught = catchRate > 0.5;
+    setTimeout(function () {
+      if (caught) {
+        setMsg(state.enemy.name + ' を つかまえた！');
+        setTimeout(function () {
+          var ow = document.getElementById('overlayWin');
+          var op = ow && ow.querySelector('p');
+          if (op) op.textContent = state.enemy.name + ' を つかまえた！';
+          ow.classList.add('visible');
+        }, TAMEGA_MS);
+      } else {
+        setMsg(state.enemy.name + ' は にげた！');
+        setTimeout(enemyTurn, TAMEGA_MS);
+      }
+    }, TAMEGA_MS);
   }
 
   function damage(attacker, defender, move) {
@@ -366,15 +421,18 @@
     return 'normal';
   }
 
+  var TAMEGA_MS = 900;
+
   function useMove(user, target, moveName) {
     var move = getMove(moveName);
     var dmg = damage(user, target, move);
-    target.hp = Math.max(0, target.hp - dmg);
     var eff = effectiveness(move.type, target.type);
     var line = user.name + ' の ' + move.name + '！';
     setMsg(line);
     renderHp();
     setTimeout(function () {
+      target.hp = Math.max(0, target.hp - dmg);
+      renderHp();
       if (eff === 'super') setMsg('こうかはばつぐん！');
       else if (eff === 'weak') setMsg('こうかはいまひとつ…');
       if (target.hp <= 0) {
@@ -382,8 +440,14 @@
           setMsg(target.name + ' は たおれた！');
           renderHp();
           setTimeout(function () {
-            if (target === state.enemy) document.getElementById('overlayWin').classList.add('visible');
-            else document.getElementById('overlayLose').classList.add('visible');
+            if (target === state.enemy) {
+              var ow = document.getElementById('overlayWin');
+              var op = ow && ow.querySelector('p');
+              if (op) op.textContent = 'たいせんに かった！';
+              ow.classList.add('visible');
+            } else {
+              document.getElementById('overlayLose').classList.add('visible');
+            }
           }, 800);
         }, 600);
       } else {
@@ -391,7 +455,7 @@
           enemyTurn();
         }, 600);
       }
-    }, 500);
+    }, TAMEGA_MS);
   }
 
   function enemyTurn() {
@@ -475,6 +539,8 @@
   document.getElementById('btnBack').addEventListener('click', function () {
     showMenu();
   });
+
+  document.getElementById('btnCatch').addEventListener('click', doCatch);
 
   document.getElementById('btnRun').addEventListener('click', function () {
     if (state.phase !== 'menu') return;

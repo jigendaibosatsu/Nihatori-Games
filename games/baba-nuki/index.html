@@ -122,7 +122,7 @@
       background: linear-gradient(135deg, #fff 0%, #ffe0e0 100%);
       font-size: clamp(10px, 2.5vmin, 14px);
     }
-    .card .suit { font-size: 0.75em; }
+    .card .suit { font-size: 1em; }
     .card.selected { transform: translateY(-4px); box-shadow: 0 6px 12px rgba(0,0,0,0.4); }
     .card.disabled { opacity: 0.6; pointer-events: none; }
     .game-actionbar {
@@ -269,14 +269,17 @@
       }
     }
     el.innerHTML = html || '<span class="card-back"></span>';
-    if (canPick) {
-      el.querySelectorAll('.card-back.btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var idx = parseInt(this.getAttribute('data-index'), 10);
-          if (!isNaN(idx)) humanDraw(idx);
-        });
-      });
-    }
+  }
+
+  function initCpuAreaClick() {
+    var el = document.getElementById('cpu-area');
+    if (!el) return;
+    el.addEventListener('click', function (e) {
+      var btn = e.target.closest('.card-back.btn');
+      if (!btn || el.classList.contains('waiting')) return;
+      var idx = parseInt(btn.getAttribute('data-index'), 10);
+      if (!isNaN(idx) && idx >= 0 && idx < state.cpu.length) humanDraw(idx);
+    });
   }
 
   function setMessage(text) {
@@ -364,6 +367,7 @@
 
   document.getElementById('btn-draw').addEventListener('click', function () { humanDraw(); });
   document.getElementById('btn-restart').addEventListener('click', startGame);
+  initCpuAreaClick();
 
   startGame();
 })();

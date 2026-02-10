@@ -52,6 +52,7 @@
     var links = [
       { href: '/about.html', text: 'このサイトについて' },
       { href: '/roadmap.html', text: '開発ロードマップ' },
+      { href: '/games/punipuni-arena/', text: 'PuniPuni Arena' },
       { href: '/games/baba-nuki/', text: 'ババ抜き' },
       { href: '/games/omikuji/', text: 'おみくじ' },
       { href: '/games/mini-dq/', text: '小さな冒険' },
@@ -62,7 +63,7 @@
       { href: '/games/poke-like/', text: 'ポケもんバトル' },
       { href: '/games/poke-town/', text: 'まちあるき' },
       { href: '/games/mystery/', text: '推理ゲーム' },
-      { href: '/games/punipuni/', text: 'ぷにバトル' },
+      { href: '/games/punipuni/', text: 'ウパ揃え' },
       { href: '/games/japan-war/', text: '合戦' },
       { href: '/games/japan-war-b/', text: '合戦B' },
       { href: '/games/election/', text: '選挙で当選！' },
