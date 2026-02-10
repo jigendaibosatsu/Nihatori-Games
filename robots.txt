@@ -1,0 +1,5 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://nihatorigames.example.com/sitemap.xml
+

@@ -1,0 +1,114 @@
+.app-root {
+  padding-top: 48px;
+  padding-bottom: 80px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.app-back {
+  display: block;
+  padding: 10px 14px 0;
+  font-size: 13px;
+  color: #9aa3bd;
+  text-decoration: none;
+}
+
+.frame {
+  margin: 10px 14px;
+  background: rgba(24, 29, 40, 0.96);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+}
+
+.title-main {
+  font-weight: 900;
+  font-size: 20px;
+}
+
+.title-sub {
+  color: #9aa3bd;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn {
+  border-radius: 12px;
+  border: 0;
+  padding: 10px 14px;
+  font-weight: 800;
+  font-size: 14px;
+  background: #ffd66b;
+  color: #1a1300;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f7ff;
+}
+
+.scene-label {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #9aa3bd;
+}
+
+.footer-hint {
+  margin-top: 16px;
+  color: #9aa3bd;
+  font-size: 12px;
+}
+
+.board {
+  margin-top: 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.cell {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.22);
+  color: #f5f7ff;
+  font-weight: 800;
+  font-size: 16px;
+}
+.cell.hidden {
+  background: rgba(255, 255, 255, 0.06);
+}
+.cell.flagged {
+  background: rgba(255, 214, 107, 0.16);
+}
+.cell.mine {
+  background: rgba(255, 106, 122, 0.26);
+}
+.cell.empty {
+  background: rgba(0, 0, 0, 0.2);
+}
+.cell.n1 {
+  color: #7fd1ff;
+}
+.cell.n2 {
+  color: #89ffb0;
+}
+.cell.n3 {
+  color: #ffe27f;
+}
+.cell.n4,
+.cell.n5,
+.cell.n6,
+.cell.n7,
+.cell.n8 {
+  color: #ffb3bf;
+}

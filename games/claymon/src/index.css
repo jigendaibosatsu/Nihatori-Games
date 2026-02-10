@@ -1,0 +1,49 @@
+:root {
+  --bg: #1a1720;
+  --panel: #211d2a;
+  --panel-soft: #2b2536;
+  --text: #f8f3ff;
+  --muted: #a49bb6;
+  --accent: #ffb347;
+  --accent-soft: #ffda96;
+  --danger: #ff6a7a;
+
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "PixelMplus10", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  line-height: 1.4;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background: radial-gradient(900px 600px at 20% -10%, rgba(255, 179, 71, 0.22), transparent 60%),
+    radial-gradient(800px 600px at 110% 0%, rgba(92, 138, 255, 0.28), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+a {
+  color: inherit;
+}

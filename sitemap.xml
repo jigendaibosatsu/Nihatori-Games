@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://nihatorigames.example.com/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Games -->
+  <url><loc>https://nihatorigames.example.com/games/punipuni-arena/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/stack-blocks/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/armored-core/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/mine-tap/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/equipment-dungeon/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/axolotl-war/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/axolotl-survivor/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/axolotl-tower/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/axolotl-escape/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/axolotl-shop/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/axolotl-cafe/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/axolotl-idle/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/unscrew/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/grow-island/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/smash-battle/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/art-escape/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/japan-war-b/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/monster-fusion/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/kantai-battle/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/typing/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/boss-buster/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/friend-collection/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/japan-war/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/tetris-like/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/table-tennis/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/kart-race/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/horse-race/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/lex-vocab/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/tap-idle/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/word-battle/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/card-collection/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/monster-collection/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/jinsei/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/sv-like/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/romance/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/power-pro/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/election/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/punipuni/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/mystery/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/poke-town/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/poke-like/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/box-maker/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/megami-like/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/jump-action/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/mini-dq/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/omikuji/</loc></url>
+  <url><loc>https://nihatorigames.example.com/games/baba-nuki/</loc></url>
+
+  <!-- Blog / pages -->
+  <url><loc>https://nihatorigames.example.com/about.html</loc></url>
+  <url><loc>https://nihatorigames.example.com/roadmap.html</loc></url>
+  <url><loc>https://nihatorigames.example.com/blog/2026-02-01-devlog.html</loc></url>
+  <url><loc>https://nihatorigames.example.com/blog/2026-01-31-update-template.html</loc></url>
+  <url><loc>https://nihatorigames.example.com/roadmap.html</loc></url>
+  <url><loc>https://nihatorigames.example.com/blog/2026-01-29-site-open.html</loc></url>
+</urlset>
+
