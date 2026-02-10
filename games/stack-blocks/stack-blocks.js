@@ -3,7 +3,7 @@
 
   // ===== 定数 =====
   var CANVAS_WIDTH = 400;
-  var CANVAS_HEIGHT = 600;
+  var CANVAS_HEIGHT = 720;
   var BLOCK_SIZE = 40;
   var BASE_WIDTH = 200;
   var GRAVITY = 0.5;
@@ -13,11 +13,12 @@
   var isMobile = window.innerWidth <= 600;
   if (isMobile) {
     CANVAS_WIDTH = Math.min(400, window.innerWidth - 32);
-    CANVAS_HEIGHT = Math.min(600, window.innerHeight * 0.6);
+    CANVAS_HEIGHT = Math.min(720, window.innerHeight * 0.75);
   }
 
   // カメラ: 先端（積み上がりの一番上）が常に良い位置で見えるように
-  var CAMERA_TOP_MARGIN = 80;
+  // テトリスくらいの「上に余白がある」感覚に寄せる
+  var CAMERA_TOP_MARGIN = 200;
 
   // ===== ゲーム状態 =====
   var state = {
@@ -109,8 +110,9 @@
 
   function generateNextBlock() {
     // 長さもランダム（細いもの含む）。ミスで短くなったベース幅を反映
-    var base = state.effectiveBaseWidth || 200;
-    var width = base + (Math.random() * 80 - 40); // ベース±40
+    var base = state.effectiveBaseWidth || BASE_WIDTH;
+    // 基本幅はほぼ一定にしつつ、±20px だけランダムに揺らす
+    var width = base + (Math.random() * 40 - 20);
     width = Math.max(50, Math.min(CANVAS_WIDTH - 40, width));
     return width;
   }

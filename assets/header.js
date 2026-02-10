@@ -38,6 +38,26 @@
     };
   }
 
+  function initSearchToggle() {
+    var btn = document.querySelector('.btn-search');
+    if (!btn) return;
+    var bar = document.querySelector('.search-bar');
+    if (!bar) return;
+    var input = document.getElementById('search-input');
+
+    function toggle() {
+      bar.classList.toggle('search-bar--hidden');
+      if (!bar.classList.contains('search-bar--hidden') && input) {
+        input.focus();
+      }
+    }
+
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      toggle();
+    });
+  }
+
   function closeMenu() {
     document.body.classList.remove('menu-open');
   }
@@ -163,10 +183,12 @@
       placeholder.innerHTML = html;
       initLogo(placeholder);
       initMobileDrawer();
+      initSearchToggle();
     })
     .catch(function () {
       placeholder.innerHTML = '<header class="site-header"><div class="header-inner"><a href="/" class="site-logo"><img class="logo-axo" src="/assets/characters/axolotl/axo_nomal.png" alt="" width="32" height="32" /><span class="logo-text">ニハトリ</span></a><div class="header-actions"><button type="button" class="btn-icon btn-search" aria-label="検索">🔍</button><button type="button" class="btn-icon btn-menu" aria-label="メニュー">☰</button></div></div></header>';
       initLogo(placeholder);
       initMobileDrawer();
+      initSearchToggle();
     });
 })();

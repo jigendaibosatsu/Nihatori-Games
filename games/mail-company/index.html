@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>メール受信だけの会社経営</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./mail-company.css">
+</head>
+<body>
+  <div class="mc-root">
+    <header class="mc-header">
+      <div class="mc-header-left">
+        <div class="mc-logo">📧 Mail Inc.</div>
+        <div class="mc-caption">メール受信だけの会社経営</div>
+      </div>
+      <div class="mc-header-right">
+        <div class="mc-stat">
+          <span class="mc-stat-label">売上</span>
+          <span id="mc-money" class="mc-stat-value">¥0</span>
+        </div>
+        <div class="mc-stat">
+          <span class="mc-stat-label">社員</span>
+          <span id="mc-employees" class="mc-stat-value">1人</span>
+        </div>
+        <div class="mc-stat">
+          <span class="mc-stat-label">評判</span>
+          <span id="mc-reputation" class="mc-stat-value">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="mc-main">
+      <section class="mc-inbox">
+        <div class="mc-inbox-header">
+          <span>受信トレイ</span>
+          <span id="mc-unread-count" class="mc-unread-pill">0</span>
+        </div>
+        <div id="mc-mail-list" class="mc-mail-list"></div>
+        <div class="mc-empty-hint" id="mc-empty-hint">
+          しばらく放置してみよう…<br>
+          社員が自動で増殖し、メールが増えていきます。
+        </div>
+      </section>
+      <aside class="mc-side">
+        <section class="mc-panel">
+          <h2 class="mc-panel-title">方針</h2>
+          <p class="mc-panel-text">
+            プレイヤーの仕事は<strong>メールを開いて決めることだけ</strong>。<br>
+            あとは社員たちが自動で仕事と増殖を進めます。
+          </p>
+        </section>
+        <section class="mc-panel">
+          <h2 class="mc-panel-title">ミニマルUI</h2>
+          <p class="mc-panel-text">
+            画面は「通知」と数字だけ。<br>
+            アート無し、文章だけの会社経営シミュレーション。
+          </p>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="./mail-company.js"></script>
+</body>
+</html>
+

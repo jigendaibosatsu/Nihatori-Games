@@ -26,20 +26,38 @@
   }
 
   function bindEncyclopedia(handlers) {
-    if (!els.btnOpenEncy || !els.overlay) return;
+    if (!els.btnOpenEncy || !els.overlay) {
+      console.warn('[DAC] Encyclopedia elements not ready');
+      return;
+    }
     els.btnOpenEncy.addEventListener('click', function () {
       els.overlay.hidden = false;
       if (handlers && handlers.onOpenEncy) handlers.onOpenEncy();
     });
     var close = function () {
+      if (!els.overlay) return;
       els.overlay.hidden = true;
     };
     if (els.btnCloseEncy) {
+      els.btnCloseEncy.setAttribute('tabindex', '0');
       els.btnCloseEncy.addEventListener('click', close);
+      els.btnCloseEncy.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          close();
+        }
+      });
     }
     if (els.overlayBackdrop) {
       els.overlayBackdrop.addEventListener('click', close);
     }
+
+    // Escapeキーでいつでも図鑑を閉じる
+    window.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && els.overlay && !els.overlay.hidden) {
+        close();
+      }
+    });
   }
 
   function renderDepth(state, helpers) {

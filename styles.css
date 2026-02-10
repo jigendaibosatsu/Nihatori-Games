@@ -333,6 +333,10 @@ body.menu-open {
   padding: 4px 16px 0;
 }
 
+.search-bar.search-bar--hidden {
+  display: none;
+}
+
 .search-inner {
   display: flex;
   gap: 4px;
