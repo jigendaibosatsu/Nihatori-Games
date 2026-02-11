@@ -56,7 +56,7 @@
   };
 
   // 画像パス（共通アセットを使用）
-  var AXOLOTL_IMAGE_BASE = '/assets/axolotl/';
+  var AXOLOTL_IMAGE_BASE = '/assets/characters/axolotl/';
   function typeImagePath(t) {
     if (t === 'goldblackeye') return AXOLOTL_IMAGE_BASE + 'axo_gold.png';
     if (t === 'yellow') return AXOLOTL_IMAGE_BASE + 'axo_yellow.png';

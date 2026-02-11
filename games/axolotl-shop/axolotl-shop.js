@@ -117,8 +117,8 @@
   var MAX_BOTTOM_CLEANER_LEVEL = 3;
   var MAX_TANK_LEVEL = 14;                 // 最大15槽 = tankLevel+1
   
-  // 共通アセットを使用（ルートの /assets/axolotl/）
-  var AXOLOTL_IMAGE_BASE = '/assets/axolotl/';
+  // 共通アセットを使用（ルートの /assets/characters/axolotl/）
+  var AXOLOTL_IMAGE_BASE = '/assets/characters/axolotl/';
   function typeImagePath(t) {
     if (t === 'goldblackeye') return AXOLOTL_IMAGE_BASE + 'axo_gold.png';
     if (t === 'yellow') return AXOLOTL_IMAGE_BASE + 'axo_yellow.png';
