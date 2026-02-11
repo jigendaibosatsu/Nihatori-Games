@@ -1,5 +1,74 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
+
+/* タイトル画面 */
+.ax-title-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #e0f2fe 0%, #e0f7fa 40%, #ecfdf5 100%);
+  padding-top: 48px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.ax-title-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+  max-width: 360px;
+}
+.ax-title-heading {
+  font-size: 1.5rem;
+  color: #064e3b;
+  text-align: center;
+  margin: 0;
+}
+.ax-title-mascot {
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ax-title-mascot-img {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+.ax-title-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 240px;
+}
+.ax-btn-primary {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  border: 2px solid #0d9488;
+  background: linear-gradient(180deg, #14b8a6, #0d9488);
+  color: #fff;
+  cursor: pointer;
+}
+.ax-btn-secondary {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  border: 2px solid #94a3b8;
+  background: linear-gradient(180deg, #f1f5f9, #e2e8f0);
+  color: #475569;
+  cursor: pointer;
+}
+.ax-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 body.game-page {
   padding-top: 48px;
   padding-bottom: calc(70px + env(safe-area-inset-bottom));

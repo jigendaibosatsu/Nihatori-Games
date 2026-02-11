@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "check:i18n:axolotl": "node games/axolotl-shop/check-i18n.js"
+  },
   "devDependencies": {
     "vite-plugin-pwa": "^1.2.0"
   }

@@ -8,10 +8,34 @@
   <link rel="apple-touch-icon" href="icon.png" />
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="axolotl-shop.css" />
+  <script src="mascot.js"></script>
 </head>
 <body class="game-page">
   <div id="site-header"></div>
 
+  <!-- タイトル画面 -->
+  <div id="axTitleScreen" class="ax-title-screen">
+    <div class="ax-title-content">
+      <h1 class="ax-title-heading" data-i18n="ui.shopTitle">ウーパールーパーショップ</h1>
+      <div id="axTitleMascot" class="ax-title-mascot"></div>
+      <div class="ax-title-buttons">
+        <button type="button" class="ax-btn ax-btn-primary" id="axBtnNewGame" data-i18n="ui.newGame">ニューゲーム</button>
+        <button type="button" class="ax-btn ax-btn-secondary" id="axBtnContinue" data-i18n="ui.continue">つづきから</button>
+      </div>
+      <div class="ax-title-lang">
+        <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
+          <span data-i18n="ui.languageLabel">言語: </span>
+          <select id="axTitleLangSelect" style="padding:6px 10px; font-size:14px; border:1px solid #94a3b8; border-radius:6px;">
+            <option value="ja">日本語</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ゲーム本体（初期非表示） -->
+  <div id="axGameRoot" class="ax-game-root" style="display:none;">
   <!-- ヘッダー（sticky） -->
   <header class="ax-header">
     <div class="ax-header-content">
@@ -19,11 +43,11 @@
         <span class="ax-day" id="axDay">1月目</span>
         <span class="ax-money" id="axMoney">¥50,000</span>
         <div class="ax-header-reputation">
-          <span class="ax-reputation-label">評判</span>
+          <span class="ax-reputation-label" data-i18n="ui.reputation">評判</span>
           <div class="ax-bar"><div class="ax-bar-fill reputation" id="axRepBar"></div></div>
         </div>
       </div>
-      <button type="button" class="ax-menu-toggle" id="axMenuToggle" aria-label="メニュー">
+      <button type="button" class="ax-menu-toggle" id="axMenuToggle" aria-label="メニュー" data-i18n="ui.menu" data-i18n-place="aria-label">
         <span></span>
         <span></span>
         <span></span>
@@ -32,13 +56,13 @@
     <!-- 全体操作セクション -->
     <div class="ax-global-actions">
       <button type="button" class="ax-global-btn clean" id="btnCleanAll">
-        <span>全体水替え</span>
+        <span data-i18n="ui.cleanAll">全体水替え</span>
       </button>
       <button type="button" class="ax-global-btn feed" id="btnFeedAll">
-        <span>全体給餌</span>
+        <span data-i18n="ui.feedAll">全体給餌</span>
       </button>
       <button type="button" class="ax-global-btn poop" id="btnRemoveAllPoop">
-        <span>全体フン除去</span>
+        <span data-i18n="ui.removePoop">全体フン除去</span>
       </button>
     </div>
   </header>
@@ -47,291 +71,302 @@
   <div class="ax-menu-overlay" id="axMenuOverlay"></div>
   <nav class="ax-menu" id="axMenu">
     <div class="ax-menu-header">
-      <h3>メニュー</h3>
+      <h3 data-i18n="ui.menu">メニュー</h3>
       <button type="button" class="ax-menu-close" id="axMenuClose">×</button>
     </div>
     <div class="ax-menu-items ax-menu-items-bottom">
       <button type="button" class="ax-menu-item breed" id="btnBreed">
         <span class="ax-menu-icon">💕</span>
-        <span class="ax-menu-label">繁殖</span>
+        <span class="ax-menu-label" data-i18n="ui.breed">繁殖</span>
       </button>
       <button type="button" class="ax-menu-item treat ax-menu-item-hidden" id="btnTreat" style="display:none;" aria-hidden="true">
         <span class="ax-menu-icon">💊</span>
-        <span class="ax-menu-label">治療</span>
+        <span class="ax-menu-label" data-i18n="ui.treat">治療</span>
         <span class="ax-menu-sub">¥5,000</span>
       </button>
       <button type="button" class="ax-menu-item shop" id="btnBuy">
         <span class="ax-menu-icon">🛒</span>
-        <span class="ax-menu-label">ショップ</span>
+        <span class="ax-menu-label" data-i18n="ui.shop">ショップ</span>
       </button>
       <button type="button" class="ax-menu-item encyclopedia" id="btnEncyclopedia">
         <span class="ax-menu-icon">📖</span>
-        <span class="ax-menu-label">図鑑</span>
+        <span class="ax-menu-label" data-i18n="ui.encyclopedia">図鑑</span>
       </button>
       <button type="button" class="ax-menu-item achievements" id="btnAchievements">
         <span class="ax-menu-icon">🏆</span>
-        <span class="ax-menu-label">実績</span>
+        <span class="ax-menu-label" data-i18n="ui.achievements">実績</span>
       </button>
       <button type="button" class="ax-menu-item settings" id="btnSettings">
         <span class="ax-menu-icon">⚙️</span>
-        <span class="ax-menu-label">設定</span>
+        <span class="ax-menu-label" data-i18n="ui.settings">設定</span>
       </button>
       <button type="button" class="ax-menu-item manual" id="btnManual">
         <span class="ax-menu-icon">📘</span>
-        <span class="ax-menu-label">説明書</span>
+        <span class="ax-menu-label" data-i18n="ui.manual">説明書</span>
       </button>
       <button type="button" class="ax-menu-item password" id="btnPassword">
         <span class="ax-menu-icon">🔑</span>
-        <span class="ax-menu-label">復活の呪文</span>
+        <span class="ax-menu-label" data-i18n="ui.password">復活の呪文</span>
       </button>
     </div>
   </nav>
 
   <div class="ax-wrap">
-    <h1 class="ax-title" id="axShopTitle" style="cursor:pointer;" title="クリックで名前を変更">ウーパールーパーショップ</h1>
-    <p class="ax-sub">水質・エサ・繁殖のバランスでお店を続けよう。</p>
+    <h1 class="ax-title" id="axShopTitle" style="cursor:pointer;" data-i18n="ui.shopTitle" data-i18n-title="ui.clickToRename">ウーパールーパーショップ</h1>
+    <p class="ax-sub" data-i18n="ui.shopSubtitle">水質・エサ・繁殖のバランスでお店を続けよう。</p>
 
     <div class="ax-panel">
       <div class="ax-tanks" id="axTanks"></div>
     </div>
 
-    <div class="ax-log" id="axLog">ショップを始めた。親ウパ2匹・水槽3つから。水とエサを整えよう。</div>
+    <div class="ax-log" id="axLog" data-i18n="ui.initialLog">ショップを始めた。親ウパ2匹・水槽3つから。水とエサを整えよう。</div>
 
-    <a href="/index.html" class="ax-back">← トップへ戻る</a>
+    <a href="/index.html" class="ax-back" data-i18n="ui.backToTop">← トップへ戻る</a>
   </div>
 
   <!-- 月送りボタン（下部sticky） -->
   <footer class="ax-footer">
     <button type="button" class="ax-next-month-btn" id="btnNextMonth">
-      <span class="ax-next-month-label">月を進める</span>
+      <span class="ax-next-month-label" data-i18n="ui.nextMonth">月を進める</span>
       <span class="ax-next-month-alerts" id="axNextMonthAlerts"></span>
     </button>
   </footer>
+  </div>
 
   <div class="ax-overlay" id="axOverlayBreed">
     <div class="ax-overlay-box">
-      <h2>交配する2匹を選ぶ</h2>
-      <p style="font-size:12px; margin-bottom:8px;">オスとメスを1匹ずつ選んでください。選んだ2匹が1つの水槽に入り、毎月産卵を試みます。</p>
+      <h2 data-i18n="ui.breedingSelectTitle">交配する2匹を選ぶ</h2>
+      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.breedingSelectDesc">オスとメスを1匹ずつ選んでください。選んだ2匹が1つの水槽に入り、毎月産卵を試みます。</p>
       <div style="margin-bottom:8px;">
-        <label>オス</label>
+        <label data-i18n="ui.male">オス</label>
         <select id="axBreedParent1" style="display:block; width:100%; padding:6px; margin-top:2px;"></select>
       </div>
       <div style="margin-bottom:12px;">
-        <label>メス</label>
+        <label data-i18n="ui.female">メス</label>
         <select id="axBreedParent2" style="display:block; width:100%; padding:6px; margin-top:2px;"></select>
       </div>
-      <button type="button" class="btn" id="axBreedConfirm">交配する</button>
-      <button type="button" class="btn" id="axBreedLineageIntroduction" style="margin-left:8px; background:#f97316; border-color:#f97316;">血統導入</button>
-      <button type="button" class="btn" style="margin-left:8px; background:#64748b; border-color:#64748b;" id="axBreedCancel">キャンセル</button>
+      <button type="button" class="btn" id="axBreedConfirm" data-i18n="ui.breedingStart">交配する</button>
+      <button type="button" class="btn" id="axBreedLineageIntroduction" style="margin-left:8px; background:#f97316; border-color:#f97316;" data-i18n="ui.lineageIntro">血統導入</button>
+      <button type="button" class="btn" style="margin-left:8px; background:#64748b; border-color:#64748b;" id="axBreedCancel" data-i18n="ui.cancel">キャンセル</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayTreat">
     <div class="ax-overlay-box">
-      <h2>治療するウパを選ぶ</h2>
-      <p style="font-size:12px; margin-bottom:8px;">病気のウパを選ぶと¥5,000で治療を開始します。翌月に一定確率で回復します。</p>
+      <h2 data-i18n="ui.treatSelectTitle">治療するウパを選ぶ</h2>
+      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.treatSelectDesc">病気のウパを選ぶと¥5,000で治療を開始します。翌月に一定確率で回復します。</p>
       <div id="axTreatTankList" style="margin-bottom:12px;"></div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axTreatCancel">キャンセル</button>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axTreatCancel" data-i18n="ui.cancel">キャンセル</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayBuy">
     <div class="ax-overlay-box">
-      <h2>ショップ</h2>
-      <p style="font-size:12px; margin-bottom:8px;">生体タブに稀に未固定個体が入荷することがあります。</p>
+      <h2 data-i18n="ui.shopTitleOverlay">ショップ</h2>
+      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.shopDesc">生体タブに稀に未固定個体が入荷することがあります。</p>
       <div id="axBuyTabs" class="ax-buy-tabs" style="display:flex; gap:4px; margin-bottom:10px; flex-wrap:wrap;"></div>
       <div id="axBuyTypeList" class="ax-buy-list" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-bottom:12px; max-height:52vh; overflow-y:auto; overflow-x:hidden;"></div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axBuyCancel">キャンセル</button>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axBuyCancel" data-i18n="ui.cancel">キャンセル</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayShopDetail">
     <div class="ax-overlay-box ax-shop-detail-box">
-      <h2 id="axShopDetailTitle">詳細</h2>
+      <h2 id="axShopDetailTitle" data-i18n="ui.detail">詳細</h2>
       <div id="axShopDetailBody" style="text-align:left; font-size:12px; margin-bottom:10px;"></div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axShopDetailClose">とじる</button>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axShopDetailClose" data-i18n="ui.close">閉じる</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayGoal">
     <div class="ax-overlay-box">
-      <h2 id="axGoalTitle">ゴール達成！</h2>
+      <h2 id="axGoalTitle" data-i18n="ui.goalTitle">ゴール達成！</h2>
       <p id="axGoalMessage" style="margin-bottom:12px;"></p>
       <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-        <button type="button" class="btn" id="axGoalContinue" style="background:#16a34a; border-color:#16a34a;">続けてプレイ</button>
-        <button type="button" class="btn" id="axGoalQuit" style="background:#64748b; border-color:#64748b;">やめる</button>
+        <button type="button" class="btn" id="axGoalContinue" style="background:#16a34a; border-color:#16a34a;" data-i18n="ui.goalContinue">続けてプレイ</button>
+        <button type="button" class="btn" id="axGoalQuit" style="background:#64748b; border-color:#64748b;" data-i18n="ui.goalQuit">やめる</button>
       </div>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayEnd">
     <div class="ax-overlay-box">
-      <h2 id="axEndTitle">エンディング</h2>
+      <h2 id="axEndTitle" data-i18n="ui.endTitle">エンディング</h2>
       <p id="axEndMessage"></p>
-      <button type="button" class="btn" id="axBtnRetry">もう一度やる</button>
+      <button type="button" class="btn" id="axBtnRetry" data-i18n="ui.retry">もう一度やる</button>
       <div style="margin-top:8px;">
-        <a href="/index.html" style="font-size:12px; color:#0369a1; text-decoration:none;">トップへ戻る</a>
+        <a href="/index.html" style="font-size:12px; color:#0369a1; text-decoration:none;" data-i18n="ui.backToTop">トップへ戻る</a>
       </div>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayDetail">
     <div class="ax-overlay-box">
-      <h2 id="axDetailName">個体詳細</h2>
+      <h2 id="axDetailName" data-i18n="ui.detailTitle">個体詳細</h2>
       <div id="axDetailBody" style="text-align:left; font-size:12px; white-space:pre-line; margin-bottom:8px;"></div>
       <div id="axDetailFamily" class="ax-detail-family"></div>
       <div style="display:flex; gap:8px; margin-top:12px;">
-        <button type="button" class="btn" id="axDetailSell" style="background:#dc2626; border-color:#dc2626; flex:1;">販売</button>
-        <button type="button" class="btn" id="axDetailCancel" style="background:#64748b; border-color:#64748b; flex:1;">閉じる</button>
+        <button type="button" class="btn" id="axDetailSell" style="background:#dc2626; border-color:#dc2626; flex:1;" data-i18n="ui.sell">販売</button>
+        <button type="button" class="btn" id="axDetailCancel" style="background:#64748b; border-color:#64748b; flex:1;" data-i18n="ui.close">閉じる</button>
       </div>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayHatch">
     <div class="ax-overlay-box">
-      <h2>孵化した幼生から1匹を選ぶ</h2>
-      <p style="font-size:12px; margin-bottom:8px;">10匹の候補から1匹を選んでください。残りは自動的に売却されます。</p>
+      <h2 data-i18n="ui.selectHatchTitle">孵化した幼生から1匹を選ぶ</h2>
+      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.selectHatchDesc">10匹の候補から1匹を選んでください。残りは自動的に売却されます。</p>
       <div id="axHatchList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axHatchCancel">キャンセル</button>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axHatchCancel" data-i18n="ui.cancel">キャンセル</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayJuvenile">
     <div class="ax-overlay-box">
-      <h2>幼生を選ぶ/売る</h2>
-      <p style="font-size:12px; margin-bottom:8px;">種類ごとに全匹を売るか、1匹を選んで別の水槽に移動できます。</p>
+      <h2 data-i18n="ui.juvenileSelectTitle">幼生を選ぶ/売る</h2>
+      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.juvenileSelectDesc">種類ごとに全匹を売るか、1匹を選んで別の水槽に移動できます。</p>
       <input type="hidden" id="axJuvenileTankIndex" value="">
       <div id="axJuvenileList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axJuvenileCancel">キャンセル</button>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axJuvenileCancel" data-i18n="ui.cancel">キャンセル</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayEncyclopedia">
     <div class="ax-overlay-box ax-encyclopedia-box" style="max-width:600px;">
-      <h2>図鑑</h2>
+      <h2 data-i18n="ui.encyclopedia">図鑑</h2>
       <div id="axEncyclopediaContent" class="ax-encyclopedia-content" style="max-height:70vh; overflow-y:auto;"></div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b; margin-top:12px;" id="axEncyclopediaCancel">閉じる</button>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b; margin-top:12px;" id="axEncyclopediaCancel" data-i18n="ui.close">閉じる</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayAchievements">
     <div class="ax-overlay-box" style="max-width:600px;">
-      <h2>実績</h2>
+      <h2 data-i18n="ui.achievements">実績</h2>
       <div id="axAchievementsContent" style="max-height:70vh; overflow-y:auto;"></div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b; margin-top:12px;" id="axAchievementsCancel">閉じる</button>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b; margin-top:12px;" id="axAchievementsCancel" data-i18n="ui.close">閉じる</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayClean">
     <div class="ax-overlay-box">
-      <h2>水替えする水槽を選ぶ</h2>
-      <p style="font-size:12px; margin-bottom:8px;">水槽を選ぶと¥500で水替えします。水質が上がります。</p>
+      <h2 data-i18n="ui.cleanSelectTitle">水替えする水槽を選ぶ</h2>
+      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.cleanSelectDesc">水槽を選ぶと¥500で水替えします。水質が上がります。</p>
       <div id="axCleanTankList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axCleanCancel">キャンセル</button>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axCleanCancel" data-i18n="ui.cancel">キャンセル</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayFeed">
     <div class="ax-overlay-box">
-      <h2 id="axFeedTitle">エサをあげる水槽を選ぶ</h2>
+      <h2 id="axFeedTitle" data-i18n="ui.feedSelectTitle">エサをあげる水槽を選ぶ</h2>
       <p style="font-size:12px; margin-bottom:8px;" id="axFeedDescription"></p>
       <div id="axFeedTankList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axFeedCancel">キャンセル</button>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axFeedCancel" data-i18n="ui.cancel">キャンセル</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlaySettings">
     <div class="ax-overlay-box">
-      <h2>設定</h2>
+      <h2 data-i18n="ui.settings">設定</h2>
       <div style="margin-bottom:12px;">
         <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer;">
           <input type="checkbox" id="settingAutoReorderTanks" style="width:20px; height:20px;">
-          <span>空になった水槽を自動的に下に移動する</span>
+          <span data-i18n="ui.autoReorderTanks">空になった水槽を自動的に下に移動する</span>
         </label>
       </div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axSettingsClose">閉じる</button>
+      <div style="margin-bottom:12px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <span data-i18n="ui.languageLabel">言語: </span>
+          <select id="axLangSelect" style="padding:6px 10px; font-size:14px; border:1px solid #94a3b8; border-radius:6px;" aria-label="言語" data-i18n="ui.language" data-i18n-place="aria-label">
+            <option value="ja">日本語</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+      </div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axSettingsClose" data-i18n="ui.close">閉じる</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayManual">
     <div class="ax-overlay-box" style="max-width:600px;">
-      <h2>説明書</h2>
+      <h2 data-i18n="title.manual">説明書</h2>
       <div id="axManualContent" style="max-height:70vh; overflow-y:auto; text-align:left; font-size:12px; line-height:1.6;">
-        <h3>ゲームのルール</h3>
-        <p>ウーパールーパーショップは、ウーパールーパーを育てて販売する育成シミュレーションゲームです。</p>
+        <h3 data-i18n="manual.rulesTitle">ゲームのルール</h3>
+        <p data-i18n="manual.rulesIntro">ウーパールーパーショップは、ウーパールーパーを育てて販売する育成シミュレーションゲームです。</p>
         <ul>
-          <li>水槽の水質とエサを管理して、ウーパールーパーを健康に育てましょう</li>
-          <li>12ヶ月以上の成体になったら、オスとメスを選んで繁殖させることができます</li>
-          <li>繁殖で生まれた個体から、良い個体を選んで育てることができます</li>
-          <li>評判を上げて、目標金額を達成することがゴールです</li>
+          <li data-i18n="manual.rules1">水槽の水質とエサを管理して、ウーパールーパーを健康に育てましょう</li>
+          <li data-i18n="manual.rules2">12ヶ月以上の成体になったら、オスとメスを選んで繁殖させることができます</li>
+          <li data-i18n="manual.rules3">繁殖で生まれた個体から、良い個体を選んで育てることができます</li>
+          <li data-i18n="manual.rules4">評判を上げて、目標金額を達成することがゴールです</li>
         </ul>
 
-        <h3>固定化とは</h3>
-        <p>固定化とは、同じ種類の個体を3世代続けて繁殖させることで、その種類を「固定化」することです。</p>
+        <h3 data-i18n="manual.fixedTitle">固定化とは</h3>
+        <p data-i18n="manual.fixedIntro">固定化とは、同じ種類の個体を3世代続けて繁殖させることで、その種類を「固定化」することです。</p>
         <ul>
-          <li>固定化された種類は、ショップで購入できるようになります</li>
-          <li>固定化には、祖父母・両親・子の3世代すべてが同じ種類である必要があります</li>
-          <li>固定化に成功すると、固定化報酬としてお金がもらえます</li>
+          <li data-i18n="manual.fixed1">固定化された種類は、ショップで購入できるようになります</li>
+          <li data-i18n="manual.fixed2">固定化には、祖父母・両親・子の3世代すべてが同じ種類である必要があります</li>
+          <li data-i18n="manual.fixed3">固定化に成功すると、固定化報酬としてお金がもらえます</li>
         </ul>
 
-        <h3>固定化の方法</h3>
+        <h3 data-i18n="manual.fixedHowTitle">固定化の方法</h3>
         <ol>
-          <li>同じ種類のオスとメスを繁殖させます</li>
-          <li>生まれた子も同じ種類になるように育てます</li>
-          <li>その子が12ヶ月以上になったら、同じ種類の個体と繁殖させます</li>
-          <li>さらにその子も同じ種類になるように育てます</li>
-          <li>3世代続けて同じ種類が生まれれば固定化成功です</li>
+          <li data-i18n="manual.fixedHow1">同じ種類のオスとメスを繁殖させます</li>
+          <li data-i18n="manual.fixedHow2">生まれた子も同じ種類になるように育てます</li>
+          <li data-i18n="manual.fixedHow3">その子が12ヶ月以上になったら、同じ種類の個体と繁殖させます</li>
+          <li data-i18n="manual.fixedHow4">さらにその子も同じ種類になるように育てます</li>
+          <li data-i18n="manual.fixedHow5">3世代続けて同じ種類が生まれれば固定化成功です</li>
         </ol>
 
-        <h3>レア個体の出し方</h3>
+        <h3 data-i18n="manual.rareTitle">レア個体の出し方</h3>
         <ul>
-          <li>レア個体は、異なる種類の個体を組み合わせて繁殖させることで生まれることがあります</li>
-          <li>特に、ゴールド、ブラック、コッパーなどの種類を組み合わせると、レア個体が生まれやすくなります</li>
-          <li>固定化されていないレア種は弱いので、固定化するまで注意深く育てる必要があります</li>
+          <li data-i18n="manual.rare1">レア個体は、異なる種類の個体を組み合わせて繁殖させることで生まれることがあります</li>
+          <li data-i18n="manual.rare2">特に、ゴールド、ブラック、コッパーなどの種類を組み合わせると、レア個体が生まれやすくなります</li>
+          <li data-i18n="manual.rare3">固定化されていないレア種は弱いので、固定化するまで注意深く育てる必要があります</li>
         </ul>
 
-        <h3>コツ</h3>
+        <h3 data-i18n="manual.tipsTitle">コツ</h3>
         <ul>
-          <li>水質を40以上に保つことが重要です。水質が低いと個体が病気になったり、評判が下がります</li>
-          <li>うんこを放置すると水質が下がります。定期的に掃除しましょう</li>
-          <li>エサは種類によって効果が異なります。人工飼料は安いですが効果が低く、ミミズは高いですが効果が高いです</li>
-          <li>繁殖ペアの関係メーターが高いほど、産卵成功率が上がります</li>
-          <li>近親交配を繰り返すと、個体が弱くなったり病気になりやすくなります</li>
-          <li>水槽やショップに名前をつけることができます（クリックで変更）</li>
+          <li data-i18n="manual.tips1">水質を40以上に保つことが重要です。水質が低いと個体が病気になったり、評判が下がります</li>
+          <li data-i18n="manual.tips2">うんこを放置すると水質が下がります。定期的に掃除しましょう</li>
+          <li data-i18n="manual.tips3">エサは種類によって効果が異なります。人工飼料は安いですが効果が低く、ミミズは高いですが効果が高いです</li>
+          <li data-i18n="manual.tips4">繁殖ペアの関係メーターが高いほど、産卵成功率が上がります</li>
+          <li data-i18n="manual.tips5">近親交配を繰り返すと、個体が弱くなったり病気になりやすくなります</li>
+          <li data-i18n="manual.tips6">水槽やショップに名前をつけることができます（クリックで変更）</li>
         </ul>
 
-        <h3>今後の追加予定</h3>
-        <p>説明項目は今後も追加予定です。</p>
+        <h3 data-i18n="manual.upcomingTitle">今後の追加予定</h3>
+        <p data-i18n="manual.upcomingText">説明項目は今後も追加予定です。</p>
       </div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b; margin-top:12px;" id="axManualClose">閉じる</button>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b; margin-top:12px;" id="axManualClose" data-i18n="ui.close">閉じる</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayPassword">
     <div class="ax-overlay-box" style="max-width:500px;">
-      <h2>復活の呪文</h2>
+      <h2 data-i18n="password.title">復活の呪文</h2>
       <div id="axPasswordContent" style="text-align:left;">
         <div style="margin-bottom:16px;">
-          <h3 style="font-size:14px; margin-bottom:8px;">呪文を生成（現在のゲーム状態を保存）</h3>
-          <button type="button" class="ax-btn" id="btnGeneratePassword" style="width:100%; margin-bottom:8px;">呪文を生成</button>
+          <h3 style="font-size:14px; margin-bottom:8px;" data-i18n="password.generateDesc">呪文を生成（現在のゲーム状態を保存）</h3>
+          <button type="button" class="ax-btn" id="btnGeneratePassword" style="width:100%; margin-bottom:8px;" data-i18n="password.generate">呪文を生成</button>
           <textarea id="axPasswordOutput" readonly style="width:100%; min-height:100px; padding:8px; font-size:11px; font-family:monospace; border:1px solid #ccc; border-radius:4px; background:#f9f9f9; word-break:break-all;"></textarea>
-          <button type="button" class="ax-btn" id="btnCopyPassword" style="width:100%; margin-top:8px; display:none;">コピー</button>
+          <button type="button" class="ax-btn" id="btnCopyPassword" style="width:100%; margin-top:8px; display:none;" data-i18n="password.copy">コピー</button>
         </div>
         <div style="border-top:1px solid #ddd; padding-top:16px;">
-          <h3 style="font-size:14px; margin-bottom:8px;">呪文を入力（ゲーム状態を復元）</h3>
-          <textarea id="axPasswordInput" placeholder="復活の呪文を貼り付けてください" style="width:100%; min-height:100px; padding:8px; font-size:11px; font-family:monospace; border:1px solid #ccc; border-radius:4px;"></textarea>
-          <button type="button" class="ax-btn" id="btnLoadPassword" style="width:100%; margin-top:8px;">復元</button>
+          <h3 style="font-size:14px; margin-bottom:8px;" data-i18n="password.loadDesc">呪文を入力（ゲーム状態を復元）</h3>
+          <textarea id="axPasswordInput" data-i18n="password.placeholder" data-i18n-place="placeholder" placeholder="復活の呪文を貼り付けてください" style="width:100%; min-height:100px; padding:8px; font-size:11px; font-family:monospace; border:1px solid #ccc; border-radius:4px;"></textarea>
+          <button type="button" class="ax-btn" id="btnLoadPassword" style="width:100%; margin-top:8px;" data-i18n="password.restore">復元</button>
         </div>
       </div>
       <div style="display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;">
-        <button type="button" class="ax-btn" id="btnDeleteSave" style="background:#dc2626; border-color:#dc2626;">セーブデータを全部削除</button>
-        <button type="button" class="ax-btn" id="axPasswordClose" style="background:#64748b; border-color:#64748b;">閉じる</button>
+        <button type="button" class="ax-btn" id="btnDeleteSave" style="background:#dc2626; border-color:#dc2626;" data-i18n="ui.deleteSave">セーブデータを全部削除</button>
+        <button type="button" class="ax-btn" id="axPasswordClose" style="background:#64748b; border-color:#64748b;" data-i18n="ui.close">閉じる</button>
       </div>
     </div>
   </div>
 
   <script src="/assets/header.js"></script>
-  <script src="axolotl-shop.js"></script>
+  <script src="src/i18n.js"></script>
+  <script src="axolotl-shop-init.js"></script>
 </body>
 </html>
 
