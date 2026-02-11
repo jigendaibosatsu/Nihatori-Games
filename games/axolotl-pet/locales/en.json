@@ -1,0 +1,22 @@
+{
+  "ui": {
+    "title": "Upa Lupa Pet Game",
+    "pageTitle": "Upa Lupa Pet Game – Nihatori Games",
+    "newGame": "New Game",
+    "continue": "Continue",
+    "menu": "Menu",
+    "back": "Back",
+    "language": "Language",
+    "languageLabel": "Language: ",
+    "langJa": "Japanese",
+    "langEn": "English",
+    "gameComingSoon": "Coming soon",
+    "deleteSave": "Delete Save Data",
+    "deleteSaveConfirm": "Are you sure you want to delete your save data? This cannot be undone.",
+    "saveVersion": "Version",
+    "saveCreatedAt": "Created",
+    "saveStage": "Stage",
+    "openMenu": "Open Menu",
+    "unknown": "—"
+  }
+}

@@ -5890,6 +5890,18 @@
     });
   }
 
+  var btnDeleteSave = document.getElementById('btnDeleteSave');
+  if (btnDeleteSave) {
+    btnDeleteSave.addEventListener('click', function () {
+      if (confirm('セーブデータを全部削除して最初からやり直しますか？\nこの操作は取り消せません。')) {
+        localStorage.removeItem(SAVE_KEY);
+        resetGame();
+        $('axOverlayPassword').classList.remove('visible');
+        logLine('セーブデータを削除しました。最初から始めます。');
+      }
+    });
+  }
+
   var btnGeneratePassword = document.getElementById('btnGeneratePassword');
   if (btnGeneratePassword) {
     btnGeneratePassword.addEventListener('click', function () {

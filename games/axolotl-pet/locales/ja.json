@@ -1,0 +1,22 @@
+{
+  "ui": {
+    "title": "ウーパールーパー育成ゲーム",
+    "pageTitle": "ウーパールーパー育成ゲーム – Nihatori Games",
+    "newGame": "ニューゲーム",
+    "continue": "つづきから",
+    "menu": "メニュー",
+    "back": "もどる",
+    "language": "言語",
+    "languageLabel": "言語: ",
+    "langJa": "日本語",
+    "langEn": "English",
+    "gameComingSoon": "ゲーム画面（準備中）",
+    "deleteSave": "セーブを削除",
+    "deleteSaveConfirm": "セーブデータを削除しますか？この操作は取り消せません。",
+    "saveVersion": "バージョン",
+    "saveCreatedAt": "作成日時",
+    "saveStage": "ステージ",
+    "openMenu": "メニューを開く",
+    "unknown": "—"
+  }
+}
