@@ -2966,10 +2966,9 @@
     
     if (btnBreed) {
       var adults = getAdultTanks();
-      var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
       var males = adults.filter(function (x) { return x.tank.axolotl && x.tank.axolotl.sex === 'オス'; });
       var females = adults.filter(function (x) { return x.tank.axolotl && x.tank.axolotl.sex === 'メス'; });
-      var canBreed = !disabled && adults.length >= 2 && empty && males.length > 0 && females.length > 0;
+      var canBreed = !disabled && adults.length >= 2 && males.length > 0 && females.length > 0;
       btnBreed.disabled = !canBreed;
     }
     if (btnTreat) btnTreat.disabled = disabled;
@@ -3443,28 +3442,7 @@
           var eggCount = tank.eggCount || 500;
           var relationshipMeter = tank.eggRelationshipMeter || 50;
           
-          // 空き水槽がない場合は卵を売却
-          var emptySlots = [];
-          state.tanks.forEach(function (t, i) {
-            if (i !== idx && !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles) {
-              emptySlots.push(i);
-            }
-          });
-          
-          if (emptySlots.length === 0) {
-            var eggPrice = Math.floor(eggCount * 50);
-            state.money += eggPrice;
-            tank.egg = false;
-            tank.eggCount = null;
-            tank.eggParentTypes = null;
-            tank.eggParentIds = null;
-            tank.eggParentShades = null;
-            tank.eggRelationshipMeter = null;
-            tank.hatchMonthsLeft = null;
-            tank.note = '空き水槽';
-            logLine(t('game.eggsSoldNoSpace', { count: eggCount, price: formatMoney(eggPrice) }));
-            return;
-          }
+          // 卵は同じ水槽内で孵化するため、別の空き水槽は不要（以前の誤ったチェックを削除）
           
           // 親の健康度を取得（孵化前に取得）
           var parent1Health = 100;
@@ -4480,8 +4458,7 @@
 
   function openBreedOverlay() {
     var adults = getAdultTanks();
-    var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
-    if (adults.length < 2 || !empty) {
+    if (adults.length < 2) {
       logLine(t('game.needTwoAdults'));
       return;
     }
@@ -4670,8 +4647,7 @@
     }
     var t1 = state.tanks[parent1Idx];
     var t2 = state.tanks[parent2Idx];
-    var emptyIdx = state.tanks.findIndex(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
-    if (!t1 || !t2 || !t1.axolotl || !t2.axolotl || emptyIdx < 0) {
+    if (!t1 || !t2 || !t1.axolotl || !t2.axolotl) {
       logLine(t('game.conditionsNotMet'));
       return;
     }
@@ -4687,15 +4663,17 @@
     state.lastBreedParent2 = parent2Idx;
     var ax1 = t1.axolotl;
     var ax2 = t2.axolotl;
+    // 空き水槽がなくても、2匹のうちどちらかの水槽にペアを収容できる
+    var targetIdx = parent1Idx; // デフォルトで親1の水槽を使用
     t1.axolotl = null;
     t1.note = '空き水槽';
     t2.axolotl = null;
     t2.note = '空き水槽';
-    var breedingTank = state.tanks[emptyIdx];
+    var breedingTank = state.tanks[targetIdx];
     breedingTank.breedingPair = [ax1, ax2];
     breedingTank.relationshipMeter = 50; // 初期関係メーター
     breedingTank.note = '同棲中（関係50）';
-    logLine(t('ui.breedingStarted', { n: emptyIdx + 1, t1: typeLabel(ax1.type), t2: typeLabel(ax2.type) }));
+    logLine(t('ui.breedingStarted', { n: targetIdx + 1, t1: typeLabel(ax1.type), t2: typeLabel(ax2.type) }));
     $('axOverlayBreed').classList.remove('visible');
     updateUI();
     saveGame();
