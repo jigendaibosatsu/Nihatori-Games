@@ -6,7 +6,9 @@
 (function () {
   'use strict';
 
-  var TAB_IDS = ['top', 'games', 'favorites', 'hobby', 'posts', 'trending', 'recommended', 'updates', 'random', 'sns'];
+  // タブIDの表示順:
+  // おすすめ → お気に入り → 更新順 → ランダム → 残り（トップ / ゲーム / 趣味 / 記事 / 急上昇 / SNS）
+  var TAB_IDS = ['recommended', 'favorites', 'updates', 'random', 'top', 'games', 'hobby', 'posts', 'trending', 'sns'];
   var TAB_PARAM = 'tab';
   var SEARCH_PARAM = 'q';
   var currentSearchQuery = '';
@@ -173,11 +175,22 @@
       case 'trending':
         return applySearchFilter(items.slice().sort(byTrendingScore));
       case 'recommended':
-        return applySearchFilter(items.filter(function (i) { return i.recommended === true; }).sort(sortFn));
+        // おすすめタブ: ウーパールーパーショップのみ
+        return applySearchFilter(
+          items.filter(function (i) { return i.id === 'axolotl-shop'; })
+        );
       case 'updates':
+        // 更新順: 更新があったゲームや新作ゲームを、公開日時の新しい順で並べる
         return applySearchFilter(
           items
-            .filter(function (i) { return i.tag === '更新' || i.updating === true; })
+            .filter(function (i) {
+              if (i.type !== 'game') return false;
+              return i.tag === '更新' ||
+                     i.tag === 'アップデート' ||
+                     i.tag === '新作' ||
+                     i.updating === true ||
+                     i.isNew === true;
+            })
             .sort(byPublishedAt)
         );
       case 'random': {

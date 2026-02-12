@@ -19,11 +19,6 @@
         } else if (place === 'aria-label') {
           el.setAttribute('aria-label', window.i18n.t(key));
         } else {
-          // #region agent log
-          if (el.id === 'axShopTitle') {
-            fetch('http://127.0.0.1:7242/ingest/f97df107-e146-4319-9c02-91a03f8f0073',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'axolotl-shop-init.js:updateI18nElements',message:'i18n overwriting axShopTitle',data:{key:key,newText:window.i18n.t(key)},hypothesisId:'A',timestamp:Date.now()})}).catch(function(){});
-          }
-          // #endregion
           el.textContent = window.i18n.t(key);
         }
       }

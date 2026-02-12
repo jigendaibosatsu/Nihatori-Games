@@ -131,8 +131,8 @@
   var EQUIPMENT_BOTTOM_CLEANER_COST = 20000;   // Lv0→1
   var EQUIPMENT_BOTTOM_CLEANER_COST_LV2 = 10000;
   var EQUIPMENT_BOTTOM_CLEANER_COST_LV3 = 12000;
-  var TANK_LEVEL_UP_BASE = 12000;          // 水槽設備レベルアップ基本料金
-  var TANK_ADD_BASE = 10000;               // 水槽追加基本料金
+  var BASE_TANK_COST = 20000;              // 水槽追加の基本料金
+  var TANK_COST_SCALE = 0.2;               // 現在の槽数に応じたスケール（cost = BASE_TANK_COST * (1 + TANK_COST_SCALE * n)）
   var AUTO_FEEDER_HUNGER_THRESHOLD = 50;
   var AUTO_FEEDER_COST_PER_FEED = 1000;
   var MAX_FILTER_LEVEL = 3;
@@ -1414,11 +1414,10 @@
     state.tanks = [];
     state.nextAxolotlId = 1;
     axolotlRegistry = {};
-    var maxT = (state.equipment && state.equipment.tankLevel) ? state.equipment.tankLevel + 1 : 3;
-    maxT = Math.min(maxT, MAX_TANKS);
+    var initialSlotCount = 3;
     var initialType = Math.random() < 0.5 ? 'nomal' : 'marble';
     var initialAx = createAxolotl(2, initialType, null, null);
-    for (var i = 0; i < maxT; i++) {
+    for (var i = 0; i < initialSlotCount; i++) {
       state.tanks.push({
         id: i + 1,
         axolotl: i === 0 ? initialAx : null,
@@ -1840,6 +1839,27 @@
     var sizeBand = sizeBandFromAge(displayAx.age);
     bodyEl.innerHTML = '';
     
+    // 同棲ペアの場合はタブを表示して、2匹の詳細を切り替えられるようにする
+    if (foundTank && foundTank.breedingPair && foundTank.breedingPair.length === 2) {
+      var tabsDiv = document.createElement('div');
+      tabsDiv.className = 'ax-detail-tabs';
+      foundTank.breedingPair.forEach(function (pairAx) {
+        var tabBtn = document.createElement('button');
+        tabBtn.type = 'button';
+        tabBtn.className = 'ax-detail-tab' + (pairAx.id === displayAx.id ? ' active' : '');
+        var tabNamePart = nameForDisplay(pairAx, localeForNameDisplay());
+        var tabLabel = (pairAx.familyName ? pairAx.familyName + ' ' : '') + tabNamePart;
+        tabBtn.textContent = tabLabel;
+        if (pairAx.id !== displayAx.id) {
+          tabBtn.addEventListener('click', function () {
+            openDetailModal(pairAx.id);
+          });
+        }
+        tabsDiv.appendChild(tabBtn);
+      });
+      bodyEl.appendChild(tabsDiv);
+    }
+    
     // 名前編集欄（要素A/Bシステム）
     var nameEditDiv = document.createElement('div');
     nameEditDiv.style.marginBottom = '8px';
@@ -2192,9 +2212,6 @@
         var displayNameStr = nameForDisplay(initialTank.axolotl, getLocale());
         // 店名を更新
         state.shopName = t('ui.shopNameWithAx', { name: displayNameStr });
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/f97df107-e146-4319-9c02-91a03f8f0073',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'axolotl-shop.js:shopName set',message:'state.shopName set on first ax name',data:{shopName:state.shopName,displayNameStr:displayNameStr},hypothesisId:'B',timestamp:Date.now()})}).catch(function(){});
-        // #endregion
         // 最初のウパのnoteを更新（名前がついたので通常の個体として扱う）
         initialTank.note = '親ウパ';
         setTimeout(function() {
@@ -2929,9 +2946,6 @@
     if (shopTitleEl) {
       var titleValue = state.shopName || t('game.defaultShopName');
       shopTitleEl.textContent = titleValue;
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/f97df107-e146-4319-9c02-91a03f8f0073',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'axolotl-shop.js:updateUI shop title',message:'updateUI set axShopTitle',data:{stateShopName:state.shopName,titleValue:titleValue,elId:shopTitleEl.id},hypothesisId:'C',timestamp:Date.now()})}).catch(function(){});
-      // #endregion
     }
 
     var disabled = state.ended;
@@ -5224,22 +5238,21 @@
         !nextFeed || state.money < nextFeed.cost,
         nextFeed ? function() { upgradeFeedType(nextFeed.type, nextFeed.cost); showBuyTypeList('equipment'); updateUI(); } : null
       );
-      // 水槽を増やす（レベルで最大槽数・購入金額が変動）
+      // 水槽を増やす（金額のみ・スケール料金で最大MAX_TANKSまで）
       (function () {
-        var tl = state.equipment && state.equipment.tankLevel ? state.equipment.tankLevel : 1;
         var maxT = getMaxTanks();
         var addCost = getAddTankCost();
-        var levelUpCost = getTankLevelUpCost();
+        var atMax = state.tanks.length >= maxT;
         var card = document.createElement('div');
         card.className = 'ax-equipment-card';
         var nameEl = document.createElement('div');
         nameEl.className = 'ax-equipment-name';
         nameEl.textContent = t('game.equipment.addTank');
         card.appendChild(nameEl);
-        var levelEl = document.createElement('div');
-        levelEl.className = 'ax-equipment-level';
-        levelEl.textContent = t('game.equipment.addTankLevelFormat', { n: tl, max: maxT });
-        card.appendChild(levelEl);
+        var descEl = document.createElement('div');
+        descEl.className = 'ax-equipment-level';
+        descEl.textContent = t('game.equipment.addTankSlotFormat', { n: state.tanks.length, max: maxT });
+        card.appendChild(descEl);
         var btns = document.createElement('div');
         btns.className = 'ax-equipment-btns';
         var detailBtn = document.createElement('button');
@@ -5250,25 +5263,16 @@
         detailBtn.style.padding = '4px 8px';
         detailBtn.addEventListener('click', function (e) {
           e.stopPropagation();
-          openShopDetail(t('game.equipment.addTank'), '<p>' + t('game.equipment.addTankDetail', { maxLevel: MAX_TANK_LEVEL }) + '</p>');
+          openShopDetail(t('game.equipment.addTank'), '<p>' + t('game.equipment.addTankDetailSimple') + '</p>');
         });
         btns.appendChild(detailBtn);
-        var levelUpBtn = document.createElement('button');
-        levelUpBtn.type = 'button';
-        levelUpBtn.className = 'ax-btn ax-buy-buy-btn';
-        levelUpBtn.textContent = tl >= MAX_TANK_LEVEL ? t('game.equipment.maxLevel') : t('game.equipment.levelUp') + ' ' + formatMoney(levelUpCost);
-        levelUpBtn.style.fontSize = '10px';
-        levelUpBtn.style.padding = '4px 8px';
-        if (tl >= MAX_TANK_LEVEL || state.money < levelUpCost) levelUpBtn.disabled = true;
-        levelUpBtn.addEventListener('click', function (e) { e.stopPropagation(); if (!this.disabled) { actTankLevelUp(); showBuyTypeList('equipment'); updateUI(); } });
-        btns.appendChild(levelUpBtn);
         var addBtn = document.createElement('button');
         addBtn.type = 'button';
         addBtn.className = 'ax-btn ax-buy-buy-btn';
-        addBtn.textContent = state.tanks.length >= maxT ? t('game.equipment.maxLevel') : t('game.equipment.addTankBtn') + ' ' + formatMoney(addCost);
+        addBtn.textContent = atMax ? t('game.equipment.maxTanks') : t('game.equipment.addTankBtn') + ' ' + formatMoney(addCost);
         addBtn.style.fontSize = '10px';
         addBtn.style.padding = '4px 8px';
-        if (state.tanks.length >= maxT || state.money < addCost) addBtn.disabled = true;
+        if (atMax || state.money < addCost) addBtn.disabled = true;
         addBtn.addEventListener('click', function (e) { e.stopPropagation(); if (!this.disabled) { actAddTank(); showBuyTypeList('equipment'); updateUI(); } });
         btns.appendChild(addBtn);
         card.appendChild(btns);
@@ -5395,13 +5399,11 @@
     var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
     if (!empty) {
       logLine(t('game.noTankSpace'));
-      $('axOverlayBuy').classList.remove('visible');
       updateUI();
       return;
     }
     if (state.money < price) {
       logLine(t('game.cannotAfford'));
-      $('axOverlayBuy').classList.remove('visible');
       updateUI();
       return;
     }
@@ -5464,8 +5466,6 @@
       }
     }
     
-    $('axOverlayBuy').classList.remove('visible');
-    
     // 名付けフェーズを表示
     if (empty && empty.axolotl) {
       openNamingModal(empty.axolotl.id, false);
@@ -5479,13 +5479,11 @@
     var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
     if (!empty) {
       logLine(t('game.noTankSpace'));
-      $('axOverlayBuy').classList.remove('visible');
       updateUI();
       return;
     }
     if (state.money < price) {
       logLine(t('game.cannotAfford'));
-      $('axOverlayBuy').classList.remove('visible');
       updateUI();
       return;
     }
@@ -5552,7 +5550,6 @@
         logLine(t('game.welcomed', { type: typeLabel(type), size: sizeLabel, sex: sexLabel }));
       }
     }
-    $('axOverlayBuy').classList.remove('visible');
     
     // 名付けフェーズを表示
     if (empty && empty.axolotl) {
@@ -5583,7 +5580,6 @@
       state.equipment[equipmentType] = true;
       logLine(t('game.equipmentBought', { equipment: t('game.equipment.' + equipmentType) }));
     }
-    $('axOverlayBuy').classList.remove('visible');
     updateUI();
   }
 
@@ -5607,60 +5603,44 @@
     state.feedType = newFeedType;
     
     logLine(t('game.feedUpgraded', { feed: t('game.feedDisplay.' + newFeedType) }));
-    $('axOverlayBuy').classList.remove('visible');
     updateUI();
   }
 
   function getMaxTanks() {
-    return Math.min((state.equipment && state.equipment.tankLevel ? state.equipment.tankLevel : 1) + 1, MAX_TANKS);
+    return MAX_TANKS;
   }
   function getAddTankCost() {
-    var tl = state.equipment && state.equipment.tankLevel ? state.equipment.tankLevel : 1;
-    return TANK_ADD_BASE + (tl - 1) * 3000;
+    var n = state.tanks ? state.tanks.length : 0;
+    return Math.floor(BASE_TANK_COST * (1 + TANK_COST_SCALE * n));
   }
-  function getTankLevelUpCost() {
-    var tl = state.equipment && state.equipment.tankLevel ? state.equipment.tankLevel : 1;
-    return TANK_LEVEL_UP_BASE + tl * 5000;
-  }
-  function actTankLevelUp() {
-    var tl = state.equipment && state.equipment.tankLevel ? state.equipment.tankLevel : 1;
-    if (tl >= MAX_TANK_LEVEL) {
-      logLine(t('game.tankMaxLevel'));
-      return;
-    }
-    var cost = getTankLevelUpCost();
-    if (state.money < cost) {
-      logLine(t('game.tankLevelUpCost'));
-      return;
-    }
-    state.money -= cost;
-    state.equipment.tankLevel = tl + 1;
-    logLine(t('game.tankLevelUp', { level: state.equipment.tankLevel, max: getMaxTanks() }));
-    updateUI();
+  function canAddTank() {
+    if (!state.tanks || state.tanks.length >= MAX_TANKS) return false;
+    return state.money >= getAddTankCost();
   }
   function actAddTank() {
-    var maxT = getMaxTanks();
-    if (state.tanks.length >= maxT) {
+    if (state.tanks.length >= MAX_TANKS) {
       logLine(t('game.cannotAddTank'));
-      return;
+      return false;
     }
     var cost = getAddTankCost();
     if (state.money < cost) {
       logLine(t('game.notEnoughTankCost'));
-      return;
+      return false;
     }
     state.money -= cost;
     state.tanks.push({
       id: state.tanks.length + 1,
       axolotl: null,
-      note: '新しく導入した水槽',
+      note: t('ui.emptyTank'),
       baby: false,
       customName: null,
       clean: 80,
       poop: false
     });
     logLine(t('game.tankAdded', { cost: formatMoney(cost) }));
+    saveGame();
     updateUI();
+    return true;
   }
 
   function resetGame() {

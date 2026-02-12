@@ -234,8 +234,8 @@ body.game-page {
 .ax-menu {
   position: fixed;
   top: 0;
-  right: -240px;
-  width: 220px;
+  right: -300px;
+  width: 280px;
   height: 100vh;
   height: calc(var(--vh, 1vh) * 100); /* Use CSS variable for stable viewport height */
   height: 100dvh; /* Dynamic Viewport Height for mobile browsers (fallback) */
@@ -354,6 +354,32 @@ body.game-page {
 .ax-menu-item:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* 同棲ペアの詳細タブ */
+.ax-detail-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ax-detail-tab {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ax-detail-tab.active {
+  background: #1d4ed8;
+  color: #ffffff;
 }
 /* フッター（月送りボタン） */
 .ax-footer {
@@ -860,6 +886,11 @@ canvas.ax-axolotl-img.ax-idle {
   align-items: center;
   justify-content: center;
   z-index: 30;
+}
+
+/* Ensure treatment overlay appears above the shop overlay */
+#axOverlayTreat {
+  z-index: 40;
 }
 .ax-overlay.visible { display: flex; }
 .ax-overlay-box {

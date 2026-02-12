@@ -2192,9 +2192,6 @@
         var displayNameStr = nameForDisplay(initialTank.axolotl, getLocale());
         // 店名を更新
         state.shopName = t('ui.shopNameWithAx', { name: displayNameStr });
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/f97df107-e146-4319-9c02-91a03f8f0073',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'axolotl-shop.js:shopName set',message:'state.shopName set on first ax name',data:{shopName:state.shopName,displayNameStr:displayNameStr},hypothesisId:'B',timestamp:Date.now()})}).catch(function(){});
-        // #endregion
         // 最初のウパのnoteを更新（名前がついたので通常の個体として扱う）
         initialTank.note = '親ウパ';
         setTimeout(function() {
@@ -2929,9 +2926,6 @@
     if (shopTitleEl) {
       var titleValue = state.shopName || t('game.defaultShopName');
       shopTitleEl.textContent = titleValue;
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/f97df107-e146-4319-9c02-91a03f8f0073',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'axolotl-shop.js:updateUI shop title',message:'updateUI set axShopTitle',data:{stateShopName:state.shopName,titleValue:titleValue,elId:shopTitleEl.id},hypothesisId:'C',timestamp:Date.now()})}).catch(function(){});
-      // #endregion
     }
 
     var disabled = state.ended;
