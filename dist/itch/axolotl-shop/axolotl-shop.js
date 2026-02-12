@@ -140,7 +140,7 @@
   var MAX_TANK_LEVEL = 14;                 // 最大15槽 = tankLevel+1
   
   // 共通アセットを使用（ルートの /assets/characters/axolotl/）
-  var AXOLOTL_IMAGE_BASE = '/assets/characters/axolotl/';
+  var AXOLOTL_IMAGE_BASE = './assets/axolotl/';
   function typeImagePath(t) {
     if (t === 'goldblackeye') return AXOLOTL_IMAGE_BASE + 'axo_gold.png';
     if (t === 'yellow') return AXOLOTL_IMAGE_BASE + 'axo_yellow.png';
@@ -2704,7 +2704,7 @@
         // うんこの表示（繁殖ペアの場合）
         if (tank.poop) {
           var poopEl = document.createElement('img');
-          poopEl.src = '/assets/items/unko_32.png';
+          poopEl.src = './assets/items/unko_32.png';
           poopEl.style.width = '16px';
           poopEl.style.height = '16px';
           poopEl.style.position = 'absolute';
@@ -2768,7 +2768,7 @@
         // うんこの表示
         if (tank.poop) {
           var poopEl = document.createElement('img');
-          poopEl.src = '/assets/items/unko_32.png';
+          poopEl.src = './assets/items/unko_32.png';
           poopEl.style.width = '16px';
           poopEl.style.height = '16px';
           poopEl.style.position = 'absolute';
