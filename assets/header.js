@@ -98,7 +98,7 @@
       { href: '/games/word-battle/', text: '英単語カードバトル' },
       { href: '/games/table-tennis/', text: '卓球' },
       { href: '/games/tetris-like/', text: 'ブロック落とし' },
-      { href: '/games/power-pro/', text: 'きゅーと野球' },
+      { href: '/games/power-pro/', text: 'ウーパー野球' },
       { href: '/games/romance/', text: 'きゅーと恋愛' },
       { href: '/games/jinsei/', text: '人生ゲーム' },
       { href: '/games/monster-collection/', text: 'モンスターコレクション' },

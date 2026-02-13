@@ -6,7 +6,7 @@
   'use strict';
 
   var LOCALE_KEY = 'locale';
-  var DEFAULT_LOCALE = 'ja';
+  var DEFAULT_LOCALE = 'en';
   var SUPPORTED_LOCALES = ['ja', 'en'];
   var messages = {};
   var currentLocale = DEFAULT_LOCALE;

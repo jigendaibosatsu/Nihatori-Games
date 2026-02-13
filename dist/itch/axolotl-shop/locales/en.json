@@ -33,6 +33,7 @@
     "male": "Male",
     "female": "Female",
     "detail": "Detail",
+    "name": "Name:",
     "confirm": "Confirm",
     "sell": "Sell",
     "unknown": "Unknown",
@@ -189,6 +190,7 @@
   },
   "dialog": {
     "shopNamePrompt": "Enter shop name:",
+    "namePlaceholder": "Enter name",
     "elementAPlaceholder": "Element A (e.g. spot)",
     "elementBPlaceholder": "Element B (e.g. tail)",
     "familyNamePlaceholder": "Enter family name (inherited by offspring)",
@@ -262,6 +264,8 @@
     "feedUpgraded": "Upgraded feed to {{feed}}.",
     "tankLevelUp": "Upgraded tank equipment to level {{level}}. (Max {{max}} tanks)",
     "tankAdded": "Added new tank. ({{cost}})",
+    "cannotAddTank": "Cannot add more tanks.",
+    "notEnoughTankCost": "Not enough money to add a tank.",
     "saveDeleted": "Save data deleted. Starting over.",
     "passwordGenerated": "Password generated. Copy and save it.",
     "passwordGenerateFailed": "Failed to generate password.",
@@ -285,8 +289,11 @@
       "selectTarget": "Select target",
       "addTank": "Add tanks",
       "addTankLevelFormat": "Lv{{n}} Max {{max}} tanks",
+      "addTankSlotFormat": "{{n}}/{{max}} tanks",
       "addTankDetail": "Tank facility level: Lv1–Lv{{maxLevel}}<br>Max tanks increase per level (Lv1=2, Lv2=3…).<br>Both level-up and adding tanks require funds.",
-      "addTankBtn": "Add tank"
+      "addTankDetailSimple": "Spend money to add a tank. Cost scales with current tank count. Max 15 tanks.",
+      "addTankBtn": "Add tank",
+      "maxTanks": "Max tanks reached"
     },
     "feedDisplay": {
       "artificial": "💊 Artificial",

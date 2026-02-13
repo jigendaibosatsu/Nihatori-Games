@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1.0" />
-  <title>ウーパールーパーショップ – Nihatori Games</title>
+  <title>Upa Lupa Shop – Nihatori Games</title>
   <link rel="icon" type="image/png" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
   <link rel="stylesheet" href="./styles.css" />
@@ -16,18 +16,18 @@
   <!-- タイトル画面 -->
   <div id="axTitleScreen" class="ax-title-screen">
     <div class="ax-title-content">
-      <h1 class="ax-title-heading" data-i18n="ui.shopTitle">ウーパールーパーショップ</h1>
+      <h1 class="ax-title-heading" data-i18n="ui.shopTitle">Upa Lupa Shop</h1>
       <div id="axTitleMascot" class="ax-title-mascot"></div>
       <div class="ax-title-buttons">
-        <button type="button" class="ax-btn ax-btn-primary" id="axBtnNewGame" data-i18n="ui.newGame">ニューゲーム</button>
-        <button type="button" class="ax-btn ax-btn-secondary" id="axBtnContinue" data-i18n="ui.continue">つづきから</button>
+        <button type="button" class="ax-btn ax-btn-primary" id="axBtnNewGame" data-i18n="ui.newGame">New Game</button>
+        <button type="button" class="ax-btn ax-btn-secondary" id="axBtnContinue" data-i18n="ui.continue">Continue</button>
       </div>
       <div class="ax-title-lang">
         <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
-          <span data-i18n="ui.languageLabel">言語: </span>
+          <span data-i18n="ui.languageLabel">Language: </span>
           <select id="axTitleLangSelect" style="padding:6px 10px; font-size:14px; border:1px solid #94a3b8; border-radius:6px;">
-            <option value="ja">日本語</option>
             <option value="en">English</option>
+            <option value="ja">日本語</option>
           </select>
         </label>
       </div>
@@ -272,15 +272,6 @@
         <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer;">
           <input type="checkbox" id="settingAutoReorderTanks" style="width:20px; height:20px;">
           <span data-i18n="ui.autoReorderTanks">空になった水槽を自動的に下に移動する</span>
-        </label>
-      </div>
-      <div style="margin-bottom:12px;">
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-          <span data-i18n="ui.languageLabel">言語: </span>
-          <select id="axLangSelect" style="padding:6px 10px; font-size:14px; border:1px solid #94a3b8; border-radius:6px;" aria-label="言語" data-i18n="ui.language" data-i18n-place="aria-label">
-            <option value="ja">日本語</option>
-            <option value="en">English</option>
-          </select>
         </label>
       </div>
       <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axSettingsClose" data-i18n="ui.close">閉じる</button>

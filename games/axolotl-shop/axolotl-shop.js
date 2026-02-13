@@ -710,6 +710,7 @@
       if (saveData.state) {
         Object.assign(state, saveData.state);
         state.version = SAVE_DATA_VERSION;
+        if (!state.saveLocale) state.saveLocale = 'ja';
       }
       
       if (saveData.axolotlRegistry) {
@@ -743,6 +744,7 @@
       if (!saveData.state.deadAxolotls) {
         saveData.state.deadAxolotls = [];
       }
+      if (!saveData.state.saveLocale) saveData.state.saveLocale = 'ja';
       
       // axolotlのマイグレーション
       function migrateAxolotl(ax) {
@@ -904,6 +906,9 @@
     return '¥' + y.toLocaleString('ja-JP');
   }
 
+  // English mode: 100 simple random names (no elementA/B)
+  var ENGLISH_NAMES = ['Albert', 'Isaac', 'Charles', 'Nikola', 'Leonardo', 'Galileo', 'Marie', 'Ada', 'Alfred', 'Louis', 'Thomas', 'James', 'Alexander', 'Julius', 'Marcus', 'Augustus', 'Plato', 'Socrates', 'Dante', 'Marco', 'Pablo', 'Vincent', 'Claude', 'Andy', 'Frida', 'Georgia', 'William', 'Edgar', 'Oscar', 'Franz', 'Johann', 'Ludwig', 'Wolfgang', 'Hector', 'Igor', 'Leo', 'Anton', 'Victor', 'Miguel', 'Rafael', 'Napoleon', 'Winston', 'Abraham', 'George', 'John', 'Franklin', 'Theodore', 'Nelson', 'Martin', 'Mahatma', 'Indira', 'Cleopatra', 'Elizabeth', 'Victoria', 'Diana', 'Catherine', 'Peter', 'Ivan', 'Timur', 'Saladin', 'Edison', 'Henry', 'Wright', 'Orville', 'Wilbur', 'Yuri', 'Neil', 'Buzz', 'Ferdinand', 'Vasco', 'Michael', 'Elvis', 'Freddie', 'David', 'Prince', 'Madonna', 'Whitney', 'Taylor', 'Beyonce', 'Adele', 'Charlie', 'Audrey', 'Marilyn', 'Bruce', 'Jackie', 'Arnold', 'Sylvester', 'Clint', 'Keanu', 'Tom', 'Max', 'Alex', 'Leo', 'Theo', 'Noah', 'Liam', 'Emma', 'Luna', 'Aria', 'Mira'];
+
   // ランダムな人名漢字のリスト
   // 各モーフの初期名A（種限定）
   var morphInitialNameA = {
@@ -931,62 +936,22 @@
   // 名付けは男女関係なく使うB候補（合体リスト）
   var nameElementB = maleNameElementB.concat(femaleNameElementB);
 
-  // English: sound maps (A = leading/capital, B = second part/lowercase)
-  var NAME_SOUND_A = { '義': 'Yoshi', '忠': 'Tada', '信': 'Nobu', '直': 'Nao', '正': 'Masa', '清': 'Kiyo', '廉': 'Kado', '篤': 'Atsu', '慎': 'Chika', '恭': 'Yasu', '勇': 'Isa', '武': 'Take', '剛': 'take', '猛': 'Take', '勝': 'Katsu', '威': 'Taka', '盛': 'Mori', '重': 'Shige', '堅': 'Kata', '吉': 'yoshi', '昌': 'Masa', '久': 'Hisa', '永': 'Naga', '長': 'Naga', '泰': 'Yasu', '安': 'Yasu', '保': 'Yasu', '福': 'tomi', '寿': 'Hisa', '政': 'Masa', '治': 'Haru', '成': 'Nari', '功': 'Isa', '元': 'moto', '光': 'mitsu', '顕': 'Aki', '章': 'Aki', '宣': 'Nobu', '隆': 'Taka', '一': 'kazu', '龍': 'tatsu', '虎': 'Tora', '家': 'Ie', '親': 'Chika', '綱': 'Tsuna', '経': 'Tsune', '時': 'Toki', '頼': 'Yori', '兼': 'Kane', '定': 'Sada', '朝': 'tomo', '晴': 'Haru', '景': 'Kage', '秀': 'Hide', '宗': 'Mune', '氏': 'Uji', '房': 'Fusa', '連': 'Tsura', '満': 'Mitsu', '教': 'Nori', '敬': 'Taka', '仁': 'Hito', '礼': 'Aya', '誠': 'Masa', '寛': 'Hiro', '良': 'Yoshi', '賢': 'kata', '純': 'sumi', '征': 'masa', '鎮': 'Shizu', '衛': 'Mori', '統': 'Osa', '守': 'Mori', '督': 'Tada', '令': 'Yoshi', '明': 'Aki', '昭': 'Aki', '春': 'Haru', '秋': 'Aki', '興': 'Oki', '栄': 'hide', '豊': 'toyo', '広': 'Hiro', '弘': 'Hiro', '祐': 'suke', '祥': 'Yoshi', '延': 'Nobu', '充': 'Mitsu', '恒': 'Tsune', '尚': 'Nao', '基': 'Moto', '実': 'sane', '康': 'Yasu', '克': 'Katsu', '照': 'Teru', '輝': 'Teru', '利': 'Toshi', '英': 'Hide', '寧': 'Yasu', '順': 'Nobu', '則': 'Nori', '典': 'Nori', '規': 'Nori', '倫': 'Tomo', '道': 'Michi', '方': 'Masa', '周': 'Shū', '通': 'Michi', '仲': 'Naka', '冬': 'Fuyu', '高': 'Taka', '夏': 'Natsu' };
-  var NAME_SOUND_B_MALE = { '千代': 'Chiyo', '太郎': 'Tarō', '一郎': 'Ichirō', '次郎': 'Jirō', '二郎': 'Jirō', '三郎': 'Saburō', '四郎': 'Shirō', '五郎': 'Gorō', '六郎': 'Rokurō', '七郎': 'Shichirō', '八郎': 'Hachirō', '九郎': 'Kurō', '十郎': 'Jūrō', '之助': 'Nosuke', '助': 'Suke', '右衛門': 'Uemon', '左衛門': 'Saemon', '兵衛': 'Hyōe', '之進': 'Noshin', '太夫': 'Tayū', '丸': 'Maru' };
-  var NAME_SOUND_B_FEMALE = { '子': 'Ko', '美': 'Mi', '女': 'Me', '香': 'Ka', '枝': 'E', '恵': 'e', '絵': 'E', '江': 'E', '代': 'Yo', '世': 'yo', '奈': 'Na', '菜': 'Na', '那': 'Na', '南': 'na', '里': 'Ri', '理': 'Ri', '梨': 'Ri', '莉': 'Ri', '花': 'ka', '華': 'ka', '葉': 'Ha', '羽': 'Ha', '乃': 'No', '野': 'No', '緒': 'O', '栄': 'e', '鶴': 'Tsuru', '富': 'Tomi', '登': 'To', '志': 'Shi', '千': 'Chi', '百': 'Momo', '万': 'Man', '愛': 'Ai', '優': 'Yū', '萌': 'Moe', '咲': 'Saki', '陽': 'Hi', '結': 'Yui', '彩': 'Aya', '音': 'ne', '詩': 'Uta', '心': 'Kokoro', '桜': 'Sakura', '桃': 'Momo', '楓': 'Kaede', '葵': 'Aoi', '梅': 'Ume', '菫': 'Sumire', '蘭': 'Ran', '蓮': 'Ren', '椿': 'Tsubaki', '柚': 'Yuzu', '梢': 'Kozue', '桂': 'Katsura', '橙': 'Daidai', '椛': 'Momiji', '芽': 'Me', '苗': 'Nae', '茜': 'Akane', '菊': 'Kiku', '萩': 'Hagi', '藤': 'Fuji', '合': 'Ai', '実': 'Mi', '穂': 'Ho', '潮': 'Ushio', '波': 'Nami', '渚': 'Nagisa', '汐': 'Shio', '海': 'Umi', '空': 'Sora', '月': 'Tsuki', '星': 'Hoshi', '雪': 'Yuki', '風': 'Kaze', '光': 'Hikari', '霞': 'Kasumi', '露': 'Tsuyu', '雫': 'Shizuku', '霧': 'Kiri', '雲': 'Kumo', '虹': 'Niji', '麗': 'Rei', '綺': 'Aya', '翠': 'Midori', '碧': 'Aoi', '晶': 'Aki', '玉': 'Tama', '珠': 'Tama', '瑠': 'Ruri', '琴': 'Koto', '歌': 'Uta', '和': 'Kazu', '雅': 'Miyabi', '絹': 'Kinu', '綾': 'Aya', '織': 'Ori', '夢': 'Yume', '希': 'Nozomi', '望': 'Nozomi', '真': 'Makoto', '幸': 'Sachi', '祈': 'Inori', '願': 'Negai', '温': 'Atsu', '柔': 'Yawa', '縁': 'Yori', '笑': 'E', '百合': 'Yuri' };
-  var NAME_SOUND_B = Object.assign({}, NAME_SOUND_B_MALE, NAME_SOUND_B_FEMALE);
-  function capitalizeFirst(s) { return (s && s.charAt(0).toUpperCase() + s.slice(1)) || s; }
-  var SOUND_NAME_ELEMENT_A = maleNameElementA.map(function (k) { var v = NAME_SOUND_A[k]; return v ? capitalizeFirst(v) : k; });
-  var SOUND_NAME_ELEMENT_B = nameElementB.map(function (k) { var v = NAME_SOUND_B[k]; return v ? v.toLowerCase() : k; });
-  var NAME_SOUND_MORPH_A = { 'リュウ': 'Ryū', 'マー': 'Mā', 'アル': 'Aru', 'ゴル': 'Gor', 'クロ': 'Kuro', 'スミ': 'Sumi', 'イエ': 'Ie', 'ダル': 'Daru', 'カネ': 'Kane', 'コパ': 'Kopa', 'キメ': 'Kime' };
-
   function getLocale() {
     return window.i18n && window.i18n.getLocale ? window.i18n.getLocale() : 'ja';
   }
-  /** Use 'en' for name/romaji when UI strings are English (avoids mismatch with getLocale()). */
+  /** Game locale (locked when in game). Language can only be changed on title screen. */
+  function getGameLocale() {
+    if (state.saveLocale) return state.saveLocale;
+    return getLocale();
+  }
+  /** For name display: use game locale when in game (English = simple names, Japanese = kanji). */
   function localeForNameDisplay() {
-    var cur = getLocale();
-    if (cur === 'en') return 'en';
-    var el = String(typeof t === 'function' ? t('ui.elementA') : '');
-    return el.indexOf('Element') >= 0 ? 'en' : cur;
-  }
-  /** Romaji for Element A (for display in inputs when English). */
-  function getRomajiForElementA(a, type) {
-    if (!a) return '';
-    if (NAME_SOUND_MORPH_A[a]) return NAME_SOUND_MORPH_A[a];
-    var iA = maleNameElementA.indexOf(a);
-    if (iA >= 0) return SOUND_NAME_ELEMENT_A[iA] || a;
-    return capitalizeFirst(a);
-  }
-  /** Romaji for Element B, lowercase (for display in inputs when English). */
-  function getRomajiForElementB(b) {
-    if (!b) return '';
-    var iB = nameElementB.indexOf(b);
-    if (iB >= 0) return SOUND_NAME_ELEMENT_B[iB] || b;
-    if (NAME_SOUND_A[b]) return NAME_SOUND_A[b].toLowerCase();
-    return String(b).toLowerCase();
+    return getGameLocale();
   }
   function nameForDisplay(ax, locale) {
     if (!ax) return '';
     var namePart = ax.name || typeLabel(ax.type);
-    if (locale !== 'en') return namePart;
-    var a = ax.nameElementA, b = ax.nameElementB;
-    if (a != null && b != null) {
-      var iA = maleNameElementA.indexOf(a), iB = nameElementB.indexOf(b);
-      var soundA = iA >= 0 ? (SOUND_NAME_ELEMENT_A[iA] || a) : (NAME_SOUND_MORPH_A[a] || capitalizeFirst(a));
-      var soundB = iB >= 0 ? (SOUND_NAME_ELEMENT_B[iB] || b) : (NAME_SOUND_A[b] ? NAME_SOUND_A[b].toLowerCase() : (b ? String(b).toLowerCase() : b));
-      return soundA + soundB;
-    }
-    // Fallback: morph-initial name without nameElementA/B (e.g. old save) — infer from type
-    if (ax.type && namePart && morphInitialNameA[ax.type]) {
-      var morphA = morphInitialNameA[ax.type];
-      if (namePart.indexOf(morphA) === 0) {
-        var rest = namePart.slice(morphA.length);
-        var iB = nameElementB.indexOf(rest);
-        if (iB >= 0) return (NAME_SOUND_MORPH_A[morphA] || morphA) + (SOUND_NAME_ELEMENT_B[iB] || rest);
-      }
-    }
+    if (locale === 'en') return namePart;
     return namePart;
   }
 
@@ -1007,20 +972,20 @@
     maxAttempts = maxAttempts || 100;
     var fullName = baseName;
     var attempt = 0;
+    var isEn = getGameLocale() === 'en';
+    var suffix = isEn ? function (n) { return n === 1 ? ' Jr.' : n === 2 ? ' III' : ' ' + (n + 1); } : function (n) { return n === 1 ? '2世' : n === 2 ? '3世' : (n + 1) + '世'; };
     
     while (isNameUsed(fullName) && attempt < maxAttempts) {
       attempt++;
-      if (attempt === 1) {
-        fullName = baseName + '2世';
-      } else if (attempt === 2) {
-        fullName = baseName + '3世';
-      } else {
-        fullName = baseName + (attempt + 1) + '世';
-      }
+      fullName = baseName + suffix(attempt);
     }
     
     registerName(fullName);
     return fullName;
+  }
+
+  function getRandomEnglishName() {
+    return ENGLISH_NAMES[Math.floor(Math.random() * ENGLISH_NAMES.length)];
   }
 
   // ランダムにB要素を選択（男女関係なく合体リストから）
@@ -1037,6 +1002,11 @@
       isHereditaryB: false,
       name: null
     };
+    
+    if (getGameLocale() === 'en') {
+      result.name = generateUniqueName(getRandomEnglishName());
+      return result;
+    }
     
     // 性別が指定されていない場合はランダムに決定
     if (!sex) {
@@ -1860,142 +1830,151 @@
       bodyEl.appendChild(tabsDiv);
     }
     
-    // 名前編集欄（要素A/Bシステム）
+    // 名前編集欄（English: 100名リストから選択 / Japanese: 要素A/Bシステム）
     var nameEditDiv = document.createElement('div');
     nameEditDiv.style.marginBottom = '8px';
     
-    // 要素AとBを横並びにするコンテナ
-    var nameElementsContainer = document.createElement('div');
-    nameElementsContainer.style.display = 'flex';
-    nameElementsContainer.style.gap = '8px';
-    nameElementsContainer.style.marginBottom = '8px';
-    
-    // 要素A
-    var elementADiv = document.createElement('div');
-    elementADiv.style.flex = '1';
-    elementADiv.innerHTML = '<label style="font-size:11px;">' + t('ui.elementA') + '</label>';
-    var elementAInput = document.createElement('input');
-    elementAInput.type = 'text';
-    var showRomajiInInputs = localeForNameDisplay() === 'en';
-    elementAInput.value = showRomajiInInputs ? getRomajiForElementA(displayAx.nameElementA, displayAx.type) : (displayAx.nameElementA || '');
-    elementAInput.placeholder = t('dialog.elementAPlaceholder');
-    elementAInput.style.width = '100%';
-    elementAInput.style.padding = '4px';
-    elementAInput.style.marginTop = '2px';
-    elementAInput.style.fontSize = '12px';
-    elementAInput.style.marginBottom = '4px';
-    var hereditaryACheckbox = document.createElement('input');
-    hereditaryACheckbox.type = 'checkbox';
-    hereditaryACheckbox.checked = displayAx.isHereditaryA || false;
-    hereditaryACheckbox.id = 'hereditaryA_' + axolotlId;
-    var hereditaryALabel = document.createElement('label');
-    hereditaryALabel.htmlFor = 'hereditaryA_' + axolotlId;
-    hereditaryALabel.textContent = t('ui.hereditary');
-    hereditaryALabel.style.fontSize = '11px';
-    hereditaryALabel.style.marginLeft = '4px';
-    elementADiv.appendChild(elementAInput);
-    elementADiv.appendChild(hereditaryACheckbox);
-    elementADiv.appendChild(hereditaryALabel);
-    
-    // 要素B
-    var elementBDiv = document.createElement('div');
-    elementBDiv.style.flex = '1';
-    elementBDiv.innerHTML = '<label style="font-size:11px;">' + t('ui.elementB') + '</label>';
-    var elementBInput = document.createElement('input');
-    elementBInput.type = 'text';
-    elementBInput.value = showRomajiInInputs ? getRomajiForElementB(displayAx.nameElementB) : (displayAx.nameElementB || '');
-    elementBInput.placeholder = t('dialog.elementBPlaceholder');
-    elementBInput.style.width = '100%';
-    elementBInput.style.padding = '4px';
-    elementBInput.style.marginTop = '2px';
-    elementBInput.style.fontSize = '12px';
-    elementBInput.style.marginBottom = '4px';
-    var hereditaryBCheckbox = document.createElement('input');
-    hereditaryBCheckbox.type = 'checkbox';
-    hereditaryBCheckbox.checked = displayAx.isHereditaryB || false;
-    hereditaryBCheckbox.id = 'hereditaryB_' + axolotlId;
-    var hereditaryBLabel = document.createElement('label');
-    hereditaryBLabel.htmlFor = 'hereditaryB_' + axolotlId;
-    hereditaryBLabel.textContent = t('ui.hereditary');
-    hereditaryBLabel.style.fontSize = '11px';
-    hereditaryBLabel.style.marginLeft = '4px';
-    elementBDiv.appendChild(elementBInput);
-    elementBDiv.appendChild(hereditaryBCheckbox);
-    elementBDiv.appendChild(hereditaryBLabel);
-    
-    nameElementsContainer.appendChild(elementADiv);
-    nameElementsContainer.appendChild(elementBDiv);
-    
-    // 名前の更新処理
-    function updateNameFromElements() {
-      var elementA = elementAInput.value.trim();
-      var elementB = elementBInput.value.trim();
-      var isHereditaryA = hereditaryACheckbox.checked;
-      var isHereditaryB = hereditaryBCheckbox.checked;
-      
-      // Aが空欄でBに通字がある場合、Aにランダムな要素を入れる（オスのA候補から）
-      if (!elementA && elementB && isHereditaryB) {
-        elementA = maleNameElementA[Math.floor(Math.random() * maleNameElementA.length)];
-        elementAInput.value = elementA;
+    if (getGameLocale() === 'en') {
+      var nameLabel = document.createElement('label');
+      nameLabel.style.fontSize = '11px';
+      nameLabel.textContent = t('ui.name');
+      var nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = displayAx.name || '';
+      nameInput.placeholder = t('dialog.namePlaceholder');
+      nameInput.style.width = '100%';
+      nameInput.style.padding = '4px';
+      nameInput.style.marginTop = '2px';
+      nameInput.style.fontSize = '12px';
+      nameInput.addEventListener('change', function () {
+        var newName = this.value.trim() || null;
+        if (currentAx) {
+          var oldName = currentAx.name;
+          if (oldName && state.usedNames && state.usedNames[oldName]) delete state.usedNames[oldName];
+          if (newName) newName = generateUniqueName(newName);
+          currentAx.name = newName;
+          currentAx.nameElementA = null;
+          currentAx.nameElementB = null;
+          if (axolotlRegistry[axolotlId]) {
+            axolotlRegistry[axolotlId].name = newName;
+            axolotlRegistry[axolotlId].nameElementA = null;
+            axolotlRegistry[axolotlId].nameElementB = null;
+          }
+          var nameEl = $('axDetailName');
+          var sexDisplayHtml = displayAx.age >= 12 ? (displayAx.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>') : '';
+          var namePart = newName ? nameForDisplay({ name: newName, nameElementA: null, nameElementB: null, type: displayAx.type }, 'en') : typeLabel(displayAx.type);
+          nameEl.innerHTML = (displayAx.familyName ? displayAx.familyName + ' ' : '') + namePart + (sexDisplayHtml ? ' ' + sexDisplayHtml : '');
+          saveGame();
+        }
+      });
+      nameEditDiv.appendChild(nameLabel);
+      nameEditDiv.appendChild(nameInput);
+    } else {
+      var nameElementsContainer = document.createElement('div');
+      nameElementsContainer.style.display = 'flex';
+      nameElementsContainer.style.gap = '8px';
+      nameElementsContainer.style.marginBottom = '8px';
+      var elementADiv = document.createElement('div');
+      elementADiv.style.flex = '1';
+      elementADiv.innerHTML = '<label style="font-size:11px;">' + t('ui.elementA') + '</label>';
+      var elementAInput = document.createElement('input');
+      elementAInput.type = 'text';
+      elementAInput.value = displayAx.nameElementA || '';
+      elementAInput.placeholder = t('dialog.elementAPlaceholder');
+      elementAInput.style.width = '100%';
+      elementAInput.style.padding = '4px';
+      elementAInput.style.marginTop = '2px';
+      elementAInput.style.fontSize = '12px';
+      elementAInput.style.marginBottom = '4px';
+      var hereditaryACheckbox = document.createElement('input');
+      hereditaryACheckbox.type = 'checkbox';
+      hereditaryACheckbox.checked = displayAx.isHereditaryA || false;
+      hereditaryACheckbox.id = 'hereditaryA_' + axolotlId;
+      var hereditaryALabel = document.createElement('label');
+      hereditaryALabel.htmlFor = 'hereditaryA_' + axolotlId;
+      hereditaryALabel.textContent = t('ui.hereditary');
+      hereditaryALabel.style.fontSize = '11px';
+      hereditaryALabel.style.marginLeft = '4px';
+      elementADiv.appendChild(elementAInput);
+      elementADiv.appendChild(hereditaryACheckbox);
+      elementADiv.appendChild(hereditaryALabel);
+      var elementBDiv = document.createElement('div');
+      elementBDiv.style.flex = '1';
+      elementBDiv.innerHTML = '<label style="font-size:11px;">' + t('ui.elementB') + '</label>';
+      var elementBInput = document.createElement('input');
+      elementBInput.type = 'text';
+      elementBInput.value = displayAx.nameElementB || '';
+      elementBInput.placeholder = t('dialog.elementBPlaceholder');
+      elementBInput.style.width = '100%';
+      elementBInput.style.padding = '4px';
+      elementBInput.style.marginTop = '2px';
+      elementBInput.style.fontSize = '12px';
+      elementBInput.style.marginBottom = '4px';
+      var hereditaryBCheckbox = document.createElement('input');
+      hereditaryBCheckbox.type = 'checkbox';
+      hereditaryBCheckbox.checked = displayAx.isHereditaryB || false;
+      hereditaryBCheckbox.id = 'hereditaryB_' + axolotlId;
+      var hereditaryBLabel = document.createElement('label');
+      hereditaryBLabel.htmlFor = 'hereditaryB_' + axolotlId;
+      hereditaryBLabel.textContent = t('ui.hereditary');
+      hereditaryBLabel.style.fontSize = '11px';
+      hereditaryBLabel.style.marginLeft = '4px';
+      elementBDiv.appendChild(elementBInput);
+      elementBDiv.appendChild(hereditaryBCheckbox);
+      elementBDiv.appendChild(hereditaryBLabel);
+      nameElementsContainer.appendChild(elementADiv);
+      nameElementsContainer.appendChild(elementBDiv);
+      function updateNameFromElements() {
+        var elementA = elementAInput.value.trim();
+        var elementB = elementBInput.value.trim();
+        var isHereditaryA = hereditaryACheckbox.checked;
+        var isHereditaryB = hereditaryBCheckbox.checked;
+        if (!elementA && elementB && isHereditaryB) {
+          elementA = maleNameElementA[Math.floor(Math.random() * maleNameElementA.length)];
+          elementAInput.value = elementA;
+        }
+        var newName = (elementA || '') + (elementB || '');
+        if (newName === '') newName = null;
+        if (currentAx) {
+          var oldName = currentAx.name;
+          if (oldName && state.usedNames && state.usedNames[oldName]) delete state.usedNames[oldName];
+          if (newName) newName = generateUniqueName(newName);
+          currentAx.name = newName;
+          currentAx.nameElementA = elementA || null;
+          currentAx.nameElementB = elementB || null;
+          currentAx.isHereditaryA = isHereditaryA;
+          currentAx.isHereditaryB = isHereditaryB;
+          if (axolotlRegistry[axolotlId]) {
+            axolotlRegistry[axolotlId].name = newName;
+            axolotlRegistry[axolotlId].nameElementA = elementA || null;
+            axolotlRegistry[axolotlId].nameElementB = elementB || null;
+            axolotlRegistry[axolotlId].isHereditaryA = isHereditaryA;
+            axolotlRegistry[axolotlId].isHereditaryB = isHereditaryB;
+          }
+          var nameEl = $('axDetailName');
+          var sexDisplayHtml = displayAx.age >= 12 ? (displayAx.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>') : '';
+          var namePart = newName ? nameForDisplay({ name: newName, nameElementA: elementA || null, nameElementB: elementB || null, type: displayAx.type }, 'ja') : typeLabel(displayAx.type);
+          nameEl.innerHTML = (displayAx.familyName ? displayAx.familyName + ' ' : '') + namePart + (sexDisplayHtml ? ' ' + sexDisplayHtml : '');
+          saveGame();
+        }
       }
-      
-      var newName = (elementA || '') + (elementB || '');
-      if (newName === '') newName = null;
-      
-      if (currentAx) {
-        // 古い名前を削除（重複チェック用）
-        var oldName = currentAx.name;
-        if (oldName && state.usedNames && state.usedNames[oldName]) {
-          delete state.usedNames[oldName];
+      elementAInput.addEventListener('change', updateNameFromElements);
+      elementBInput.addEventListener('change', updateNameFromElements);
+      hereditaryACheckbox.addEventListener('change', updateNameFromElements);
+      hereditaryBCheckbox.addEventListener('change', updateNameFromElements);
+      nameEditDiv.appendChild(nameElementsContainer);
+      if (displayAx.name && !displayAx.nameElementA && !displayAx.nameElementB) {
+        var existingName = displayAx.name;
+        if (existingName.length >= 2) {
+          elementAInput.value = existingName.substring(0, 1);
+          elementBInput.value = existingName.substring(1);
+        } else {
+          elementBInput.value = existingName;
         }
-        
-        // 新しい名前を登録（重複チェック）
-        if (newName) {
-          newName = generateUniqueName(newName);
-        }
-        
-        currentAx.name = newName;
-        currentAx.nameElementA = elementA || null;
-        currentAx.nameElementB = elementB || null;
-        currentAx.isHereditaryA = isHereditaryA;
-        currentAx.isHereditaryB = isHereditaryB;
-        if (axolotlRegistry[axolotlId]) {
-          axolotlRegistry[axolotlId].name = newName;
-          axolotlRegistry[axolotlId].nameElementA = elementA || null;
-          axolotlRegistry[axolotlId].nameElementB = elementB || null;
-          axolotlRegistry[axolotlId].isHereditaryA = isHereditaryA;
-          axolotlRegistry[axolotlId].isHereditaryB = isHereditaryB;
-        }
-        // モーダル内の表示のみ更新
-        var nameEl = $('axDetailName');
-        var sexDisplayHtml = displayAx.age >= 12 ? (displayAx.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>') : '';
-        var namePart = newName ? nameForDisplay({ name: newName, nameElementA: elementA || null, nameElementB: elementB || null, type: displayAx.type }, localeForNameDisplay()) : typeLabel(displayAx.type);
-        var displayName = (displayAx.familyName ? displayAx.familyName + ' ' : '') + namePart;
-        nameEl.innerHTML = displayName + (sexDisplayHtml ? ' ' + sexDisplayHtml : '');
-        saveGame();
+        updateNameFromElements();
       }
     }
-    
-    elementAInput.addEventListener('change', updateNameFromElements);
-    elementBInput.addEventListener('change', updateNameFromElements);
-    hereditaryACheckbox.addEventListener('change', updateNameFromElements);
-    hereditaryBCheckbox.addEventListener('change', updateNameFromElements);
-    
-    nameEditDiv.appendChild(nameElementsContainer);
     bodyEl.appendChild(nameEditDiv);
-    
-    // 既存の名前がある場合は要素A/Bに分割
-    if (displayAx.name && !displayAx.nameElementA && !displayAx.nameElementB) {
-      // 既存の名前を2文字に分割（最初の1文字がA、残りがB）
-      var existingName = displayAx.name;
-      if (existingName.length >= 2) {
-        elementAInput.value = existingName.substring(0, 1);
-        elementBInput.value = existingName.substring(1);
-      } else {
-        elementBInput.value = existingName;
-      }
-      updateNameFromElements();
-    }
     
     // 苗字編集欄（繁殖ペアの場合のみ）
     if (displayAx.age >= 12 && (displayAx.sex === 'オス' || displayAx.sex === 'メス')) {
@@ -5862,11 +5841,6 @@
     if (checkbox) {
       checkbox.checked = state.settings && state.settings.autoReorderTanks || false;
     }
-    var langSelect = document.getElementById('axLangSelect');
-    if (langSelect && window.i18n) {
-      langSelect.value = window.i18n.getLocale();
-    }
-    
     overlay.classList.add('visible');
   }
 
@@ -5883,16 +5857,6 @@
       if (!state.settings) state.settings = {};
       state.settings.autoReorderTanks = this.checked;
       saveGame();
-    });
-  }
-
-  var axLangSelect = document.getElementById('axLangSelect');
-  if (axLangSelect && window.i18n && window.axolotlShopI18n) {
-    axLangSelect.addEventListener('change', function () {
-      window.i18n.setLocale(this.value);
-      document.title = window.i18n.t('ui.pageTitle');
-      window.axolotlShopI18n.update();
-      if (window.axolotlShopUpdateUI) window.axolotlShopUpdateUI();
     });
   }
 
@@ -6366,9 +6330,14 @@
   // ゲーム開始（タイトル画面から呼ばれる）
   function doStartGame(isNewGame) {
     if (isNewGame) {
+      state.saveLocale = window.i18n && window.i18n.getLocale ? window.i18n.getLocale() : 'en';
       resetGame();
     } else {
       if (!loadGame()) return false;
+      if (state.saveLocale && window.i18n && window.i18n.setLocale) {
+        window.i18n.setLocale(state.saveLocale);
+        if (window.axolotlShopI18n && window.axolotlShopI18n.update) window.axolotlShopI18n.update();
+      }
       updateUI();
       if (state.usedNames) state.usedNames = {};
       state.tanks.forEach(function(tank) {

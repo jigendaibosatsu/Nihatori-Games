@@ -33,6 +33,7 @@
     "male": "オス",
     "female": "メス",
     "detail": "詳細",
+    "name": "名前:",
     "confirm": "決定",
     "sell": "販売",
     "unknown": "不明",
@@ -189,6 +190,7 @@
   },
   "dialog": {
     "shopNamePrompt": "ショップ名を入力してください:",
+    "namePlaceholder": "名前を入力",
     "elementAPlaceholder": "要素A（例：斑）",
     "elementBPlaceholder": "要素B（例：尾）",
     "familyNamePlaceholder": "苗字を入力（子に継承されます）",
@@ -262,6 +264,8 @@
     "feedUpgraded": "餌を{{feed}}にアップグレードしました。",
     "tankLevelUp": "水槽設備をレベル{{level}}にアップグレードした。（最大{{max}}槽）",
     "tankAdded": "新しい水槽を1つ増設した。（{{cost}}）",
+    "cannotAddTank": "これ以上水槽を増やせません。",
+    "notEnoughTankCost": "水槽追加の資金が足りません。",
     "saveDeleted": "セーブデータを削除しました。最初から始めます。",
     "passwordGenerated": "復活の呪文を生成しました。コピーして保存してください。",
     "passwordGenerateFailed": "復活の呪文の生成に失敗しました。",
@@ -285,8 +289,11 @@
       "selectTarget": "対象を選ぶ",
       "addTank": "水槽を増やす",
       "addTankLevelFormat": "Lv{{n}} 最大{{max}}槽",
+      "addTankSlotFormat": "{{n}}/{{max}}槽",
       "addTankDetail": "水槽設備レベル: Lv1〜Lv{{maxLevel}}<br>レベルに応じて最大槽数が増えます（Lv1=2槽、Lv2=3槽…）。<br>レベルアップと水槽追加の両方に資金が必要です。",
-      "addTankBtn": "水槽追加"
+      "addTankDetailSimple": "所持金で水槽を追加できます。槽数が増えるほど次の追加費用が上がります。最大15槽まで。",
+      "addTankBtn": "水槽追加",
+      "maxTanks": "最大槽数です"
     },
     "feedDisplay": {
       "artificial": "💊 人工餌",

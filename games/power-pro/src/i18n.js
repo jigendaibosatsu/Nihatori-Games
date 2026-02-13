@@ -1,12 +1,12 @@
 /**
- * Minimal i18n for axolotl-shop
+ * Minimal i18n for power-pro (Axolotl Baseball)
  * Fallback: current locale -> en -> ja -> return key string
  */
 (function (global) {
   'use strict';
 
   var LOCALE_KEY = 'locale';
-  var DEFAULT_LOCALE = 'en';
+  var DEFAULT_LOCALE = 'ja';
   var SUPPORTED_LOCALES = ['ja', 'en'];
   var messages = {};
   var currentLocale = DEFAULT_LOCALE;

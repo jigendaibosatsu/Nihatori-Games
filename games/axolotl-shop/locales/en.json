@@ -33,6 +33,7 @@
     "male": "Male",
     "female": "Female",
     "detail": "Detail",
+    "name": "Name:",
     "confirm": "Confirm",
     "sell": "Sell",
     "unknown": "Unknown",
@@ -189,6 +190,7 @@
   },
   "dialog": {
     "shopNamePrompt": "Enter shop name:",
+    "namePlaceholder": "Enter name",
     "elementAPlaceholder": "Element A (e.g. spot)",
     "elementBPlaceholder": "Element B (e.g. tail)",
     "familyNamePlaceholder": "Enter family name (inherited by offspring)",
