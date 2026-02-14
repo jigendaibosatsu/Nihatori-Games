@@ -1,0 +1,39 @@
+{
+  "axolotl-shop": {
+    "type": "plain",
+    "gameFiles": ["axolotl-shop.css", "axolotl-shop-init.js", "axolotl-shop.js", "mascot.js", "icon.png"],
+    "copyFromRoot": ["styles.css"],
+    "copyDirs": ["src", "locales"],
+    "assets": [
+      { "from": "assets/characters/axolotl", "to": "assets/axolotl" },
+      { "from": "assets/items/unko_32.png", "to": "assets/items/unko_32.png" }
+    ],
+    "pathRewrites": [
+      ["href=\"/styles.css\"", "href=\"./styles.css\""],
+      ["src=\"/assets/header.js\"", "src=\"./header-itch.js\""],
+      ["href=\"/index.html\"", "href=\"#\""],
+      ["'/assets/characters/axolotl/'", "'./assets/axolotl/'"],
+      ["/assets/items/unko_32.png", "./assets/items/unko_32.png"]
+    ],
+    "rewriteFiles": ["index.html", "axolotl-shop.js", "mascot.js"],
+    "useHeaderStub": true
+  },
+  "mine-tap": {
+    "type": "plain",
+    "gameFiles": [],
+    "copyDirs": ["src", "locales"],
+    "assets": [
+      { "from": "assets/icon", "to": "assets/icon" },
+      { "from": "assets/ores", "to": "assets/ores" },
+      { "from": "assets/money", "to": "assets/money" },
+      { "from": "assets/items/pickaxe", "to": "assets/items/pickaxe" },
+      { "from": "assets/sound/damege", "to": "assets/sound/damege" },
+      { "from": "assets/characters", "to": "assets/characters" }
+    ],
+    "pathRewrites": [
+      ["/assets/", "./assets/", "regex"]
+    ],
+    "rewriteFiles": ["index.html"],
+    "useHeaderStub": false
+  }
+}

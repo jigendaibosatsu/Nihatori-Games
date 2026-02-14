@@ -1,7 +1,9 @@
 {
   "scripts": {
     "check:i18n:axolotl": "node games/axolotl-shop/check-i18n.js",
-    "build:itch:axolotl-shop": "node scripts/build-itch-axolotl-shop.js"
+    "build:itch:axolotl-shop": "node scripts/build-itch.js axolotl-shop",
+    "build:itch": "node scripts/build-itch.js",
+    "build:itch:mine-tap": "node scripts/build-itch.js mine-tap"
   },
   "devDependencies": {
     "vite-plugin-pwa": "^1.2.0"
