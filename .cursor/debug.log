@@ -1,0 +1,28 @@
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":"base-pickaxe-1771055993894"},"timestamp":1771056000034,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056000035,"hypothesisId":"A,B"}
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":1771055996900.3914},"timestamp":1771056000174,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056000175,"hypothesisId":"A,B"}
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":"base-pickaxe-1771055993894"},"timestamp":1771056000342,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056000344,"hypothesisId":"A,B"}
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":1771055996900.3914},"timestamp":1771056000500,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056000501,"hypothesisId":"A,B"}
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":"base-pickaxe-1771055993894"},"timestamp":1771056000659,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056000661,"hypothesisId":"A,B"}
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":1771055996900.3914},"timestamp":1771056000825,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056000826,"hypothesisId":"A,B"}
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":"base-pickaxe-1771055993894"},"timestamp":1771056001024,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056001025,"hypothesisId":"A,B"}
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":1771055996900.3914},"timestamp":1771056001317,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056001318,"hypothesisId":"A,B"}
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":"base-pickaxe-1771055993894"},"timestamp":1771056001674,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056001674,"hypothesisId":"A,B"}
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":1771055996900.3914},"timestamp":1771056003632,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056003633,"hypothesisId":"A,B"}
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":"base-pickaxe-1771055993894"},"timestamp":1771056004024,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056004025,"hypothesisId":"A,B"}
+{"location":"unequipTool:entry","message":"unequipTool called","data":{"invCountBefore":1,"equippedId":1771055996900.3914},"timestamp":1771056006632,"hypothesisId":"A,B"}
+{"location":"unequipTool:after","message":"equipped","data":{"invCountAfter":1,"equippedFromInv":true},"timestamp":1771056006633,"hypothesisId":"A,B"}
+{"location":"breakTool:entry","message":"breakTool called","data":{"hadEquipped":true,"invToolCount":1},"timestamp":1771056022391,"hypothesisId":"C"}
+{"location":"breakTool:fromInv","message":"equipped from inventory","data":{},"timestamp":1771056022391,"hypothesisId":"C"}
+{"location":"breakTool:entry","message":"breakTool called","data":{"hadEquipped":true,"invToolCount":0},"timestamp":1771056056020,"hypothesisId":"C"}
+{"location":"breakTool:createBase","message":"created base pickaxe (no inv tools)","data":{"invCount":0},"timestamp":1771056056021,"hypothesisId":"C"}

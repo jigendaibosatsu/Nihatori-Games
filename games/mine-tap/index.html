@@ -90,6 +90,36 @@
     .depth-info {
       margin-bottom: 16px;
     }
+    .depth-travel {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .depth-travel input[type="number"] {
+      width: 80px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 2px solid #3b82f6;
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      font-size: 14px;
+    }
+    .depth-travel input[type="range"] {
+      flex: 1;
+      min-width: 100px;
+      accent-color: #3b82f6;
+    }
+    .depth-travel .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    .depth-hint {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
     .depth-value {
       font-size: 24px;
       font-weight: bold;
@@ -171,8 +201,8 @@
     .log-entry.epic { border-color: #a78bfa; color: #c4b5fd; }
     .log-entry.legendary { border-color: #fbbf24; color: #fde047; }
     .log-entry img {
-      width: 16px;
-      height: 16px;
+      width: 32px;
+      height: 32px;
       vertical-align: middle;
       margin-right: 4px;
       display: inline-block;
@@ -181,33 +211,50 @@
       position: fixed;
       pointer-events: none;
       z-index: 1000;
-      font-size: 14px;
+      font-size: 28px;
       font-weight: bold;
       color: #fbbf24;
       text-shadow: 0 0 4px rgba(0,0,0,0.8);
       animation: rewardFloat 2s ease-out forwards;
     }
     .reward-animation img {
-      width: 24px;
-      height: 24px;
+      width: 48px;
+      height: 48px;
       vertical-align: middle;
       margin-right: 4px;
     }
     @keyframes rewardFloat {
       0% {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translate(-50%, 0) scale(1);
       }
       100% {
         opacity: 0;
-        transform: translateY(-80px) scale(1.2);
+        transform: translate(-50%, -80px) scale(1.2);
       }
     }
     .stat-item img {
-      width: 20px;
-      height: 20px;
+      width: 40px;
+      height: 40px;
       vertical-align: middle;
       margin-right: 4px;
+    }
+    .stat-ore-gem-icon {
+      width: 56px !important;
+      height: 56px !important;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    /* 自動掘削中のキャラクター：各体が個別にバウンス（axolotl shop風） */
+    @keyframes monster-bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .monster-auto-dig .monster-bounce,
+    .monster-auto-dig img.monster-bounce {
+      display: inline-block;
+      animation: monster-bounce 1s ease-in-out infinite;
+      vertical-align: middle;
     }
     .equipment-grid {
       display: grid;
@@ -426,7 +473,7 @@
     <!-- リソース表示 -->
     <div class="stats-bar">
       <div class="stat-item">
-        <div class="stat-label" id="statGold">Gold</div>
+        <div class="stat-label" id="statGold">Yen</div>
         <div class="stat-value gold" id="goldValue">0</div>
       </div>
       <div class="stat-item">
@@ -445,6 +492,7 @@
       <button class="tab" onclick="switchTab('equipment')" id="tabEquipment">Equipment</button>
       <button class="tab" onclick="switchTab('upgrade')" id="tabUpgrade">Upgrade</button>
       <button class="tab" onclick="switchTab('shop')" id="tabShop">Shop</button>
+      <button class="tab" onclick="switchTab('encyclopedia')" id="tabEncyclopedia">Encyclopedia</button>
     </div>
     
     <!-- 掘るタブ -->
@@ -452,6 +500,13 @@
       <div class="mine-panel">
         <div class="depth-info">
           <div class="depth-value"><span id="depthLabel">Depth</span>: <span id="depthValue">1</span>m</div>
+          <div class="depth-travel" id="depthTravelRow">
+            <span id="depthRangeLabel" style="font-size:11px; color:#94a3b8;">1–1m</span>
+            <input type="range" id="depthSlider" min="1" max="1" value="1" aria-label="Depth slider" oninput="syncDepthFromSlider()" onchange="goToDepthFromInput()" />
+            <input type="number" id="depthInput" min="1" placeholder="m" aria-label="Depth" onkeypress="if(event.key==='Enter')goToDepthFromInput()" onchange="syncDepthFromInput()" />
+            <button class="btn btn-small" id="depthGoBtn" onclick="goToDepthFromInput()"><span id="depthGoLabel">Go</span></button>
+          </div>
+          <div class="depth-hint" id="depthHint"></div>
           <div class="block-hp-bar">
             <div class="block-hp-fill" id="blockHpFill">100/100</div>
           </div>
@@ -466,6 +521,7 @@
             </div>
           </div>
         </div>
+        <div id="monstersPanel" style="margin-bottom:12px; text-align:left; font-size:11px; color:#94a3b8;"></div>
         <button class="mine-button" id="mineButton" onclick="mine()">Mine</button>
         <div class="log-panel" id="mineLog"></div>
       </div>
@@ -538,6 +594,10 @@
     
     <!-- ショップタブ -->
     <div id="shopTab" class="tab-content">
+      <div class="equipment-section" style="margin-bottom:16px;">
+        <div class="section-title" id="shopMonstersTitle">Auto Dig Monsters</div>
+        <div id="shopMonstersList"></div>
+      </div>
       <div class="equipment-grid">
         <div class="equipment-section">
           <div class="section-title" id="shopEquipmentTitle">Sell Equipment</div>
@@ -551,6 +611,23 @@
           <div class="section-title" id="shopGemTitle">Exchange Gems</div>
           <div id="shopGemList"></div>
         </div>
+      </div>
+    </div>
+    
+    <!-- 図鑑タブ -->
+    <div id="encyclopediaTab" class="tab-content">
+      <div class="encyclopedia-desc" style="font-size:11px; color:#94a3b8; margin-bottom:12px;" id="encyclopediaDesc"></div>
+      <div class="equipment-section" style="margin-bottom:16px;">
+        <div class="section-title" id="encyclopediaOresTitle"></div>
+        <div id="encyclopediaOresList" class="encyclopedia-grid"></div>
+      </div>
+      <div class="equipment-section" style="margin-bottom:16px;">
+        <div class="section-title" id="encyclopediaGemsTitle"></div>
+        <div id="encyclopediaGemsList" class="encyclopedia-grid"></div>
+      </div>
+      <div class="equipment-section">
+        <div class="section-title" id="encyclopediaPickaxesTitle"></div>
+        <div id="encyclopediaPickaxesList" class="encyclopedia-grid"></div>
       </div>
     </div>
   </div>
@@ -570,65 +647,103 @@
     function getRareWeaponName(key) { return t('rareWeapon.' + key); }
     function getEquipmentDisplayName(eq) {
       if (!eq) return '';
-      if (eq.nameKey === 'basePickaxe') return getToolName('basePickaxe');
+      if (eq.nameKey === 'basePickaxe') return getToolName('rock');
       if (eq.nameKey && RARE_WEAPONS[eq.nameKey]) return getRareWeaponName(eq.nameKey);
-      if (eq.nameKey === 'pickaxe') return getToolName('pickaxe');
-      return eq.name || getToolName('pickaxe');
+      if (eq.nameKey && PICKAXE_LIST[eq.nameKey]) return getToolName(eq.nameKey);
+      return eq.name || getToolName('rock');
+    }
+
+    function getMonsterName(key) { return t('monster.' + key); }
+    function getMonsterDefaultName(key) { return t('monsterName.' + key); }
+    function getGemCountByType(type) {
+      if (!Array.isArray(gameState.resources.gems)) return 0;
+      return gameState.resources.gems.filter(g => g.type === type).length;
+    }
+    function getMonsterStats(type, level) {
+      const m = MONSTERS[type];
+      if (!m) return { digInterval: 1, tapPower: 0 };
+      const lv = Math.max(1, level || 1);
+      const up = m.upgradePerLevel || {};
+      return {
+        digInterval: Math.max(0.3, (m.baseStats.digInterval || 1) + (up.digInterval || 0) * (lv - 1)),
+        tapPower: (m.baseStats.tapPower || 1) + (up.tapPower || 0) * (lv - 1)
+      };
     }
 
     function getPickaxeImagePath(equipment) {
       if (!equipment) return PICKAXE_LIST.basePickaxe;
-      // 耐久力20%以下で使用済みツルハシを表示
-      if (equipment.durability !== undefined && equipment.maxDurability && equipment.maxDurability > 0) {
-        const pct = (equipment.durability / equipment.maxDurability) * 100;
-        if (pct <= 20 && PICKAXE_LIST.used && PICKAXE_LIST.used.length > 0) {
-          const idx = Math.min(Math.floor((1 - pct / 20) * PICKAXE_LIST.used.length), PICKAXE_LIST.used.length - 1);
-          return PICKAXE_LIST.used[idx];
-        }
-      }
+      // 耐久力で画像は変えない（used_pickaxeは別アイテムとして扱う）
       if (equipment.nameKey === 'basePickaxe') return PICKAXE_LIST.basePickaxe;
-      if (equipment.nameKey && RARE_WEAPONS[equipment.nameKey]) {
-        return PICKAXE_LIST[equipment.nameKey] || PICKAXE_LIST.pickaxe[equipment.rarity] || PICKAXE_LIST.basePickaxe;
-      }
-      const rarity = equipment.rarity || 'common';
-      return (PICKAXE_LIST.pickaxe && PICKAXE_LIST.pickaxe[rarity]) || PICKAXE_LIST.basePickaxe;
+      if (equipment.nameKey && PICKAXE_LIST[equipment.nameKey]) return PICKAXE_LIST[equipment.nameKey];
+      return PICKAXE_LIST.basePickaxe;
     }
 
     // ===== 定数定義 =====
     const ORE_TYPES = {
-      iron: { depthRange: [1, 30], image: '/assets/ores/iron_ore.png' },
-      silver: { depthRange: [31, 80], image: '/assets/ores/silver_ore.png' },
-      gold: { depthRange: [81, 150], image: '/assets/ores/gold_ore.png' },
-      crystal: { depthRange: [151, Infinity], image: '/assets/ores/cristal_blue.png' }
+      rock: { depthRange: [1, 15], image: '/assets/ores/rock.png', rarity: 0 },
+      copper: { depthRange: [16, 40], image: '/assets/ores/copper_ore.png', rarity: 1 },
+      iron: { depthRange: [41, 70], image: '/assets/ores/iron_ore.png', rarity: 2 },
+      silver: { depthRange: [71, 110], image: '/assets/ores/silver_ore.png', rarity: 3 },
+      gold: { depthRange: [111, 170], image: '/assets/ores/gold_ore.png', rarity: 4 },
+      platinum: { depthRange: [171, 230], image: '/assets/ores/platinum_ore.png', rarity: 5 },
+      quartz: { depthRange: [231, 299], image: '/assets/ores/quartz.png', rarity: 6 },
+      Carmeltazite: { depthRange: [300, 400], image: '/assets/ores/Carmeltazite.png', rarity: 7 },
+      Lonsdaleite: { depthRange: [401, 500], image: '/assets/ores/Lonsdaleite.png', rarity: 8 },
+      'Wurtzite BN': { depthRange: [501, Infinity], image: '/assets/ores/Wurtzite%20BN.png', rarity: 9 }
     };
+
+    // 通貨：円（獲得量に応じてアイコン変更。+10yen→1円玉、+420yen→100円札など）
+    const YEN_DENOMINATIONS = [
+      { min: 10000, image: '/assets/money/10000yen.png' },
+      { min: 5000, image: '/assets/money/5000yen.png' },
+      { min: 2000, image: '/assets/money/2000yen.png' },
+      { min: 1000, image: '/assets/money/1000yen.png' },
+      { min: 500, image: '/assets/money/500yen.png' },
+      { min: 100, image: '/assets/money/100yen.png' },
+      { min: 1, image: '/assets/money/1yen.png' }
+    ];
+    function getYenIcon(amount) {
+      const n = Math.floor(amount);
+      for (const d of YEN_DENOMINATIONS) {
+        if (n >= d.min) return d.image;
+      }
+      return YEN_DENOMINATIONS[YEN_DENOMINATIONS.length - 1].image;
+    }
 
     // アセットパスマッピング
     const ASSET_PATHS = {
       coin: '/assets/money/coin_32.png',
       goldCoin: '/assets/money/gold_coins128.png',
+      yen: YEN_DENOMINATIONS,
       gems: {
         ruby: '/assets/ores/ruby.png',
         sapphire: '/assets/ores/sapphire.png',
         emerald: '/assets/ores/emerald.png',
         diamond: '/assets/ores/diamond.png',
         amethyst: '/assets/ores/amegist.png',
-        topaz: '/assets/ores/topaz.png'
+        topaz: '/assets/ores/topaz.png',
+        alexandrite: '/assets/ores/alexandrite.png',
+        quartz: '/assets/ores/quartz.png',
+        obsidian: '/assets/ores/obsidian.png'
       }
     };
 
-    // ツルハシアセット一覧（assets/items/pickaxe/）
+    // ツルハシアセット一覧（assets/items/pickaxe/）- 全アセットを名前でマッピング
     const PICKAXE_LIST = {
       basePickaxe: '/assets/items/pickaxe/rock_pickaxe.png',
-      pickaxe: {
-        common: '/assets/items/pickaxe/rock_pickaxe.png',
-        rare: '/assets/items/pickaxe/iron_pickaxe.png',
-        epic: '/assets/items/pickaxe/golden_pickaxe.png',
-        legendary: '/assets/items/pickaxe/diamond_pickaxe.png'
-      },
-      thunder: '/assets/items/pickaxe/ice_pickaxe.png',
+      rock: '/assets/items/pickaxe/rock_pickaxe.png',
+      used_1: '/assets/items/pickaxe/used_pickaxe_1.png',
+      used_2: '/assets/items/pickaxe/used_pickaxe_2.png',
+      used_3: '/assets/items/pickaxe/used_pickaxe_3.png',
+      iron: '/assets/items/pickaxe/iron_pickaxe.png',
+      silvre: '/assets/items/pickaxe/silvre_pickaxe.png',
+      golden: '/assets/items/pickaxe/golden_pickaxe.png',
+      diamond: '/assets/items/pickaxe/diamond_pickaxe.png',
+      Platinum: '/assets/items/pickaxe/Platinum_pickaxe.png',
       ice: '/assets/items/pickaxe/ice_pickaxe.png',
-      flame: '/assets/items/pickaxe/golden_pickaxe.png',
-      mythic: '/assets/items/pickaxe/Carmeltazite_pickaxe.png',
+      Carmeltazite: '/assets/items/pickaxe/Carmeltazite_pickaxe.png',
+      Lonsdaleite: '/assets/items/pickaxe/Lonsdaleite_pickaxe.png',
+      'Wurtzite BN': '/assets/items/pickaxe/Wurtzite BN_pickaxe.png',
       used: [
         '/assets/items/pickaxe/used_pickaxe_1.png',
         '/assets/items/pickaxe/used_pickaxe_2.png',
@@ -648,11 +763,11 @@
     const TOOL_UPGRADE_COST_MULT = 1.22;
     const TOOL_UPGRADE_POWER = 2;
 
-    // 基本ツルハシ
+    // 基本ツルハシ（rock_pickaxe）
     const BASE_PICKAXE = {
       id: 'base-pickaxe',
       type: 'tool',
-      nameKey: 'basePickaxe',
+      nameKey: 'rock',
       rarity: 'common',
       durability: 100,
       maxDurability: 100,
@@ -671,7 +786,10 @@
       emerald: { basePrice: 150 },
       diamond: { basePrice: 200 },
       amethyst: { basePrice: 80 },
-      topaz: { basePrice: 90 }
+      topaz: { basePrice: 90 },
+      alexandrite: { basePrice: 110 },
+      quartz: { basePrice: 60 },
+      obsidian: { basePrice: 70 }
     };
 
     // 宝石のサイズ
@@ -681,68 +799,152 @@
       large: { multiplier: 2.5 }
     };
 
-    // レア武器（開発解除可能なツルハシ）
+    // レア武器（開発解除可能なツルハシ）- 同名の鉱石・宝石を使用・ステータス強化
     const RARE_WEAPONS = {
-      thunder: {
-        nameKey: 'thunder',
+      iron: {
+        nameKey: 'iron',
         rarity: 'rare',
-        requiredOres: { iron: 50, silver: 30 },
-        stats: {
-          tapPower: 15,
-          tapPowerPercent: 20,
-          goldBonus: 10,
-          oreBonus: 10
-        },
+        requiredOres: { rock: 20, iron: 30 },
+        requiredGems: {},
+        stats: { tapPower: 25, tapPowerPercent: 25, goldBonus: 15, oreBonus: 15 },
         durability: 200,
         maxDurability: 200
+      },
+      silvre: {
+        nameKey: 'silvre',
+        rarity: 'rare',
+        requiredOres: { copper: 30, iron: 25, silver: 25 },
+        requiredGems: {},
+        stats: { tapPower: 35, tapPowerPercent: 30, goldBonus: 20, oreBonus: 20 },
+        durability: 280,
+        maxDurability: 280
+      },
+      golden: {
+        nameKey: 'golden',
+        rarity: 'epic',
+        requiredOres: { iron: 30, silver: 30, gold: 40 },
+        requiredGems: {},
+        stats: { tapPower: 50, tapPowerPercent: 45, goldBonus: 30, oreBonus: 30 },
+        durability: 400,
+        maxDurability: 400
+      },
+      diamond: {
+        nameKey: 'diamond',
+        rarity: 'epic',
+        requiredOres: { gold: 40, platinum: 30 },
+        requiredGems: { diamond: 3 },
+        stats: { tapPower: 70, tapPowerPercent: 55, goldBonus: 45, oreBonus: 45 },
+        durability: 500,
+        maxDurability: 500
+      },
+      Platinum: {
+        nameKey: 'Platinum',
+        rarity: 'epic',
+        requiredOres: { gold: 30, platinum: 50, quartz: 20 },
+        requiredGems: {},
+        stats: { tapPower: 80, tapPowerPercent: 60, goldBonus: 50, oreBonus: 50 },
+        durability: 550,
+        maxDurability: 550
       },
       ice: {
         nameKey: 'ice',
         rarity: 'epic',
-        requiredOres: { silver: 50, gold: 30, crystal: 10 },
-        stats: {
-          tapPower: 25,
-          tapPowerPercent: 30,
-          goldBonus: 15,
-          oreBonus: 20
-        },
-        durability: 300,
-        maxDurability: 300
+        requiredOres: { silver: 40, gold: 20, quartz: 15 },
+        requiredGems: { sapphire: 3 },
+        stats: { tapPower: 60, tapPowerPercent: 50, goldBonus: 35, oreBonus: 40 },
+        durability: 450,
+        maxDurability: 450
       },
-      flame: {
-        nameKey: 'flame',
-        rarity: 'epic',
-        requiredOres: { gold: 50, crystal: 30 },
-        stats: {
-          tapPower: 30,
-          tapPowerPercent: 25,
-          goldBonus: 20,
-          oreBonus: 15
-        },
-        durability: 350,
-        maxDurability: 350
-      },
-      mythic: {
-        nameKey: 'mythic',
+      Carmeltazite: {
+        nameKey: 'Carmeltazite',
         rarity: 'legendary',
-        requiredOres: { crystal: 100, gold: 80 },
-        stats: {
-          tapPower: 50,
-          tapPowerPercent: 50,
-          goldBonus: 30,
-          oreBonus: 30
-        },
-        durability: 500,
-        maxDurability: 500
+        requiredOres: { platinum: 40, quartz: 50, Carmeltazite: 20 },
+        requiredGems: {},
+        stats: { tapPower: 120, tapPowerPercent: 80, goldBonus: 70, oreBonus: 70 },
+        durability: 700,
+        maxDurability: 700
+      },
+      Lonsdaleite: {
+        nameKey: 'Lonsdaleite',
+        rarity: 'legendary',
+        requiredOres: { quartz: 60, Carmeltazite: 30, Lonsdaleite: 15 },
+        requiredGems: {},
+        stats: { tapPower: 150, tapPowerPercent: 95, goldBonus: 90, oreBonus: 90 },
+        durability: 800,
+        maxDurability: 800
+      },
+      'Wurtzite BN': {
+        nameKey: 'Wurtzite BN',
+        rarity: 'legendary',
+        requiredOres: { Carmeltazite: 25, Lonsdaleite: 20, 'Wurtzite BN': 10 },
+        requiredGems: {},
+        stats: { tapPower: 200, tapPowerPercent: 120, goldBonus: 120, oreBonus: 120 },
+        durability: 1000,
+        maxDurability: 1000
       }
     };
 
     // 鉱物の基本価格
     const ORE_PRICES = {
+      rock: 1,
+      copper: 3,
       iron: 5,
       silver: 15,
       gold: 50,
-      crystal: 200
+      platinum: 120,
+      quartz: 200,
+      Carmeltazite: 500,
+      Lonsdaleite: 800,
+      'Wurtzite BN': 1200
+    };
+
+    // 自動掘削モンスター（ショップで購入・強化可能）
+    const MONSTERS = {
+      kobold_shiba: {
+        id: 'kobold_shiba',
+        nameKey: 'kobold_shiba',
+        image: '/assets/characters/kobold_shiba.png',
+        basePrice: 80,
+        baseStats: { digInterval: 1, tapPower: 3 },
+        upgradeCostBase: 30,
+        upgradePerLevel: { tapPower: 1, digInterval: -0.02 }
+      },
+      kobold_bl_shiba: {
+        id: 'kobold_bl_shiba',
+        nameKey: 'kobold_bl_shiba',
+        image: '/assets/characters/kobold_bl_shiba.png',
+        basePrice: 150,
+        baseStats: { digInterval: 0.8, tapPower: 5 },
+        upgradeCostBase: 50,
+        upgradePerLevel: { tapPower: 2, digInterval: -0.015 }
+      },
+      kobold_jr: {
+        id: 'kobold_jr',
+        nameKey: 'kobold_jr',
+        image: '/assets/characters/kobold_jr.png',
+        basePrice: 50,
+        baseStats: { digInterval: 1.5, tapPower: 2 },
+        upgradeCostBase: 20,
+        upgradePerLevel: { tapPower: 1, digInterval: -0.03 }
+      },
+      samoyed_kobold: {
+        id: 'samoyed_kobold',
+        nameKey: 'samoyed_kobold',
+        image: '/assets/characters/samoyed_kobold.png',
+        basePrice: 120,
+        baseStats: { digInterval: 0.9, tapPower: 4 },
+        upgradeCostBase: 40,
+        upgradePerLevel: { tapPower: 1.5, digInterval: -0.02 }
+      },
+      haskey_kobold: {
+        id: 'haskey_kobold',
+        nameKey: 'haskey_kobold',
+        image: '/assets/characters/haskey_samoyed.png',
+        basePrice: 100,
+        baseStats: { digInterval: 1, tapPower: 4 },
+        upgradeCostBase: 35,
+        upgradePerLevel: { tapPower: 1.5, digInterval: -0.02 }
+      }
     };
 
     const STORAGE_KEY = 'mine-tap-save';
@@ -751,13 +953,14 @@
     // ===== ゲーム状態 =====
     let gameState = {
       depth: 1,
+      maxDepthReached: 1, // 到達済み最大深度（この範囲内で自由に移動可能）
       currentBlockHp: 0,
       currentBlockMaxHp: 0,
       
       resources: {
         gold: 0,
-        ore: { iron: 0, silver: 0, gold: 0, crystal: 0 },
-        gems: [] // 宝石を配列で管理（各宝石に種類とサイズを持つ）
+        ore: { rock: 0, copper: 0, iron: 0, silver: 0, gold: 0, platinum: 0, quartz: 0 },
+        gems: []
       },
       
       tool: {
@@ -773,7 +976,12 @@
         critChance: 0
       },
       
-      unlockedWeapons: [], // 開発解除済みの武器ID
+      unlockedWeapons: [],
+      
+      monsters: {}, // { kobold_shiba: { count: 0, level: 1 }, ... }
+      monsterDigAccumulator: {}, // 自動掘削用
+      
+      encyclopedia: { ores: {}, gems: {}, pickaxes: {} }, // 発見したアイテムの図鑑
       
       lastSaveTime: Date.now()
     };
@@ -781,11 +989,19 @@
     // ===== 初期化 =====
     function initGame() {
       gameState.depth = 1;
-      gameState.resources = { gold: 0, ore: { iron: 0, silver: 0, gold: 0, crystal: 0 }, gems: [] };
+      gameState.maxDepthReached = 1;
+      const oreInit = {};
+      Object.keys(ORE_TYPES).forEach(ot => { oreInit[ot] = 0; });
+      gameState.resources = { gold: 0, ore: oreInit, gems: [] };
       gameState.tool = { level: 1, equipped: null };
       gameState.inventory = [];
       gameState.upgrades = { goldBonus: 0, oreBonus: 0, critChance: 0 };
       gameState.unlockedWeapons = [];
+      gameState.monsters = {};
+      gameState.encyclopedia = { ores: {}, gems: {}, pickaxes: {} };
+      Object.keys(MONSTERS).forEach(k => { gameState.monsters[k] = { count: 0, level: 1 }; });
+      gameState.monsterDigAccumulator = {};
+      Object.keys(MONSTERS).forEach(k => { gameState.monsterDigAccumulator[k] = 0; });
       
       // 基本ツルハシを自動装備
       const basePickaxe = JSON.parse(JSON.stringify(BASE_PICKAXE));
@@ -845,6 +1061,29 @@
       return power;
     }
 
+    // タップ音（assets/sound/damege）- ツルハシごとに固定、クリティカルは100%
+    const CRITICAL_SOUND = '014';
+    const TAP_SOUND_CHANCE = 0.8;
+    const PICKAXE_SOUND_MAP = {
+      rock: '001', used_1: '002', used_2: '003', used_3: '004',
+      iron: '006', silvre: '007', golden: '008', diamond: '009',
+      Platinum: '010', ice: '011', Carmeltazite: '012', Lonsdaleite: '013',
+      'Wurtzite BN': '005'
+    };
+    function playTapSound(isCritical, equipped) {
+      if (isCritical) {
+        const audio = new Audio(`/assets/sound/damege/se_itemget_${CRITICAL_SOUND}.wav`);
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+      } else if (Math.random() < TAP_SOUND_CHANCE) {
+        const nameKey = equipped && equipped.nameKey ? equipped.nameKey : 'rock';
+        const id = PICKAXE_SOUND_MAP[nameKey] || '001';
+        const audio = new Audio(`/assets/sound/damege/se_itemget_${id}.wav`);
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+      }
+    }
+
     function mine() {
       // ツルハシがない場合は基本ツルハシを装備
       if (!gameState.tool.equipped) {
@@ -857,10 +1096,13 @@
       
       // クリティカル判定
       const critChance = gameState.upgrades.critChance;
-      if (Math.random() < critChance / 100) {
+      const isCritical = Math.random() < critChance / 100;
+      if (isCritical) {
         damage = Math.floor(damage * 2);
         addLog(t('game.critical'), 'epic');
       }
+      
+      playTapSound(isCritical, gameState.tool.equipped);
       
       gameState.currentBlockHp -= damage;
       
@@ -896,13 +1138,81 @@
       
       // 次の深度へ
       gameState.depth++;
+      if (gameState.depth > gameState.maxDepthReached) {
+        gameState.maxDepthReached = gameState.depth;
+      }
       generateBlock();
       
       addLog(t('game.depthReached', { n: gameState.depth }), 'rare');
     }
 
+    // 深度を変更（1〜maxDepthReachedの範囲で自由移動）
+    function goToDepth(targetDepth) {
+      const d = Math.floor(Number(targetDepth));
+      if (isNaN(d) || d < 1) return;
+      const max = gameState.maxDepthReached || 1;
+      const clamped = Math.min(Math.max(d, 1), max);
+      if (clamped !== gameState.depth) {
+        gameState.depth = clamped;
+        generateBlock();
+        addLog(t('game.depthChanged', { n: clamped }), 'rare');
+        updateUI();
+        checkAutoSave();
+      }
+    }
+
+    function goToDepthFromInput() {
+      const input = document.getElementById('depthInput');
+      if (input) goToDepth(input.value);
+    }
+
+    function syncDepthFromSlider() {
+      const slider = document.getElementById('depthSlider');
+      const input = document.getElementById('depthInput');
+      if (slider && input) {
+        input.value = slider.value;
+      }
+    }
+
+    function syncDepthFromInput() {
+      const slider = document.getElementById('depthSlider');
+      const input = document.getElementById('depthInput');
+      if (slider && input) {
+        const max = parseInt(slider.max, 10) || 1;
+        const val = Math.min(Math.max(parseInt(input.value, 10) || 1, 1), max);
+        slider.value = val;
+        input.value = val;
+      }
+    }
+
+    // モンスターの自動掘削（1 dig = digInterval秒ごと）
+    function applyMonsterDig(type, damage) {
+      gameState.currentBlockHp -= Math.floor(damage);
+      if (gameState.currentBlockHp <= 0) {
+        destroyBlock();
+      }
+      updateUI();
+      checkAutoSave();
+    }
+
+    function tickMonsterDig(deltaMs) {
+      Object.keys(MONSTERS).forEach(type => {
+        const data = gameState.monsters[type];
+        if (!data || data.count <= 0) return;
+        const stats = getMonsterStats(type, data.level);
+        const digPerSec = data.count / stats.digInterval;
+        const acc = (gameState.monsterDigAccumulator[type] || 0) + digPerSec * (deltaMs / 1000);
+        gameState.monsterDigAccumulator[type] = acc % 1;
+        const digs = Math.floor(acc);
+        for (let i = 0; i < digs; i++) {
+          applyMonsterDig(type, stats.tapPower);
+        }
+      });
+    }
+
     function dropRewards() {
       const depth = gameState.depth;
+      let rewardIndex = 0;
       
       // Gold獲得
       const baseGold = 1 + Math.floor(Math.random() * 3) + Math.floor(depth / 5);
@@ -910,16 +1220,17 @@
       const goldGained = Math.floor(baseGold * goldBonus);
       if (goldGained > 0) {
         gameState.resources.gold += goldGained;
-        showRewardAnimation(goldGained, ASSET_PATHS.coin, 'Gold');
-        addLog(`<img src="${ASSET_PATHS.coin}" alt="Gold" />${t('game.goldGain', { n: goldGained })}`, 'rare');
+        showRewardAnimation(goldGained, getYenIcon(goldGained), t('ui.yen'), 'rare', rewardIndex++);
+        addLog(`<img src="${getYenIcon(goldGained)}" alt="${t('ui.yen')}" style="width:32px;height:32px;vertical-align:middle;" />${t('game.goldGain', { n: goldGained })}`, 'rare');
       }
       
-      // Ore獲得
+      // Ore獲得（最深層の鉱石を優先）
       let oreType = 'iron';
+      let bestRarity = -1;
       for (const [type, data] of Object.entries(ORE_TYPES)) {
         if (depth >= data.depthRange[0] && depth <= data.depthRange[1]) {
-          oreType = type;
-          break;
+          const r = data.rarity ?? 0;
+          if (r > bestRarity) { oreType = type; bestRarity = r; }
         }
       }
       
@@ -927,14 +1238,15 @@
       const oreBonus = 1 + gameState.upgrades.oreBonus * 0.05;
       const oreGained = baseOre > 0 ? Math.floor(baseOre * oreBonus) : 0;
       if (oreGained > 0) {
-        gameState.resources.ore[oreType] += oreGained;
+        gameState.resources.ore[oreType] = (gameState.resources.ore[oreType] || 0) + oreGained;
+        unlockEncyclopediaOre(oreType);
         const oreData = ORE_TYPES[oreType];
-        showRewardAnimation(oreGained, oreData.image, getOreName(oreType));
+        showRewardAnimation(oreGained, oreData.image, getOreName(oreType), 'rare', rewardIndex++);
         addLog(`<img src="${oreData.image}" alt="${getOreName(oreType)}" />${t('game.oreGain', { name: getOreName(oreType), n: oreGained })}`, 'rare');
       }
       
-      // 装備ドロップ（低確率）
-      if (Math.random() < 0.05) { // 5%で装備ドロップ
+      // 装備ドロップ（excavation）：rock/usedは時々、レアは低確率
+      if (Math.random() < 0.12) { // 12%で装備ドロップ
         dropEquipment();
       }
       
@@ -952,18 +1264,24 @@
         };
         
         gameState.resources.gems.push(gem);
+        unlockEncyclopediaGem(gemType);
         const gemImage = ASSET_PATHS.gems[gemType] || ASSET_PATHS.gems.ruby;
-        showRewardAnimation(1, gemImage, getGemName(gemType), 'legendary');
+        showRewardAnimation(1, gemImage, getGemName(gemType), 'legendary', rewardIndex++);
         addLog(`<img src="${gemImage}" alt="${getGemName(gemType)}" />${t('game.gemFound', { size: getGemSizeName(gemSize), name: getGemName(gemType) })}`, 'legendary');
       }
     }
 
-    // 獲得アイテムのアニメーション表示
-    function showRewardAnimation(amount, imagePath, name, rarity = 'rare') {
+    // 獲得アイテムのアニメーション表示（複数同時取得時は高さ・横ともに重ならないようオフセット）
+    const REWARD_OFFSET = 56;
+    function showRewardAnimation(amount, imagePath, name, rarity = 'rare', index = 0) {
       const mineButton = document.getElementById('mineButton');
       const rect = mineButton.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const xOffset = (index % 2 === 0 ? -1 : 1) * Math.ceil((index + 1) / 2) * (REWARD_OFFSET / 2);
+      const yOffset = -index * REWARD_OFFSET;
+      const x = centerX + xOffset;
+      const y = centerY + yOffset;
       
       const rewardEl = document.createElement('div');
       rewardEl.className = 'reward-animation';
@@ -988,31 +1306,56 @@
       }, 2000);
     }
 
+    function unlockEncyclopediaOre(oreType) {
+      if (!gameState.encyclopedia) gameState.encyclopedia = { ores: {}, gems: {}, pickaxes: {} };
+      gameState.encyclopedia.ores[oreType] = true;
+    }
+    function unlockEncyclopediaGem(gemType) {
+      if (!gameState.encyclopedia) gameState.encyclopedia = { ores: {}, gems: {}, pickaxes: {} };
+      gameState.encyclopedia.gems[gemType] = true;
+    }
+    function unlockEncyclopediaPickaxe(nameKey) {
+      if (!gameState.encyclopedia) gameState.encyclopedia = { ores: {}, gems: {}, pickaxes: {} };
+      gameState.encyclopedia.pickaxes[nameKey] = true;
+    }
+    function getRarityForPickaxe(nameKey) {
+      if (['rock', 'used_1', 'used_2', 'used_3'].includes(nameKey)) return 'common';
+      if (['iron', 'silvre'].includes(nameKey)) return 'rare';
+      if (['golden', 'diamond', 'Platinum', 'ice'].includes(nameKey)) return 'epic';
+      if (['Carmeltazite', 'Lonsdaleite', 'Wurtzite BN'].includes(nameKey)) return 'legendary';
+      return 'common';
+    }
     function dropEquipment() {
-      // レアリティ抽選
+      // excavation用ドロップテーブル：rock/usedは時々、レアは非常に低確率
       const rand = Math.random();
-      let rarity = 'common';
-      let cumulative = 0;
-      for (const [key, data] of Object.entries(RARITY)) {
-        cumulative += data.chance;
-        if (rand <= cumulative) {
-          rarity = key;
-          break;
-        }
+      let nameKey = 'rock';
+      if (rand < 0.75) {
+        const common = ['rock', 'used_1', 'used_2', 'used_3'];
+        nameKey = common[Math.floor(Math.random() * common.length)];
+      } else if (rand < 0.90) {
+        const rare = ['iron', 'silvre'];
+        nameKey = rare[Math.floor(Math.random() * rare.length)];
+      } else if (rand < 0.98) {
+        const epic = ['golden', 'diamond', 'Platinum', 'ice'];
+        nameKey = epic[Math.floor(Math.random() * epic.length)];
+      } else {
+        const legendary = ['Carmeltazite', 'Lonsdaleite', 'Wurtzite BN'];
+        nameKey = legendary[Math.floor(Math.random() * legendary.length)];
       }
-      
-      // 装備タイプ（MVPはツルハシのみ）
+      const rarity = getRarityForPickaxe(nameKey);
+      const weaponData = RARE_WEAPONS[nameKey];
       const equipment = {
         id: Date.now() + Math.random(),
         type: 'tool',
-        nameKey: 'pickaxe',
+        nameKey: nameKey,
         rarity: rarity,
-        durability: 100,
-        maxDurability: 100,
-        stats: generateEquipmentStats(rarity)
+        durability: weaponData ? (weaponData.durability || 100) : 100,
+        maxDurability: weaponData ? (weaponData.maxDurability || 100) : 100,
+        stats: weaponData ? JSON.parse(JSON.stringify(weaponData.stats)) : generateEquipmentStats(rarity)
       };
       
       gameState.inventory.push(equipment);
+      unlockEncyclopediaPickaxe(nameKey);
       addLog(t('game.equipmentDrop', { rarity: getRarityName(rarity), name: getEquipmentDisplayName(equipment) }), rarity);
     }
 
@@ -1044,11 +1387,19 @@
       if (gameState.tool.equipped) {
         gameState.inventory.push(gameState.tool.equipped);
         gameState.tool.equipped = null;
-        // 装備を外したら基本ツルハシを自動装備
-        const basePickaxe = createBasePickaxe();
-        gameState.tool.equipped = basePickaxe;
+        // インベントリに他のツルハシがあればそれを装備、なければ基本ツルハシを生成
+        const toolIndex = gameState.inventory.findIndex(eq => eq.type === 'tool');
+        if (toolIndex >= 0) {
+          const newTool = gameState.inventory[toolIndex];
+          gameState.tool.equipped = newTool;
+          gameState.inventory.splice(toolIndex, 1);
+          addLog(t('game.autoEquip', { name: getEquipmentDisplayName(newTool) }), newTool.rarity);
+        } else {
+          const basePickaxe = createBasePickaxe();
+          gameState.tool.equipped = basePickaxe;
+          addLog(t('game.basePickaxeEquip'), 'common');
+        }
         updateUI();
-        addLog(t('game.basePickaxeEquip'), 'common');
         checkAutoSave();
       }
     }
@@ -1101,13 +1452,14 @@
         return;
       }
       
-      // Ore消費（優先順位：クリスタル > 金 > 銀 > 鉄）
+      // Ore消費（優先順位：クリスタル > プラチナ > 金 > 銀 > 鉄 > 銅 > 石）
       let remaining = cost;
-      const order = ['crystal', 'gold', 'silver', 'iron'];
+      const order = ['quartz', 'platinum', 'gold', 'silver', 'iron', 'copper', 'rock'];
       for (const type of order) {
         if (remaining <= 0) break;
-        const consume = Math.min(remaining, gameState.resources.ore[type]);
-        gameState.resources.ore[type] -= consume;
+        const have = gameState.resources.ore[type] || 0;
+        const consume = Math.min(remaining, have);
+        gameState.resources.ore[type] = have - consume;
         remaining -= consume;
       }
       
@@ -1120,45 +1472,89 @@
     function updateUI() {
       // リソース表示（画像付き）
       const goldEl = document.getElementById('goldValue');
-      goldEl.innerHTML = `<img src="${ASSET_PATHS.coin}" alt="Gold" />${formatNumber(gameState.resources.gold)}`;
+      const yenAmount = gameState.resources.gold;
+      goldEl.innerHTML = `<img src="${getYenIcon(yenAmount)}" alt="Yen" />${formatNumber(yenAmount)}${t('ui.yen')}`;
       
       const oreEl = document.getElementById('oreValue');
       const totalOre = Object.values(gameState.resources.ore).reduce((a, b) => a + b, 0);
-      // 最も多い鉱石の画像を表示
-      let maxOreType = 'iron';
-      let maxOreCount = 0;
+      // 最もレアな鉱石の画像を表示（rarityが高い順）
+      let rarestOreType = 'iron';
+      let rarestOreRarity = -1;
       for (const [type, count] of Object.entries(gameState.resources.ore)) {
-        if (count > maxOreCount) {
-          maxOreCount = count;
-          maxOreType = type;
+        if (count > 0) {
+          const data = ORE_TYPES[type];
+          const r = data?.rarity ?? 0;
+          if (r > rarestOreRarity) { rarestOreType = type; rarestOreRarity = r; }
         }
       }
-      const oreImage = ORE_TYPES[maxOreType]?.image || ORE_TYPES.iron.image;
-      oreEl.innerHTML = totalOre > 0 ? `<img src="${oreImage}" alt="Ore" />${totalOre}` : '0';
+      const oreImage = ORE_TYPES[rarestOreType]?.image || ORE_TYPES.iron.image;
+      oreEl.innerHTML = totalOre > 0 ? `<img src="${oreImage}" alt="Ore" class="stat-ore-gem-icon" />${totalOre}` : '0';
       
       const gemEl = document.getElementById('gemValue');
       const gemCount = Array.isArray(gameState.resources.gems) ? gameState.resources.gems.length : gameState.resources.gems;
       if (gemCount > 0 && gameState.resources.gems.length > 0) {
-        const firstGem = gameState.resources.gems[0];
-        const gemImage = ASSET_PATHS.gems[firstGem.type] || ASSET_PATHS.gems.ruby;
-        gemEl.innerHTML = `<img src="${gemImage}" alt="Gem" />${gemCount}`;
+        // 最もレアな宝石を表示（basePriceが高い順）
+        let rarestGem = gameState.resources.gems[0];
+        let rarestPrice = GEM_TYPES[rarestGem.type]?.basePrice ?? 0;
+        gameState.resources.gems.forEach(g => {
+          const p = GEM_TYPES[g.type]?.basePrice ?? 0;
+          if (p > rarestPrice) { rarestGem = g; rarestPrice = p; }
+        });
+        const gemImage = ASSET_PATHS.gems[rarestGem.type] || ASSET_PATHS.gems.ruby;
+        gemEl.innerHTML = `<img src="${gemImage}" alt="Gem" class="stat-ore-gem-icon" />${gemCount}`;
       } else {
         gemEl.textContent = '0';
       }
       
       // 掘削画面
       document.getElementById('depthValue').textContent = gameState.depth;
+      const maxD = gameState.maxDepthReached || 1;
+      document.getElementById('depthRangeLabel').textContent = t('ui.depthRange', { min: 1, max: maxD });
+      const depthSlider = document.getElementById('depthSlider');
+      const depthInput = document.getElementById('depthInput');
+      if (depthSlider) {
+        depthSlider.min = 1;
+        depthSlider.max = maxD;
+        depthSlider.value = Math.min(gameState.depth, maxD);
+      }
+      if (depthInput) {
+        depthInput.min = 1;
+        depthInput.max = maxD;
+        depthInput.placeholder = '1–' + maxD;
+        depthInput.value = gameState.depth;
+      }
+      const depthHint = document.getElementById('depthHint');
+      if (depthHint) depthHint.textContent = t('ui.depthHint');
       const hpPercent = (gameState.currentBlockHp / gameState.currentBlockMaxHp) * 100;
       document.getElementById('blockHpFill').style.width = hpPercent + '%';
       document.getElementById('blockHpFill').textContent = 
         `${Math.max(0, Math.floor(gameState.currentBlockHp))}/${gameState.currentBlockMaxHp}`;
       document.getElementById('tapPowerValue').textContent = calculateTapPower();
       
+      // 自動掘削モンスター表示
+      const monstersPanel = document.getElementById('monstersPanel');
+      if (monstersPanel) {
+        let totalDig = 0;
+        const lines = [];
+        Object.entries(MONSTERS).forEach(([type, m], idx) => {
+          const data = gameState.monsters[type];
+          if (!data || data.count <= 0) return;
+          const stats = getMonsterStats(type, data.level);
+          const dps = data.count * stats.tapPower / stats.digInterval;
+          totalDig += dps;
+          const icons = Array(data.count).fill(0).map((_, i) =>
+            `<img src="${m.image}" class="monster-bounce" style="width:80px;height:80px;object-fit:contain;animation-delay:${(idx * 0.2 + i * 0.15) % 1}s;" />`
+          ).join('');
+          lines.push(`<span class="monster-auto-dig" style="display:inline-flex;align-items:center;gap:2px;margin-right:12px;">${icons}${getMonsterDefaultName(type)} x${data.count} Lv.${data.level}</span>`);
+        });
+        monstersPanel.innerHTML = lines.length > 0 ? (t('ui.autoDig') + ': ' + lines.join('')) : '';
+      }
+      
       // 装備中ツルハシのアイコン表示
       const equippedIcon = document.getElementById('equippedPickaxeIcon');
       if (gameState.tool.equipped) {
         const imgPath = getPickaxeImagePath(gameState.tool.equipped);
-        equippedIcon.innerHTML = '<img src="' + imgPath + '" alt="" style="width:24px; height:24px; object-fit:contain; vertical-align:middle;" />';
+        equippedIcon.innerHTML = '<img src="' + imgPath + '" alt="" style="width:48px; height:48px; object-fit:contain; vertical-align:middle;" />';
       } else {
         equippedIcon.innerHTML = '';
       }
@@ -1250,7 +1646,7 @@
       card.innerHTML = `
         <div class="equipment-header">
           <div class="equipment-name" style="display:flex; align-items:center; gap:8px;">
-            <img src="${pickaxeImg}" alt="${getEquipmentDisplayName(equipment)}" style="width:32px; height:32px; object-fit:contain;" />
+            <img src="${pickaxeImg}" alt="${getEquipmentDisplayName(equipment)}" style="width:64px; height:64px; object-fit:contain;" />
             ${getEquipmentDisplayName(equipment)}
           </div>
           <div class="equipment-rarity" style="background:${rarity.color}20; color:${rarity.color}">
@@ -1285,19 +1681,19 @@
     function updateUpgradeUI() {
       // ツルハシ強化
       const toolCost = Math.floor(TOOL_UPGRADE_BASE_COST * Math.pow(TOOL_UPGRADE_COST_MULT, gameState.tool.level - 1));
-      document.getElementById('toolUpgradeCost').textContent = t('game.costGold', { n: formatNumber(toolCost) });
+      document.getElementById('toolUpgradeCost').textContent = t('game.costYen', { n: formatNumber(toolCost) });
       document.getElementById('toolLevel').textContent = gameState.tool.level;
       document.getElementById('toolUpgradeBtn').disabled = gameState.resources.gold < toolCost;
       
       // Gold獲得+
       const goldCost = Math.floor(100 * Math.pow(1.5, gameState.upgrades.goldBonus));
-      document.getElementById('goldBonusCost').textContent = t('game.costGold', { n: formatNumber(goldCost) });
+      document.getElementById('goldBonusCost').textContent = t('game.costYen', { n: formatNumber(goldCost) });
       document.getElementById('goldBonusLevel').textContent = gameState.upgrades.goldBonus;
       document.getElementById('goldBonusBtn').disabled = gameState.resources.gold < goldCost;
       
       // Ore獲得+
       const oreCost = Math.floor(100 * Math.pow(1.5, gameState.upgrades.oreBonus));
-      document.getElementById('oreBonusCost').textContent = t('game.costGold', { n: formatNumber(oreCost) });
+      document.getElementById('oreBonusCost').textContent = t('game.costYen', { n: formatNumber(oreCost) });
       document.getElementById('oreBonusLevel').textContent = gameState.upgrades.oreBonus;
       document.getElementById('oreBonusBtn').disabled = gameState.resources.gold < oreCost;
       
@@ -1318,16 +1714,26 @@
         const card = document.createElement('div');
         card.className = `upgrade-card ${weaponData.rarity}`;
         
-        // 必要鉱物の表示
+        // 必要鉱物・宝石の表示
         let requiredOresText = '';
-        const requiredOres = Object.entries(weaponData.requiredOres);
+        const requiredOres = Object.entries(weaponData.requiredOres || {});
         requiredOres.forEach(([oreType, amount]) => {
           const current = gameState.resources.ore[oreType] || 0;
           const hasEnough = current >= amount;
-          const oreData = ORE_TYPES[oreType];
+          const oreData = ORE_TYPES[oreType] || ORE_TYPES.rock;
         requiredOresText += `<div style="color:${hasEnough ? '#22c55e' : '#ef4444'}; font-size:11px; display:flex; align-items:center;">
-          <img src="${oreData.image}" alt="${getOreName(oreType)}" style="width:16px; height:16px; margin-right:4px;" />
+          <img src="${oreData.image}" alt="${getOreName(oreType)}" style="width:32px; height:32px; margin-right:4px;" />
           ${getOreName(oreType)}: ${current}/${amount}
+        </div>`;
+        });
+        const requiredGems = Object.entries(weaponData.requiredGems || {});
+        requiredGems.forEach(([gemType, amount]) => {
+          const current = getGemCountByType(gemType);
+          const hasEnough = current >= amount;
+          const gemImage = ASSET_PATHS.gems[gemType] || ASSET_PATHS.gems.ruby;
+        requiredOresText += `<div style="color:${hasEnough ? '#22c55e' : '#ef4444'}; font-size:11px; display:flex; align-items:center;">
+          <img src="${gemImage}" alt="${getGemName(gemType)}" style="width:32px; height:32px; margin-right:4px;" />
+          ${getGemName(gemType)}: ${current}/${amount}
         </div>`;
         });
         
@@ -1340,16 +1746,20 @@
         if (stats.oreBonus) statsText += `${t('stats.oreBonus')}+${stats.oreBonus}% `;
         statsText += `${t('ui.durability')}: ${weaponData.durability}`;
         
-        // 必要鉱物が揃っているかチェック
-        const canUnlock = requiredOres.every(([oreType, amount]) => 
+        // 必要鉱物・宝石が揃っているかチェック
+        const canUnlockOres = requiredOres.every(([oreType, amount]) => 
           (gameState.resources.ore[oreType] || 0) >= amount
         );
+        const canUnlockGems = requiredGems.every(([gemType, amount]) => 
+          getGemCountByType(gemType) >= amount
+        );
+        const canUnlock = canUnlockOres && canUnlockGems;
         
         const weaponImg = PICKAXE_LIST[weaponId] || PICKAXE_LIST.basePickaxe;
         card.innerHTML = `
           <div class="upgrade-header">
             <div class="upgrade-name" style="color:${RARITY[weaponData.rarity].color}; display:flex; align-items:center; gap:8px;">
-              <img src="${weaponImg}" alt="${getRareWeaponName(weaponId)}" style="width:32px; height:32px; object-fit:contain;" />
+              <img src="${weaponImg}" alt="${getRareWeaponName(weaponId)}" style="width:64px; height:64px; object-fit:contain;" />
               ${getRareWeaponName(weaponId)}
             </div>
             <div class="equipment-rarity" style="background:${RARITY[weaponData.rarity].color}20; color:${RARITY[weaponData.rarity].color}; font-size:11px;">
@@ -1358,7 +1768,7 @@
           </div>
           <div class="upgrade-desc" style="margin-bottom:8px;">${statsText}</div>
           <div style="margin-bottom:8px;">
-            <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">${t('ui.requiredOres')}:</div>
+            <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">${t('ui.requiredMaterials')}:</div>
             ${requiredOresText}
           </div>
           ${isUnlocked ? 
@@ -1379,14 +1789,18 @@
         return;
       }
       
-      // 必要鉱物が揃っているかチェック
-      const requiredOres = Object.entries(weaponData.requiredOres);
-      const canUnlock = requiredOres.every(([oreType, amount]) => 
+      // 必要鉱物・宝石が揃っているかチェック
+      const requiredOres = Object.entries(weaponData.requiredOres || {});
+      const requiredGems = Object.entries(weaponData.requiredGems || {});
+      const canUnlockOres = requiredOres.every(([oreType, amount]) => 
         (gameState.resources.ore[oreType] || 0) >= amount
       );
+      const canUnlockGems = requiredGems.every(([gemType, amount]) => 
+        getGemCountByType(gemType) >= amount
+      );
       
-      if (!canUnlock) {
-        alert(t('game.notEnoughOre'));
+      if (!canUnlockOres || !canUnlockGems) {
+        alert(t('game.notEnoughMaterials'));
         return;
       }
       
@@ -1394,6 +1808,9 @@
       let requiredOresText = '';
       requiredOres.forEach(([oreType, amount]) => {
         requiredOresText += `${getOreName(oreType)}x${amount} `;
+      });
+      requiredGems.forEach(([gemType, amount]) => {
+        requiredOresText += `${getGemName(gemType)}x${amount} `;
       });
       
       if (!confirm(t('game.unlockConfirm', { name: getRareWeaponName(weaponId), ores: requiredOresText }))) {
@@ -1403,6 +1820,16 @@
       // 鉱物を消費
       requiredOres.forEach(([oreType, amount]) => {
         gameState.resources.ore[oreType] -= amount;
+      });
+      // 宝石を消費（必要な種類から順に削除）
+      requiredGems.forEach(([gemType, amount]) => {
+        let remaining = amount;
+        for (let i = gameState.resources.gems.length - 1; i >= 0 && remaining > 0; i--) {
+          if (gameState.resources.gems[i].type === gemType) {
+            gameState.resources.gems.splice(i, 1);
+            remaining--;
+          }
+        }
       });
       
       // 武器を開発解除
@@ -1420,6 +1847,7 @@
       };
       
       gameState.inventory.push(weapon);
+      unlockEncyclopediaPickaxe(weaponData.nameKey);
       
       addLog(t('game.weaponUnlocked', { name: getRareWeaponName(weaponId) }), weaponData.rarity);
       updateUI();
@@ -1473,7 +1901,7 @@
       if (index >= 0) {
         gameState.resources.gold += price;
         gameState.inventory.splice(index, 1);
-        addLog(`<img src="${ASSET_PATHS.coin}" alt="Gold" />${t('game.soldEquipment', { name: getEquipmentDisplayName(equipment), price: formatNumber(price) })}`, equipment.rarity);
+        addLog(`<img src="${getYenIcon(price)}" alt="${t('ui.yen')}" style="width:32px;height:32px;vertical-align:middle;" />${t('game.soldEquipment', { name: getEquipmentDisplayName(equipment), price: formatNumber(price) })}`, equipment.rarity);
         updateUI();
         checkAutoSave();
       }
@@ -1489,7 +1917,7 @@
       gameState.resources.ore[oreType] -= quantity;
       gameState.resources.gold += price;
       const oreData = ORE_TYPES[oreType];
-      addLog(`<img src="${oreData.image}" alt="${getOreName(oreType)}" />${t('game.soldOre', { name: getOreName(oreType), n: quantity, price: formatNumber(price) })}`, 'rare');
+      addLog(`<img src="${oreData.image}" alt="${getOreName(oreType)}" style="width:24px;height:24px;vertical-align:middle;" /><img src="${getYenIcon(price)}" alt="${t('ui.yen')}" style="width:24px;height:24px;vertical-align:middle;" />${t('game.soldOre', { name: getOreName(oreType), n: quantity, price: formatNumber(price) })}`, 'rare');
       updateUI();
       checkAutoSave();
     }
@@ -1501,13 +1929,82 @@
         gameState.resources.gold += price;
         gameState.resources.gems.splice(index, 1);
         const gemImage = ASSET_PATHS.gems[gem.type] || ASSET_PATHS.gems.ruby;
-        addLog(`<img src="${gemImage}" alt="${getGemName(gem.type)}" />${t('game.soldGem', { size: getGemSizeName(gem.size), name: getGemName(gem.type), price: formatNumber(price) })}`, 'legendary');
+        addLog(`<img src="${gemImage}" alt="${getGemName(gem.type)}" style="width:24px;height:24px;vertical-align:middle;" /><img src="${getYenIcon(price)}" alt="${t('ui.yen')}" style="width:24px;height:24px;vertical-align:middle;" />${t('game.soldGem', { size: getGemSizeName(gem.size), name: getGemName(gem.type), price: formatNumber(price) })}`, 'legendary');
         updateUI();
         checkAutoSave();
       }
     }
 
+    function buyMonster(type) {
+      const m = MONSTERS[type];
+      if (!m) return;
+      const data = gameState.monsters[type] || { count: 0, level: 1 };
+      const price = m.basePrice * Math.pow(1.5, data.count);
+      if (gameState.resources.gold < price) {
+        alert(t('game.notEnoughGold'));
+        return;
+      }
+      gameState.resources.gold -= price;
+      data.count = (data.count || 0) + 1;
+      gameState.monsters[type] = data;
+      addLog(t('game.monsterBought', { name: getMonsterDefaultName(type) }), 'rare');
+      updateUI();
+      checkAutoSave();
+    }
+
+    function upgradeMonster(type) {
+      const m = MONSTERS[type];
+      if (!m) return;
+      const data = gameState.monsters[type] || { count: 0, level: 1 };
+      if (data.count <= 0) {
+        alert(t('game.buyMonsterFirst'));
+        return;
+      }
+      const cost = Math.floor(m.upgradeCostBase * Math.pow(1.5, data.level - 1));
+      if (gameState.resources.gold < cost) {
+        alert(t('game.notEnoughGold'));
+        return;
+      }
+      gameState.resources.gold -= cost;
+      data.level = (data.level || 1) + 1;
+      gameState.monsters[type] = data;
+      addLog(t('game.monsterUpgraded', { name: getMonsterDefaultName(type), level: data.level }), 'epic');
+      updateUI();
+      checkAutoSave();
+    }
+
     function updateShopUI() {
+      // モンスター購入・強化
+      const monstersList = document.getElementById('shopMonstersList');
+      monstersList.innerHTML = '';
+      Object.entries(MONSTERS).forEach(([type, m]) => {
+        const data = gameState.monsters[type] || { count: 0, level: 1 };
+        const stats = getMonsterStats(type, data.level);
+        const buyPrice = Math.floor(m.basePrice * Math.pow(1.5, data.count));
+        const upgradeCost = data.count > 0 ? Math.floor(m.upgradeCostBase * Math.pow(1.5, data.level - 1)) : 0;
+        const card = document.createElement('div');
+        card.className = 'equipment-card';
+        card.innerHTML = `
+          <div class="equipment-header">
+            <div class="equipment-name" style="display:flex; align-items:center; gap:8px;">
+              <img src="${m.image}" alt="${getMonsterName(type)}" style="width:120px; height:120px; object-fit:contain;" />
+              ${getMonsterName(type)}
+            </div>
+            <div style="font-size:11px; color:#94a3b8;">${t('ui.owned')}: ${data.count} | ${t('ui.level')}: ${data.level}</div>
+          </div>
+          <div class="equipment-stats" style="margin-bottom:8px; font-size:11px;">
+            ${t('monster.digPerSec')}: ${(1 / stats.digInterval).toFixed(1)} | ${t('stats.tapPower')}: ${stats.tapPower}
+          </div>
+          <div style="display:flex; gap:4px;">
+            <button class="btn" style="flex:1; padding:6px; font-size:11px;" onclick="buyMonster('${type}')" ${gameState.resources.gold < buyPrice ? 'disabled' : ''}>
+              ${t('ui.buy')} (${formatNumber(buyPrice)}<img src="${getYenIcon(buyPrice)}" style="width:24px;height:24px;vertical-align:middle;" />)
+            </button>
+            ${data.count > 0 ? `<button class="btn" style="flex:1; padding:6px; font-size:11px;" onclick="upgradeMonster('${type}')" ${gameState.resources.gold < upgradeCost ? 'disabled' : ''}>${t('ui.upgradeBtn')} (${formatNumber(upgradeCost)})</button>` : ''}
+          </div>
+        `;
+        monstersList.appendChild(card);
+      });
+      
       // 装備リスト
       const equipmentList = document.getElementById('shopEquipmentList');
       equipmentList.innerHTML = '';
@@ -1527,14 +2024,14 @@
             card.innerHTML = `
               <div class="equipment-header">
                 <div class="equipment-name" style="display:flex; align-items:center; gap:8px;">
-                  <img src="${pickaxeImg}" alt="${getEquipmentDisplayName(eq)}" style="width:32px; height:32px; object-fit:contain;" />
+                  <img src="${pickaxeImg}" alt="${getEquipmentDisplayName(eq)}" style="width:64px; height:64px; object-fit:contain;" />
                   ${getEquipmentDisplayName(eq)}
                 </div>
                 <div class="equipment-rarity" style="background:${rarity.color}20; color:${rarity.color}">
                   ${getRarityName(eq.rarity)}
                 </div>
               </div>
-              <div class="equipment-stats" style="margin-bottom:8px;">${t('ui.price')}: ${formatNumber(price)} Gold</div>
+              <div class="equipment-stats" style="margin-bottom:8px;"><img src="${getYenIcon(price)}" alt="${t('ui.yen')}" style="width:24px;height:24px;vertical-align:middle;" /> ${t('ui.price')}: ${formatNumber(price)}${t('ui.yen')}</div>
               <button class="btn" style="padding:6px; font-size:12px;" onclick="sellEquipmentById('${eq.id}')">${t('ui.sell')}</button>
             `;
             equipmentList.appendChild(card);
@@ -1558,15 +2055,15 @@
           card.innerHTML = `
             <div class="equipment-header">
               <div class="equipment-name" style="display:flex; align-items:center;">
-                <img src="${oreData.image}" alt="${getOreName(oreType)}" style="width:24px; height:24px; margin-right:6px;" />
+                <img src="${oreData.image}" alt="${getOreName(oreType)}" style="width:48px; height:48px; margin-right:6px;" />
                 ${getOreName(oreType)}
               </div>
               <div style="font-size:12px; color:#aaa;">${t('ui.owned')}: ${quantity}</div>
             </div>
             <div class="equipment-stats" style="margin-bottom:8px;">
-              <div><img src="${ASSET_PATHS.coin}" alt="Gold" style="width:14px; height:14px; vertical-align:middle;" /> ${t('ui.per1')}: ${formatNumber(price1)} Gold</div>
-              <div><img src="${ASSET_PATHS.coin}" alt="Gold" style="width:14px; height:14px; vertical-align:middle;" /> ${t('ui.per10')}: ${formatNumber(price10)} Gold</div>
-              <div><img src="${ASSET_PATHS.coin}" alt="Gold" style="width:14px; height:14px; vertical-align:middle;" /> ${t('ui.all')}: ${formatNumber(priceAll)} Gold</div>
+              <div><img src="${getYenIcon(price1)}" alt="${t('ui.yen')}" style="width:28px; height:28px; vertical-align:middle;" /> ${t('ui.per1')}: ${formatNumber(price1)}${t('ui.yen')}</div>
+              <div><img src="${getYenIcon(price10)}" alt="${t('ui.yen')}" style="width:28px; height:28px; vertical-align:middle;" /> ${t('ui.per10')}: ${formatNumber(price10)}${t('ui.yen')}</div>
+              <div><img src="${getYenIcon(priceAll)}" alt="${t('ui.yen')}" style="width:28px; height:28px; vertical-align:middle;" /> ${t('ui.all')}: ${formatNumber(priceAll)}${t('ui.yen')}</div>
             </div>
             <div style="display:flex; gap:4px;">
               <button class="btn" style="flex:1; padding:6px; font-size:11px;" onclick="sellOreByType('${oreType}', 1)">${t('ui.sell1')}</button>
@@ -1595,16 +2092,83 @@
           card.innerHTML = `
             <div class="equipment-header">
               <div class="equipment-name" style="display:flex; align-items:center;">
-                <img src="${gemImage}" alt="${getGemName(gem.type)}" style="width:24px; height:24px; margin-right:6px;" />
+                <img src="${gemImage}" alt="${getGemName(gem.type)}" style="width:48px; height:48px; margin-right:6px;" />
                 ${getGemSizeName(gem.size)} ${getGemName(gem.type)}
               </div>
             </div>
             <div class="equipment-stats" style="margin-bottom:8px;">
-              <img src="${ASSET_PATHS.coin}" alt="Gold" style="width:14px; height:14px; vertical-align:middle;" /> ${t('ui.price')}: ${formatNumber(price)} Gold
+              <img src="${getYenIcon(price)}" alt="${t('ui.yen')}" style="width:28px; height:28px; vertical-align:middle;" /> ${t('ui.price')}: ${formatNumber(price)}${t('ui.yen')}
             </div>
             <button class="btn" style="padding:6px; font-size:12px;" onclick="sellGemById('${gem.id}')">${t('ui.exchange')}</button>
           `;
           gemList.appendChild(card);
+        });
+      }
+    }
+
+    function renderEncyclopedia() {
+      const enc = gameState.encyclopedia || { ores: {}, gems: {}, pickaxes: {} };
+      const pickaxeCount = ['rock', 'used_1', 'used_2', 'used_3', 'iron', 'silvre', 'golden', 'diamond', 'Platinum', 'ice', 'Carmeltazite', 'Lonsdaleite', 'Wurtzite BN'].length;
+      const total = Object.keys(ORE_TYPES).length + Object.keys(GEM_TYPES).length + pickaxeCount;
+      const found = Object.keys(enc.ores).length + Object.keys(enc.gems).length + Object.keys(enc.pickaxes).length;
+      const descEl = document.getElementById('encyclopediaDesc');
+      if (descEl) descEl.textContent = t('ui.encyclopediaDesc', { found, total });
+      
+      function card(locked, img, name, desc) {
+        return `<div class="encyclopedia-card ${locked ? 'locked' : ''}" style="background:${locked ? 'rgba(0,0,0,0.5)' : 'rgba(59,130,246,0.2)'}; border:2px solid ${locked ? '#333' : '#3b82f6'}; border-radius:8px; padding:10px; text-align:center; min-width:100px;">
+          <img src="${img}" alt="" style="width:48px;height:48px;object-fit:contain;${locked ? 'filter:brightness(0.2);' : ''}" />
+          <div style="font-size:11px; font-weight:bold; margin-top:4px;">${name}</div>
+          <div style="font-size:10px; color:#94a3b8; margin-top:4px;">${desc}</div>
+        </div>`;
+      }
+      
+      const oresList = document.getElementById('encyclopediaOresList');
+      if (oresList) {
+        oresList.innerHTML = '';
+        oresList.style.display = 'flex';
+        oresList.style.flexWrap = 'wrap';
+        oresList.style.gap = '8px';
+        Object.entries(ORE_TYPES).forEach(([type, data]) => {
+          const unlocked = enc.ores[type];
+          const depthStr = data.depthRange[1] === Infinity ? `${data.depthRange[0]}+m` : `${data.depthRange[0]}-${data.depthRange[1]}m`;
+          const price = ORE_PRICES[type] || 0;
+          oresList.innerHTML += card(!unlocked, unlocked ? data.image : '/assets/ores/rock.png', unlocked ? getOreName(type) : '???', unlocked ? `${t('ui.encyclopediaDepth')}: ${depthStr} | ${t('ui.encyclopediaPrice')}: ${price}${t('ui.yen')}` : '');
+        });
+      }
+      
+      const gemsList = document.getElementById('encyclopediaGemsList');
+      if (gemsList) {
+        gemsList.innerHTML = '';
+        gemsList.style.display = 'flex';
+        gemsList.style.flexWrap = 'wrap';
+        gemsList.style.gap = '8px';
+        Object.entries(GEM_TYPES).forEach(([type, data]) => {
+          const unlocked = enc.gems[type];
+          const price = data.basePrice || 0;
+          const img = ASSET_PATHS.gems[type] || ASSET_PATHS.gems.ruby;
+          gemsList.innerHTML += card(!unlocked, unlocked ? img : '/assets/ores/rock.png', unlocked ? getGemName(type) : '???', unlocked ? `${t('ui.encyclopediaPrice')}: ${price}${t('ui.yen')}` : '');
+        });
+      }
+      
+      const pickaxesList = document.getElementById('encyclopediaPickaxesList');
+      if (pickaxesList) {
+        pickaxesList.innerHTML = '';
+        pickaxesList.style.display = 'flex';
+        pickaxesList.style.flexWrap = 'wrap';
+        pickaxesList.style.gap = '8px';
+        const pickaxeKeys = ['rock', 'used_1', 'used_2', 'used_3', 'iron', 'silvre', 'golden', 'diamond', 'Platinum', 'ice', 'Carmeltazite', 'Lonsdaleite', 'Wurtzite BN'];
+        pickaxeKeys.forEach(nameKey => {
+          const unlocked = enc.pickaxes[nameKey];
+          const img = PICKAXE_LIST[nameKey] || PICKAXE_LIST.basePickaxe;
+          let desc = '';
+          if (unlocked && RARE_WEAPONS[nameKey]) {
+            const w = RARE_WEAPONS[nameKey];
+            desc = `Power:${w.stats.tapPower} Gold+${w.stats.goldBonus}% Ore+${w.stats.oreBonus}%`;
+          } else if (unlocked) {
+            desc = t('ui.encyclopediaCommon');
+          }
+          const displayName = unlocked ? (RARE_WEAPONS[nameKey] ? getRareWeaponName(nameKey) : getToolName(nameKey)) : '???';
+          pickaxesList.innerHTML += card(!unlocked, unlocked ? img : '/assets/items/pickaxe/rock_pickaxe.png', displayName, desc);
         });
       }
     }
@@ -1626,9 +2190,13 @@
     function switchTab(tabName) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      
-      event.target.classList.add('active');
-      document.getElementById(tabName + 'Tab').classList.add('active');
+      const tabId = 'tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1);
+      const tabBtn = document.getElementById(tabId);
+      if (tabBtn) tabBtn.classList.add('active');
+      const content = document.getElementById(tabName + 'Tab');
+      if (content) content.classList.add('active');
+      if (tabName === 'shop') updateShopUI();
+      if (tabName === 'encyclopedia') renderEncyclopedia();
     }
 
     function formatNumber(num) {
@@ -1642,13 +2210,16 @@
       try {
         const saveData = {
           depth: gameState.depth,
+          maxDepthReached: gameState.maxDepthReached || gameState.depth,
           currentBlockHp: gameState.currentBlockHp,
+          monsters: gameState.monsters || {},
           currentBlockMaxHp: gameState.currentBlockMaxHp,
           resources: gameState.resources,
           tool: gameState.tool,
           inventory: gameState.inventory,
           upgrades: gameState.upgrades,
-          unlockedWeapons: gameState.unlockedWeapons
+          unlockedWeapons: gameState.unlockedWeapons,
+          encyclopedia: gameState.encyclopedia || { ores: {}, gems: {}, pickaxes: {} }
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
         gameState.lastSaveTime = Date.now();
@@ -1670,6 +2241,29 @@
           }
           if (!Array.isArray(gameState.unlockedWeapons)) {
             gameState.unlockedWeapons = [];
+          }
+          if (gameState.maxDepthReached === undefined) {
+            gameState.maxDepthReached = Math.max(gameState.depth || 1, 1);
+          }
+          if (!gameState.monsters || typeof gameState.monsters !== 'object') {
+            gameState.monsters = {};
+            Object.keys(MONSTERS).forEach(k => { gameState.monsters[k] = { count: 0, level: 1 }; });
+          }
+          Object.keys(MONSTERS).forEach(k => {
+            if (!gameState.monsters[k]) gameState.monsters[k] = { count: 0, level: 1 };
+          });
+          if (!gameState.monsterDigAccumulator) gameState.monsterDigAccumulator = {};
+          if (!gameState.encyclopedia || typeof gameState.encyclopedia !== 'object') {
+            gameState.encyclopedia = { ores: {}, gems: {}, pickaxes: {} };
+          }
+          // 鉱物：新タイプ（rock, copper, platinum）を追加
+          const oreTypes = Object.keys(ORE_TYPES);
+          oreTypes.forEach(ot => {
+            if (gameState.resources.ore[ot] === undefined) gameState.resources.ore[ot] = 0;
+          });
+          if (gameState.resources.ore.crystal !== undefined) {
+            gameState.resources.ore.quartz = (gameState.resources.ore.quartz || 0) + (gameState.resources.ore.crystal || 0);
+            delete gameState.resources.ore.crystal;
           }
           
           // 装備中のツルハシに耐久力がない場合は追加
@@ -1757,14 +2351,18 @@
       document.documentElement.lang = locale === 'ja' ? 'ja' : locale === 'es' ? 'es' : locale === 'da' ? 'da' : 'en';
       document.title = t('ui.pageTitle');
       document.getElementById('gameTitle').textContent = t('ui.title');
-      document.getElementById('statGold').textContent = t('ui.gold');
+      document.getElementById('statGold').textContent = t('ui.yen');
       document.getElementById('statOre').textContent = t('ui.ore');
       document.getElementById('statGems').textContent = t('ui.gems');
       document.getElementById('tabMine').textContent = t('ui.tabMine');
       document.getElementById('tabEquipment').textContent = t('ui.tabEquipment');
+      const tabEnc = document.getElementById('tabEncyclopedia');
+      if (tabEnc) tabEnc.textContent = t('ui.tabEncyclopedia');
       document.getElementById('tabUpgrade').textContent = t('ui.tabUpgrade');
       document.getElementById('tabShop').textContent = t('ui.tabShop');
       document.getElementById('depthLabel').textContent = t('ui.depth');
+      var depthGoEl = document.getElementById('depthGoLabel');
+      if (depthGoEl) depthGoEl.textContent = t('ui.depthGo');
       document.getElementById('tapPowerLabel').textContent = t('ui.tapPower');
       document.getElementById('toolDurabilityLabel').textContent = t('ui.pickaxeDurability');
       document.getElementById('mineButton').textContent = t('ui.mineBtn');
@@ -1785,9 +2383,17 @@
       document.getElementById('critChanceBtn').textContent = t('ui.upgradeBtn');
       document.getElementById('rareWeaponsTitle').textContent = t('ui.rareWeapons');
       document.getElementById('resetBtn').textContent = t('ui.reset');
+      var shopMonstersTitle = document.getElementById('shopMonstersTitle');
+      if (shopMonstersTitle) shopMonstersTitle.textContent = t('ui.shopMonsters');
       document.getElementById('shopEquipmentTitle').textContent = t('ui.sellEquipment');
       document.getElementById('shopOreTitle').textContent = t('ui.sellOre');
       document.getElementById('shopGemTitle').textContent = t('ui.exchangeGems');
+      var encOres = document.getElementById('encyclopediaOresTitle');
+      if (encOres) encOres.textContent = t('ui.encyclopediaOres');
+      var encGems = document.getElementById('encyclopediaGemsTitle');
+      if (encGems) encGems.textContent = t('ui.encyclopediaGems');
+      var encPick = document.getElementById('encyclopediaPickaxesTitle');
+      if (encPick) encPick.textContent = t('ui.encyclopediaPickaxes');
       updateUI();
     }
 
@@ -1802,6 +2408,9 @@
       }
       setInterval(checkAutoSave, AUTO_SAVE_INTERVAL);
       window.addEventListener('beforeunload', saveGame);
+      // 自動掘削モンスター（250msごとにtick）
+      if (window.monsterDigInterval) clearInterval(window.monsterDigInterval);
+      window.monsterDigInterval = setInterval(function() { tickMonsterDig(250); }, 250);
     }
 
     function initWithI18n() {
@@ -1876,6 +2485,12 @@
 
     // グローバル関数（HTMLから呼び出すため）
     window.mine = mine;
+    window.goToDepth = goToDepth;
+    window.goToDepthFromInput = goToDepthFromInput;
+    window.syncDepthFromSlider = syncDepthFromSlider;
+    window.syncDepthFromInput = syncDepthFromInput;
+    window.buyMonster = buyMonster;
+    window.upgradeMonster = upgradeMonster;
     window.upgradeTool = upgradeTool;
     window.upgradeGoldBonus = upgradeGoldBonus;
     window.upgradeOreBonus = upgradeOreBonus;
