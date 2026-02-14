@@ -455,7 +455,10 @@
           <div class="block-hp-bar">
             <div class="block-hp-fill" id="blockHpFill">100/100</div>
           </div>
-          <div class="tap-power"><span id="tapPowerLabel">Mining power</span>: <span id="tapPowerValue">10</span></div>
+          <div class="tap-power">
+            <span id="tapPowerLabel">Mining power</span>: <span id="tapPowerValue">10</span>
+            <span id="equippedPickaxeIcon" style="margin-left:8px; vertical-align:middle;"></span>
+          </div>
           <div id="toolDurabilityBar" style="margin-top:8px; display:none;">
             <div style="font-size:11px; color:#aaa; margin-bottom:4px;" id="toolDurabilityLabel">Pickaxe durability</div>
             <div class="block-hp-bar" style="height:16px;">
@@ -573,6 +576,24 @@
       return eq.name || getToolName('pickaxe');
     }
 
+    function getPickaxeImagePath(equipment) {
+      if (!equipment) return PICKAXE_LIST.basePickaxe;
+      // 耐久力20%以下で使用済みツルハシを表示
+      if (equipment.durability !== undefined && equipment.maxDurability && equipment.maxDurability > 0) {
+        const pct = (equipment.durability / equipment.maxDurability) * 100;
+        if (pct <= 20 && PICKAXE_LIST.used && PICKAXE_LIST.used.length > 0) {
+          const idx = Math.min(Math.floor((1 - pct / 20) * PICKAXE_LIST.used.length), PICKAXE_LIST.used.length - 1);
+          return PICKAXE_LIST.used[idx];
+        }
+      }
+      if (equipment.nameKey === 'basePickaxe') return PICKAXE_LIST.basePickaxe;
+      if (equipment.nameKey && RARE_WEAPONS[equipment.nameKey]) {
+        return PICKAXE_LIST[equipment.nameKey] || PICKAXE_LIST.pickaxe[equipment.rarity] || PICKAXE_LIST.basePickaxe;
+      }
+      const rarity = equipment.rarity || 'common';
+      return (PICKAXE_LIST.pickaxe && PICKAXE_LIST.pickaxe[rarity]) || PICKAXE_LIST.basePickaxe;
+    }
+
     // ===== 定数定義 =====
     const ORE_TYPES = {
       iron: { depthRange: [1, 30], image: '/assets/ores/iron_ore.png' },
@@ -593,6 +614,26 @@
         amethyst: '/assets/ores/amegist.png',
         topaz: '/assets/ores/topaz.png'
       }
+    };
+
+    // ツルハシアセット一覧（assets/items/pickaxe/）
+    const PICKAXE_LIST = {
+      basePickaxe: '/assets/items/pickaxe/rock_pickaxe.png',
+      pickaxe: {
+        common: '/assets/items/pickaxe/rock_pickaxe.png',
+        rare: '/assets/items/pickaxe/iron_pickaxe.png',
+        epic: '/assets/items/pickaxe/golden_pickaxe.png',
+        legendary: '/assets/items/pickaxe/diamond_pickaxe.png'
+      },
+      thunder: '/assets/items/pickaxe/ice_pickaxe.png',
+      ice: '/assets/items/pickaxe/ice_pickaxe.png',
+      flame: '/assets/items/pickaxe/golden_pickaxe.png',
+      mythic: '/assets/items/pickaxe/Carmeltazite_pickaxe.png',
+      used: [
+        '/assets/items/pickaxe/used_pickaxe_1.png',
+        '/assets/items/pickaxe/used_pickaxe_2.png',
+        '/assets/items/pickaxe/used_pickaxe_3.png'
+      ]
     };
 
     const RARITY = {
@@ -1113,6 +1154,15 @@
         `${Math.max(0, Math.floor(gameState.currentBlockHp))}/${gameState.currentBlockMaxHp}`;
       document.getElementById('tapPowerValue').textContent = calculateTapPower();
       
+      // 装備中ツルハシのアイコン表示
+      const equippedIcon = document.getElementById('equippedPickaxeIcon');
+      if (gameState.tool.equipped) {
+        const imgPath = getPickaxeImagePath(gameState.tool.equipped);
+        equippedIcon.innerHTML = '<img src="' + imgPath + '" alt="" style="width:24px; height:24px; object-fit:contain; vertical-align:middle;" />';
+      } else {
+        equippedIcon.innerHTML = '';
+      }
+      
       // ツルハシの耐久力表示
       const toolDurabilityBar = document.getElementById('toolDurabilityBar');
       const toolDurabilityFill = document.getElementById('toolDurabilityFill');
@@ -1194,11 +1244,15 @@
         durabilityText = `<div style="font-size:10px; color:${durabilityColor}; margin-top:4px;">${t('ui.durability')}: ${Math.max(0, Math.floor(equipment.durability))}/${equipment.maxDurability}</div>`;
       }
       
+      const pickaxeImg = getPickaxeImagePath(equipment);
       const card = document.createElement('div');
       card.className = `equipment-card ${equipment.rarity} ${isEquipped ? 'equipped' : ''}`;
       card.innerHTML = `
         <div class="equipment-header">
-          <div class="equipment-name">${getEquipmentDisplayName(equipment)}</div>
+          <div class="equipment-name" style="display:flex; align-items:center; gap:8px;">
+            <img src="${pickaxeImg}" alt="${getEquipmentDisplayName(equipment)}" style="width:32px; height:32px; object-fit:contain;" />
+            ${getEquipmentDisplayName(equipment)}
+          </div>
           <div class="equipment-rarity" style="background:${rarity.color}20; color:${rarity.color}">
             ${getRarityName(equipment.rarity)}
           </div>
@@ -1291,9 +1345,13 @@
           (gameState.resources.ore[oreType] || 0) >= amount
         );
         
+        const weaponImg = PICKAXE_LIST[weaponId] || PICKAXE_LIST.basePickaxe;
         card.innerHTML = `
           <div class="upgrade-header">
-            <div class="upgrade-name" style="color:${RARITY[weaponData.rarity].color}">${getRareWeaponName(weaponId)}</div>
+            <div class="upgrade-name" style="color:${RARITY[weaponData.rarity].color}; display:flex; align-items:center; gap:8px;">
+              <img src="${weaponImg}" alt="${getRareWeaponName(weaponId)}" style="width:32px; height:32px; object-fit:contain;" />
+              ${getRareWeaponName(weaponId)}
+            </div>
             <div class="equipment-rarity" style="background:${RARITY[weaponData.rarity].color}20; color:${RARITY[weaponData.rarity].color}; font-size:11px;">
               ${getRarityName(weaponData.rarity)}
             </div>
@@ -1465,9 +1523,13 @@
             card.className = `equipment-card ${eq.rarity}`;
             const price = calculateEquipmentPrice(eq);
             const rarity = RARITY[eq.rarity];
+            const pickaxeImg = getPickaxeImagePath(eq);
             card.innerHTML = `
               <div class="equipment-header">
-                <div class="equipment-name">${getEquipmentDisplayName(eq)}</div>
+                <div class="equipment-name" style="display:flex; align-items:center; gap:8px;">
+                  <img src="${pickaxeImg}" alt="${getEquipmentDisplayName(eq)}" style="width:32px; height:32px; object-fit:contain;" />
+                  ${getEquipmentDisplayName(eq)}
+                </div>
                 <div class="equipment-rarity" style="background:${rarity.color}20; color:${rarity.color}">
                   ${getRarityName(eq.rarity)}
                 </div>

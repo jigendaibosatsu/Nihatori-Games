@@ -18,6 +18,21 @@
 - **unko-real.png** - リアルなうんこ
 - **unko-*.png** - その他のうんこバリエーション
 
+### ツルハシ (`pickaxe/`)
+mine-tap ゲームで使用するツルハシ画像。
+
+- **rock_pickaxe.png** - 石のツルハシ（基本）
+- **iron_pickaxe.png** - 鉄のツルハシ
+- **silvre_pickaxe.png** - 銀のツルハシ
+- **golden_pickaxe.png** - 金のツルハシ
+- **diamond_pickaxe.png** - ダイヤのツルハシ
+- **Platinum_pickaxe.png** - プラチナのツルハシ
+- **ice_pickaxe.png** - 氷のツルハシ
+- **Carmeltazite_pickaxe.png** - カルメルタザイトのツルハシ
+- **Lonsdaleite_pickaxe.png** - ロンズデーライトのツルハシ
+- **Wurtzite BN_pickaxe.png** - ウルツァイトBNのツルハシ
+- **used_pickaxe_1.png**〜**3.png** - 使用済みツルハシ
+
 ### その他のアイテム
 必要に応じて追加してください。
 

@@ -145,6 +145,24 @@
 
 その他のアイテム画像を配置しています。
 
+### ツルハシ (`/assets/items/pickaxe/`)
+
+| ファイル名 | 説明 | 使用ゲーム |
+|-----------|------|-----------|
+| `rock_pickaxe.png` | 石のツルハシ（基本） | mine-tap |
+| `iron_pickaxe.png` | 鉄のツルハシ | mine-tap |
+| `silvre_pickaxe.png` | 銀のツルハシ | mine-tap |
+| `golden_pickaxe.png` | 金のツルハシ | mine-tap |
+| `diamond_pickaxe.png` | ダイヤのツルハシ | mine-tap |
+| `Platinum_pickaxe.png` | プラチナのツルハシ | mine-tap |
+| `ice_pickaxe.png` | 氷のツルハシ | mine-tap |
+| `Carmeltazite_pickaxe.png` | カルメルタザイトのツルハシ | mine-tap |
+| `Lonsdaleite_pickaxe.png` | ロンズデーライトのツルハシ | mine-tap |
+| `Wurtzite BN_pickaxe.png` | ウルツァイトBNのツルハシ | mine-tap |
+| `used_pickaxe_1.png`〜`3.png` | 使用済みツルハシ | mine-tap |
+
+### その他のアイテム
+
 | ファイル名 | 説明 | 使用ゲーム |
 |-----------|------|-----------|
 | `unko.png` | うんこ画像 | axolotl-shop, axolotl-cafe, axolotl-idle |
