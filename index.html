@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-i18n-page-title="site.title">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -33,6 +33,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <script src="/assets/i18n.js"></script>
   <link rel="icon" href="/assets/icon/nihatori_icon.png" type="image/png" media="(prefers-color-scheme: light)" />
   <link rel="icon" href="/assets/icon/nihatori_icon.png" type="image/png" media="(prefers-color-scheme: dark)" />
 
@@ -59,20 +60,18 @@
 <body>
   <div id="site-header"></div>
 
-  <nav class="category-tabs" role="tablist" aria-label="カテゴリ">
+  <nav class="category-tabs" role="tablist" aria-label="Category">
     <div class="tabs-scroll">
-      <!-- タブ順: おすすめ → お気に入り → 更新 → ランダム → 残り -->
-      <button type="button" class="tab" data-tab="recommended" role="tab">おすすめ</button>
-      <button type="button" class="tab" data-tab="favorites" role="tab">お気に入り</button>
-      <button type="button" class="tab" data-tab="updates" role="tab">更新</button>
-      <button type="button" class="tab" data-tab="random" role="tab">ランダム</button>
-      <!-- 残りのタブ -->
-      <button type="button" class="tab" data-tab="top" role="tab">トップ</button>
-      <button type="button" class="tab" data-tab="games" role="tab">ゲーム</button>
-      <button type="button" class="tab" data-tab="hobby" role="tab">趣味</button>
-      <button type="button" class="tab" data-tab="posts" role="tab">記事</button>
-      <button type="button" class="tab" data-tab="trending" role="tab">急上昇</button>
-      <button type="button" class="tab" data-tab="sns" role="tab">SNS</button>
+      <button type="button" class="tab" data-tab="recommended" role="tab" data-i18n="tabs.recommended">おすすめ</button>
+      <button type="button" class="tab" data-tab="favorites" role="tab" data-i18n="tabs.favorites">お気に入り</button>
+      <button type="button" class="tab" data-tab="updates" role="tab" data-i18n="tabs.updates">更新</button>
+      <button type="button" class="tab" data-tab="random" role="tab" data-i18n="tabs.random">ランダム</button>
+      <button type="button" class="tab" data-tab="top" role="tab" data-i18n="tabs.top">トップ</button>
+      <button type="button" class="tab" data-tab="games" role="tab" data-i18n="tabs.games">ゲーム</button>
+      <button type="button" class="tab" data-tab="hobby" role="tab" data-i18n="tabs.hobby">趣味</button>
+      <button type="button" class="tab" data-tab="posts" role="tab" data-i18n="tabs.posts">記事</button>
+      <button type="button" class="tab" data-tab="trending" role="tab" data-i18n="tabs.trending">急上昇</button>
+      <button type="button" class="tab" data-tab="sns" role="tab" data-i18n="tabs.sns">SNS</button>
     </div>
   </nav>
 
@@ -82,11 +81,12 @@
         id="search-input"
         class="search-input"
         type="search"
+        data-i18n-placeholder="search.placeholder"
         placeholder="タイトルやカテゴリで検索"
         autocomplete="off"
       />
-      <button id="search-button" class="search-button" type="button">検索</button>
-      <button id="search-clear" class="search-button search-clear" type="button">クリア</button>
+      <button id="search-button" class="search-button" type="button" data-i18n="search.button">検索</button>
+      <button id="search-clear" class="search-button search-clear" type="button" data-i18n="search.clear">クリア</button>
     </div>
   </div>
 
@@ -110,10 +110,10 @@
 
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-inner">
-        <p class="sidebar-label">ピックアップ</p>
+        <p class="sidebar-label" data-i18n="sidebar.pickup">ピックアップ</p>
         <ul class="sidebar-links">
-          <li><a href="/about.html">このサイトについて</a></li>
-          <li><a href="/roadmap.html">開発ロードマップ</a></li>
+          <li><a href="/about.html" data-i18n="sidebar.about">このサイトについて</a></li>
+          <li><a href="/roadmap.html" data-i18n="sidebar.roadmap">開発ロードマップ</a></li>
           <li><a href="./games/baba-nuki/">ババ抜き</a></li>
           <li><a href="./games/omikuji/">おみくじ</a></li>
           <li><a href="./games/mini-dq/">洞窟の果てへ</a></li>
@@ -155,7 +155,7 @@
         </ul>
         
         <div class="sidebar-social">
-          <p class="sidebar-label">SNS</p>
+          <p class="sidebar-label" data-i18n="sidebar.sns">SNS</p>
           <div class="social-links">
             <a href="https://www.instagram.com/nihatori_zeroh/" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="Instagram">
               <span>📷</span> Instagram

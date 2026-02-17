@@ -89,10 +89,6 @@
   // うんこ未処理ペナルティ
   var POOP_PENALTY_PER_MONTH = 15;
   
-  // 血統導入関連定数
-  var LINEAGE_INTRODUCTION_FEE = 5000;
-  var LINEAGE_INTRODUCTION_REDUCTION = 20;
-  
   // 固定化報酬レア度マップ
   var rarityMultiplierMap = {
     common: 10,
@@ -761,6 +757,13 @@
           if (tank.axolotl) migrateAxolotl(tank.axolotl);
           if (tank.breedingPair) tank.breedingPair.forEach(migrateAxolotl);
           if (tank.juveniles) tank.juveniles.forEach(migrateAxolotl);
+          // 最初のウパは販売不可：noteで識別しisInitialを設定（ロード時・旧セーブ対策）
+          if (tank.axolotl && (tank.note === '最初のウパ' || tank.note === 'First axolotl' || tank.note === '親ウパ')) {
+            tank.axolotl.isInitial = true;
+            if (saveData.axolotlRegistry && saveData.axolotlRegistry[tank.axolotl.id]) {
+              saveData.axolotlRegistry[tank.axolotl.id].isInitial = true;
+            }
+          }
         });
       }
       
@@ -1387,6 +1390,8 @@
     var initialSlotCount = 3;
     var initialType = Math.random() < 0.5 ? 'nomal' : 'marble';
     var initialAx = createAxolotl(2, initialType, null, null);
+    initialAx.isInitial = true;  // 最初のウパは販売不可
+    if (axolotlRegistry[initialAx.id]) axolotlRegistry[initialAx.id].isInitial = true;
     for (var i = 0; i < initialSlotCount; i++) {
       state.tanks.push({
         id: i + 1,
@@ -1588,7 +1593,8 @@
     var tree = {
       self: ax,
       parents: [],
-      grandparents: []
+      grandparents: [],
+      grandparentsPerParent: [] // [parent1's grandparents, parent2's grandparents]
     };
     // 親を取得
     if (ax.parent1Id && axolotlRegistry[ax.parent1Id]) {
@@ -1597,14 +1603,18 @@
     if (ax.parent2Id && axolotlRegistry[ax.parent2Id]) {
       tree.parents.push(axolotlRegistry[ax.parent2Id]);
     }
-    // 祖父母を取得
+    // 祖父母を取得（親ごとに分離）
     tree.parents.forEach(function (parent) {
+      var gps = [];
       if (parent.parent1Id && axolotlRegistry[parent.parent1Id]) {
+        gps.push(axolotlRegistry[parent.parent1Id]);
         tree.grandparents.push(axolotlRegistry[parent.parent1Id]);
       }
       if (parent.parent2Id && axolotlRegistry[parent.parent2Id]) {
+        gps.push(axolotlRegistry[parent.parent2Id]);
         tree.grandparents.push(axolotlRegistry[parent.parent2Id]);
       }
+      tree.grandparentsPerParent.push(gps);
     });
     return tree;
   }
@@ -1770,23 +1780,27 @@
     window._namingMode = { axolotlId: axolotlId, isHatch: isHatch };
   }
 
-  function openDetailModal(axolotlId) {
+  function openDetailModal(axolotlId, options) {
     var ax = axolotlRegistry[axolotlId];
     if (!ax) return;
+    var fromHatch = options && options.fromHatch;
     
     // 現在の状態を取得（水槽内の個体から）
     var currentAx = null;
     var foundTank = null;
-    state.tanks.forEach(function (tank) {
+    var foundTankIdx = -1;
+    state.tanks.forEach(function (tank, idx) {
       if (tank.axolotl && tank.axolotl.id === axolotlId) {
         currentAx = tank.axolotl;
         foundTank = tank;
+        foundTankIdx = idx;
       }
       if (tank.breedingPair) {
         tank.breedingPair.forEach(function (pairAx) {
           if (pairAx.id === axolotlId) {
             currentAx = pairAx;
             foundTank = tank;
+            foundTankIdx = idx;
           }
         });
       }
@@ -1797,6 +1811,7 @@
     
     var tree = getFamilyTree(axolotlId);
     var nameEl = $('axDetailName');
+    var iconWrapEl = $('axDetailIconWrap');
     var bodyEl = $('axDetailBody');
     var familyEl = $('axDetailFamily');
     
@@ -1804,41 +1819,180 @@
     var namePart = nameForDisplay(displayAx, localeForNameDisplay());
     var displayName = (displayAx.familyName ? displayAx.familyName + ' ' : '') + namePart;
     var sexDisplayHtml = displayAx.age >= 12 ? (displayAx.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>') : '';
-    nameEl.innerHTML = displayName + (sexDisplayHtml ? ' ' + sexDisplayHtml : '');
+    if (foundTank && foundTank.breedingPair && foundTank.breedingPair.length === 2) {
+      var pairNames = foundTank.breedingPair.map(function (p) {
+        return (p.familyName ? p.familyName + ' ' : '') + nameForDisplay(p, localeForNameDisplay()) + (p.age >= 12 ? (p.sex === 'オス' ? ' ♂' : ' ♀') : '');
+      }).join(' & ');
+      nameEl.innerHTML = pairNames;
+    } else {
+      nameEl.innerHTML = displayName + (sexDisplayHtml ? ' ' + sexDisplayHtml : '');
+    }
+    
+    // 中央揃えのアイコンをヘッダーに表示（繁殖ペアの場合は各カラムに表示するため非表示）
+    iconWrapEl.innerHTML = '';
+    if (!(foundTank && foundTank.breedingPair && foundTank.breedingPair.length === 2)) {
+      var detailSprite = (displayAx.type === 'chimera' && displayAx.chimeraTypes && displayAx.chimeraTypes.length >= 2)
+        ? createChimeraCanvasSprite(displayAx, 80)
+        : createPixelArtCanvasSprite(displayAx, 80);
+      iconWrapEl.appendChild(detailSprite);
+    }
     
     var sizeBand = sizeBandFromAge(displayAx.age);
     bodyEl.innerHTML = '';
     
-    // 同棲ペアの場合はタブを表示して、2匹の詳細を切り替えられるようにする
+    // 繁殖ペアの場合は左右2カラムで各個体の詳細を表示
     if (foundTank && foundTank.breedingPair && foundTank.breedingPair.length === 2) {
-      var tabsDiv = document.createElement('div');
-      tabsDiv.className = 'ax-detail-tabs';
+      var pairColumnsDiv = document.createElement('div');
+      pairColumnsDiv.className = 'ax-detail-pair-columns';
       foundTank.breedingPair.forEach(function (pairAx) {
-        var tabBtn = document.createElement('button');
-        tabBtn.type = 'button';
-        tabBtn.className = 'ax-detail-tab' + (pairAx.id === displayAx.id ? ' active' : '');
-        var tabNamePart = nameForDisplay(pairAx, localeForNameDisplay());
-        var tabLabel = (pairAx.familyName ? pairAx.familyName + ' ' : '') + tabNamePart;
-        tabBtn.textContent = tabLabel;
-        if (pairAx.id !== displayAx.id) {
-          tabBtn.addEventListener('click', function () {
-            openDetailModal(pairAx.id);
-          });
+        var col = document.createElement('div');
+        col.className = 'ax-detail-pair-column';
+        var colIconWrap = document.createElement('div');
+        colIconWrap.className = 'ax-detail-pair-column-icon-wrap';
+        var colSprite = (pairAx.type === 'chimera' && pairAx.chimeraTypes && pairAx.chimeraTypes.length >= 2)
+          ? createChimeraCanvasSprite(pairAx, 48)
+          : createPixelArtCanvasSprite(pairAx, 48);
+        colIconWrap.appendChild(colSprite);
+        col.appendChild(colIconWrap);
+        var colTitle = document.createElement('h4');
+        colTitle.textContent = (pairAx.familyName ? pairAx.familyName + ' ' : '') + nameForDisplay(pairAx, localeForNameDisplay()) + (pairAx.age >= 12 ? (pairAx.sex === 'オス' ? ' ♂' : ' ♀') : '');
+        col.appendChild(colTitle);
+        var colContent = document.createElement('div');
+        colContent.className = 'ax-detail-pair-column-content';
+        var pairTankClean = foundTank && foundTank.clean !== undefined ? foundTank.clean : 80;
+        var pairStatusStr = (pairAx.injured ? t('ui.injured') : '') + (pairAx.sick ? t('ui.sick') : '') + (pairAx.underTreatment ? t('ui.underTreatment') : '') + (!pairAx.injured && !pairAx.sick && !pairAx.underTreatment ? t('ui.healthy') : '');
+        var pairBodyText = t('ui.sizeLabel') + formatSize(pairAx.size) + '\n' + t('ui.ageFormat', { n: pairAx.age }) + '\n' + t('ui.healthLabel') + Math.round(pairAx.health || 100) + '/100\n' + t('ui.hungerLabelShort') + Math.round(pairAx.hunger || 100) + '/100\n' + t('ui.waterQualityLabel') + Math.round(pairTankClean) + '/100\n' + t('ui.shadeLabel') + shadeLabel(pairAx.shade) + '\n' + t('ui.statusFormat', { status: pairStatusStr }) + '\n' + t('ui.estimatedPrice') + formatMoney(calcPrice(pairAx));
+        var pairTextDiv = document.createElement('div');
+        pairTextDiv.style.whiteSpace = 'pre-line';
+        pairTextDiv.style.fontSize = '11px';
+        pairTextDiv.textContent = pairBodyText;
+        colContent.appendChild(pairTextDiv);
+        var pairNameLabel = document.createElement('label');
+        pairNameLabel.style.fontSize = '10px';
+        pairNameLabel.textContent = t('ui.name');
+        var pairNameInput = document.createElement('input');
+        pairNameInput.type = 'text';
+        pairNameInput.value = pairAx.name || '';
+        pairNameInput.placeholder = t('dialog.namePlaceholder');
+        pairNameInput.style.width = '100%';
+        pairNameInput.style.padding = '4px';
+        pairNameInput.style.fontSize = '11px';
+        pairNameInput.style.marginTop = '4px';
+        pairNameInput.dataset.axolotlId = String(pairAx.id);
+        pairNameInput.addEventListener('change', function () {
+          var axId = parseInt(this.dataset.axolotlId, 10);
+          var ax = axolotlRegistry[axId];
+          if (!ax) return;
+          var newName = this.value.trim() || null;
+          var oldName = ax.name;
+          if (oldName && state.usedNames && state.usedNames[oldName]) delete state.usedNames[oldName];
+          if (newName) newName = generateUniqueName(newName);
+          ax.name = newName;
+          ax.nameElementA = null;
+          ax.nameElementB = null;
+          if (displayAx.id === axId) {
+            var nameEl = $('axDetailName');
+            var sexDisplayHtml = displayAx.age >= 12 ? (displayAx.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>') : '';
+            var namePart = newName ? nameForDisplay({ name: newName, nameElementA: null, nameElementB: null, type: displayAx.type }, 'en') : typeLabel(displayAx.type);
+            nameEl.innerHTML = (displayAx.familyName ? displayAx.familyName + ' ' : '') + namePart + (sexDisplayHtml ? ' ' + sexDisplayHtml : '');
+          }
+          colTitle.textContent = (pairAx.familyName ? pairAx.familyName + ' ' : '') + (newName || typeLabel(pairAx.type)) + (pairAx.age >= 12 ? (pairAx.sex === 'オス' ? ' ♂' : ' ♀') : '');
+          saveGame();
+        });
+        colContent.appendChild(pairNameLabel);
+        colContent.appendChild(pairNameInput);
+        var pairTree = getFamilyTree(pairAx.id);
+        var pairTreeDiv = document.createElement('div');
+        pairTreeDiv.className = 'ax-detail-pair-family';
+        pairTreeDiv.style.marginTop = '8px';
+        pairTreeDiv.style.paddingTop = '8px';
+        pairTreeDiv.style.borderTop = '1px solid #bae6fd';
+        pairTreeDiv.style.fontSize = '10px';
+        var pairTreeH4 = document.createElement('h4');
+        pairTreeH4.textContent = t('ui.familyTree');
+        pairTreeH4.style.fontSize = '11px';
+        pairTreeH4.style.marginBottom = '4px';
+        pairTreeH4.style.color = '#0369a1';
+        pairTreeDiv.appendChild(pairTreeH4);
+        if (pairTree && (pairTree.parents.length > 0 || pairTree.grandparents.length > 0)) {
+          if (pairTree.parents.length > 0) {
+            pairTree.parents.forEach(function (p, idx) {
+              var entry = document.createElement('div');
+              entry.className = 'ax-detail-family-entry';
+              entry.style.marginBottom = '4px';
+              var pSprite = (p.type === 'chimera' && p.chimeraTypes && p.chimeraTypes.length >= 2)
+                ? createChimeraCanvasSprite(p, 24)
+                : createPixelArtCanvasSprite(p, 24);
+              entry.appendChild(pSprite);
+              var morphSpan = document.createElement('div');
+              morphSpan.className = 'ax-detail-family-entry-morph';
+              morphSpan.style.fontSize = '10px';
+              morphSpan.innerHTML = typeLabel(p.type) + ' ' + (p.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>');
+              entry.appendChild(morphSpan);
+              var nameSpan = document.createElement('div');
+              nameSpan.className = 'ax-detail-family-entry-name';
+              nameSpan.textContent = p.name || '-';
+              entry.appendChild(nameSpan);
+              pairTreeDiv.appendChild(entry);
+              var gps = pairTree.grandparentsPerParent && pairTree.grandparentsPerParent[idx] ? pairTree.grandparentsPerParent[idx] : [];
+              gps.forEach(function (gp) {
+                var gpEntry = document.createElement('div');
+                gpEntry.className = 'ax-detail-family-entry';
+                gpEntry.style.marginBottom = '4px';
+                gpEntry.style.marginLeft = '8px';
+                var gpSprite = (gp.type === 'chimera' && gp.chimeraTypes && gp.chimeraTypes.length >= 2)
+                  ? createChimeraCanvasSprite(gp, 20)
+                  : createPixelArtCanvasSprite(gp, 20);
+                gpEntry.appendChild(gpSprite);
+                var gpMorphSpan = document.createElement('div');
+                gpMorphSpan.className = 'ax-detail-family-entry-morph';
+                gpMorphSpan.style.fontSize = '9px';
+                gpMorphSpan.innerHTML = typeLabel(gp.type) + ' ' + (gp.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>');
+                gpEntry.appendChild(gpMorphSpan);
+                var gpNameSpan = document.createElement('div');
+                gpNameSpan.className = 'ax-detail-family-entry-name';
+                gpNameSpan.textContent = gp.name || '-';
+                gpEntry.appendChild(gpNameSpan);
+                pairTreeDiv.appendChild(gpEntry);
+              });
+            });
+          } else {
+            var noP = document.createElement('div');
+            noP.textContent = t('ui.parentUnknown');
+            pairTreeDiv.appendChild(noP);
+          }
+        } else {
+          var noP2 = document.createElement('div');
+          noP2.textContent = t('ui.parentUnknown');
+          pairTreeDiv.appendChild(noP2);
         }
-        tabsDiv.appendChild(tabBtn);
+        colContent.appendChild(pairTreeDiv);
+        col.appendChild(colContent);
+        pairColumnsDiv.appendChild(col);
       });
-      bodyEl.appendChild(tabsDiv);
+      bodyEl.appendChild(pairColumnsDiv);
     }
     
-    // 名前編集欄（English: 100名リストから選択 / Japanese: 要素A/Bシステム）
+    // 名前編集欄（孵化プレビュー時は非表示、繁殖ペア時は各カラムに含めるか下に表示）
     var nameEditDiv = document.createElement('div');
     nameEditDiv.style.marginBottom = '8px';
     
+    if (fromHatch) {
+      nameEditDiv.style.display = 'none';
+    }
+    // 繁殖ペアの場合は名前編集を非表示（各カラムに統計のみ表示）
+    if (foundTank && foundTank.breedingPair && foundTank.breedingPair.length === 2) {
+      nameEditDiv.style.display = 'none';
+    }
     if (getGameLocale() === 'en') {
+      var nameInputId = 'axDetailName_' + axolotlId;
       var nameLabel = document.createElement('label');
+      nameLabel.htmlFor = nameInputId;
       nameLabel.style.fontSize = '11px';
       nameLabel.textContent = t('ui.name');
       var nameInput = document.createElement('input');
+      nameInput.id = nameInputId;
+      nameInput.name = nameInputId;
       nameInput.type = 'text';
       nameInput.value = displayAx.name || '';
       nameInput.placeholder = t('dialog.namePlaceholder');
@@ -1874,10 +2028,16 @@
       nameElementsContainer.style.display = 'flex';
       nameElementsContainer.style.gap = '8px';
       nameElementsContainer.style.marginBottom = '8px';
+      var elementAInputId = 'axDetailElementA_' + axolotlId;
       var elementADiv = document.createElement('div');
       elementADiv.style.flex = '1';
-      elementADiv.innerHTML = '<label style="font-size:11px;">' + t('ui.elementA') + '</label>';
+      var elementALabel = document.createElement('label');
+      elementALabel.htmlFor = elementAInputId;
+      elementALabel.style.fontSize = '11px';
+      elementALabel.textContent = t('ui.elementA');
       var elementAInput = document.createElement('input');
+      elementAInput.id = elementAInputId;
+      elementAInput.name = elementAInputId;
       elementAInput.type = 'text';
       elementAInput.value = displayAx.nameElementA || '';
       elementAInput.placeholder = t('dialog.elementAPlaceholder');
@@ -1895,13 +2055,20 @@
       hereditaryALabel.textContent = t('ui.hereditary');
       hereditaryALabel.style.fontSize = '11px';
       hereditaryALabel.style.marginLeft = '4px';
+      elementADiv.appendChild(elementALabel);
       elementADiv.appendChild(elementAInput);
       elementADiv.appendChild(hereditaryACheckbox);
       elementADiv.appendChild(hereditaryALabel);
+      var elementBInputId = 'axDetailElementB_' + axolotlId;
       var elementBDiv = document.createElement('div');
       elementBDiv.style.flex = '1';
-      elementBDiv.innerHTML = '<label style="font-size:11px;">' + t('ui.elementB') + '</label>';
+      var elementBLabel = document.createElement('label');
+      elementBLabel.htmlFor = elementBInputId;
+      elementBLabel.style.fontSize = '11px';
+      elementBLabel.textContent = t('ui.elementB');
       var elementBInput = document.createElement('input');
+      elementBInput.id = elementBInputId;
+      elementBInput.name = elementBInputId;
       elementBInput.type = 'text';
       elementBInput.value = displayAx.nameElementB || '';
       elementBInput.placeholder = t('dialog.elementBPlaceholder');
@@ -1919,6 +2086,7 @@
       hereditaryBLabel.textContent = t('ui.hereditary');
       hereditaryBLabel.style.fontSize = '11px';
       hereditaryBLabel.style.marginLeft = '4px';
+      elementBDiv.appendChild(elementBLabel);
       elementBDiv.appendChild(elementBInput);
       elementBDiv.appendChild(hereditaryBCheckbox);
       elementBDiv.appendChild(hereditaryBLabel);
@@ -1976,12 +2144,18 @@
     }
     bodyEl.appendChild(nameEditDiv);
     
-    // 苗字編集欄（繁殖ペアの場合のみ）
-    if (displayAx.age >= 12 && (displayAx.sex === 'オス' || displayAx.sex === 'メス')) {
+    // 苗字編集欄（繁殖ペアの場合のみ、孵化プレビュー時は非表示）
+    if (!fromHatch && displayAx.age >= 12 && (displayAx.sex === 'オス' || displayAx.sex === 'メス')) {
+      var familyNameInputId = 'axDetailFamilyName_' + axolotlId;
       var familyNameEditDiv = document.createElement('div');
       familyNameEditDiv.style.marginBottom = '8px';
-      familyNameEditDiv.innerHTML = '<label style="font-size:11px;">' + t('ui.familyNameLabel') + '</label>';
+      var familyNameLabel = document.createElement('label');
+      familyNameLabel.htmlFor = familyNameInputId;
+      familyNameLabel.style.fontSize = '11px';
+      familyNameLabel.textContent = t('ui.familyNameLabel');
       var familyNameInput = document.createElement('input');
+      familyNameInput.id = familyNameInputId;
+      familyNameInput.name = familyNameInputId;
       familyNameInput.type = 'text';
       familyNameInput.value = displayAx.familyName || '';
       familyNameInput.placeholder = t('dialog.familyNamePlaceholder');
@@ -2004,6 +2178,7 @@
           nameEl.innerHTML = displayName + (sexDisplayHtml ? ' ' + sexDisplayHtml : '');
         }
       });
+      familyNameEditDiv.appendChild(familyNameLabel);
       familyNameEditDiv.appendChild(familyNameInput);
       bodyEl.appendChild(familyNameEditDiv);
     }
@@ -2024,44 +2199,76 @@
     var bodyTextDiv = document.createElement('div');
     bodyTextDiv.style.whiteSpace = 'pre-line';
     bodyTextDiv.textContent = bodyText;
-    bodyEl.appendChild(bodyTextDiv);
+    if (!(foundTank && foundTank.breedingPair && foundTank.breedingPair.length === 2)) {
+      bodyEl.appendChild(bodyTextDiv);
+    }
     
-    // 家系図を表示
+    // 家系図を表示（繁殖ペアの場合は各カラム内に表示するためスキップ）
     familyEl.innerHTML = '';
-    if (tree && (tree.parents.length > 0 || tree.grandparents.length > 0)) {
+    if (foundTank && foundTank.breedingPair && foundTank.breedingPair.length === 2) {
+      familyEl.style.display = 'none';
+    } else {
+      familyEl.style.display = '';
+    }
+    if (!(foundTank && foundTank.breedingPair && foundTank.breedingPair.length === 2) && tree && (tree.parents.length > 0 || tree.grandparents.length > 0)) {
       var h3 = document.createElement('h3');
       h3.textContent = t('ui.familyTree');
       familyEl.appendChild(h3);
       
       if (tree.parents.length > 0) {
-        var parentDiv = document.createElement('div');
-        parentDiv.className = 'ax-detail-family-item';
-        parentDiv.innerHTML = t('ui.parent');
+        var treeContainer = document.createElement('div');
+        treeContainer.className = 'ax-detail-family-tree';
         tree.parents.forEach(function (p, idx) {
-          if (idx > 0) parentDiv.innerHTML += '、';
-          var pSexDisplay = p.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>';
-          parentDiv.innerHTML += typeLabel(p.type) + ' ' + pSexDisplay;
+          var side = document.createElement('div');
+          side.className = 'ax-detail-family-side';
+          var sideLabel = document.createElement('div');
+          sideLabel.className = 'ax-detail-family-side-label';
+          sideLabel.textContent = t('ui.parent') + ' (' + (p.sex === 'オス' ? '♂' : '♀') + ')';
+          side.appendChild(sideLabel);
+          var entry = document.createElement('div');
+          entry.className = 'ax-detail-family-entry';
+          var pSprite = (p.type === 'chimera' && p.chimeraTypes && p.chimeraTypes.length >= 2)
+            ? createChimeraCanvasSprite(p, 32)
+            : createPixelArtCanvasSprite(p, 32);
+          entry.appendChild(pSprite);
+          var morphSpan = document.createElement('div');
+          morphSpan.className = 'ax-detail-family-entry-morph';
+          morphSpan.innerHTML = typeLabel(p.type) + ' ' + (p.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>');
+          entry.appendChild(morphSpan);
+          var nameSpan = document.createElement('div');
+          nameSpan.className = 'ax-detail-family-entry-name';
+          nameSpan.textContent = p.name || '-';
+          entry.appendChild(nameSpan);
+          side.appendChild(entry);
+          var gps = tree.grandparentsPerParent && tree.grandparentsPerParent[idx] ? tree.grandparentsPerParent[idx] : [];
+          gps.forEach(function (gp) {
+            var gpEntry = document.createElement('div');
+            gpEntry.className = 'ax-detail-family-entry';
+            var gpSprite = (gp.type === 'chimera' && gp.chimeraTypes && gp.chimeraTypes.length >= 2)
+              ? createChimeraCanvasSprite(gp, 24)
+              : createPixelArtCanvasSprite(gp, 24);
+            gpEntry.appendChild(gpSprite);
+            var gpMorphSpan = document.createElement('div');
+            gpMorphSpan.className = 'ax-detail-family-entry-morph';
+            gpMorphSpan.style.fontSize = '10px';
+            gpMorphSpan.innerHTML = typeLabel(gp.type) + ' ' + (gp.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>');
+            gpEntry.appendChild(gpMorphSpan);
+            var gpNameSpan = document.createElement('div');
+            gpNameSpan.className = 'ax-detail-family-entry-name';
+            gpNameSpan.textContent = gp.name || '-';
+            gpEntry.appendChild(gpNameSpan);
+            side.appendChild(gpEntry);
+          });
+          treeContainer.appendChild(side);
         });
-        familyEl.appendChild(parentDiv);
+        familyEl.appendChild(treeContainer);
       } else {
         var noParentDiv = document.createElement('div');
         noParentDiv.className = 'ax-detail-family-item';
         noParentDiv.textContent = t('ui.parentUnknown');
         familyEl.appendChild(noParentDiv);
       }
-      
-      if (tree.grandparents.length > 0) {
-        var grandparentDiv = document.createElement('div');
-        grandparentDiv.className = 'ax-detail-family-item';
-        grandparentDiv.innerHTML = t('ui.grandparent');
-        tree.grandparents.forEach(function (gp, idx) {
-          if (idx > 0) grandparentDiv.innerHTML += '、';
-          var gpSexDisplay = gp.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>';
-          grandparentDiv.innerHTML += typeLabel(gp.type) + ' ' + gpSexDisplay;
-        });
-        familyEl.appendChild(grandparentDiv);
-      }
-    } else {
+    } else if (!(foundTank && foundTank.breedingPair && foundTank.breedingPair.length === 2)) {
       var noFamilyDiv = document.createElement('div');
       noFamilyDiv.className = 'ax-detail-family-item';
       noFamilyDiv.textContent = t('ui.parentUnknown');
@@ -2078,8 +2285,13 @@
       isShopNaming = !isHatchNaming;
     } else {
       state.tanks.forEach(function(tank) {
-        if (tank.axolotl && tank.axolotl.id === axolotlId && tank.note === '最初のウパ' && !tank.axolotl.name) {
+        if (tank.axolotl && tank.axolotl.id === axolotlId && (tank.axolotl.isInitial || tank.note === t('ui.firstAxo') || tank.note === '最初のウパ' || tank.note === 'First axolotl' || tank.note === '親ウパ')) {
           isInitialAxolotl = true;
+        }
+        if (tank.breedingPair) {
+          tank.breedingPair.forEach(function(pairAx) {
+            if (pairAx.id === axolotlId && pairAx.isInitial) isInitialAxolotl = true;
+          });
         }
         if (tank.axolotl && tank.axolotl.id === axolotlId && tank.note === '1ヶ月目のウパ' && !tank.axolotl.name) {
           isHatchNaming = true;
@@ -2092,23 +2304,92 @@
     
     var cancelBtn = $('axDetailCancel');
     var sellBtn = $('axDetailSell');
-    if (isInitialAxolotl || isHatchNaming || isShopNaming) {
+    var sellBtn2 = $('axDetailSell2');
+    var sellPairBtn = $('axDetailSellPair');
+    if (fromHatch) {
+      cancelBtn.textContent = t('ui.close');
+      if (sellBtn) sellBtn.style.display = 'none';
+      if (sellBtn2) sellBtn2.style.display = 'none';
+      if (sellPairBtn) sellPairBtn.style.display = 'none';
+    } else if (isHatchNaming || isShopNaming) {
       cancelBtn.textContent = t('ui.confirm');
       if (sellBtn) sellBtn.style.display = 'none';
+      if (sellBtn2) sellBtn2.style.display = 'none';
+      if (sellPairBtn) sellPairBtn.style.display = 'none';
+    } else if (foundTank && foundTank.breedingPair && foundTank.breedingPair.length === 2) {
+      cancelBtn.textContent = t('ui.close');
+      if (sellPairBtn) {
+        var pairTotalPrice = 0;
+        var pairCannotSell = false;
+        foundTank.breedingPair.forEach(function (pairAx) {
+          pairTotalPrice += calcPrice(pairAx);
+          var pairIsInitial = pairAx.isInitial;
+          state.tanks.forEach(function (tank) {
+            if (tank.breedingPair) {
+              tank.breedingPair.forEach(function (p) {
+                if (p.id === pairAx.id && p.isInitial) pairIsInitial = true;
+              });
+            }
+          });
+          var sameMonthBought = (pairAx.boughtAtMonth != null && pairAx.boughtAtMonth === state.month);
+          var sameMonthWelcomed = (pairAx.welcomedAtMonth != null && pairAx.welcomedAtMonth === state.month);
+          if (sameMonthBought || sameMonthWelcomed || (pairIsInitial && state.month < 2)) pairCannotSell = true;
+        });
+        sellPairBtn.style.display = 'block';
+        sellPairBtn.textContent = pairCannotSell ? t('ui.cannotSellThisMonth') : (t('ui.sellPair') + ' ' + formatMoney(pairTotalPrice));
+        sellPairBtn.disabled = pairCannotSell;
+        var newPairBtn = sellPairBtn.cloneNode(true);
+        sellPairBtn.parentNode.replaceChild(newPairBtn, sellPairBtn);
+        var tankIdxToSell = foundTankIdx;
+        newPairBtn.onclick = function () {
+          if (this.disabled) return;
+          sellBreedingPair(tankIdxToSell);
+          $('axOverlayDetail').classList.remove('visible');
+          updateUI();
+        };
+      }
+      foundTank.breedingPair.forEach(function (pairAx, idx) {
+        var btn = idx === 0 ? sellBtn : sellBtn2;
+        if (!btn) return;
+        var pairIsInitial = false;
+        if (pairAx.isInitial) pairIsInitial = true;
+        state.tanks.forEach(function (tank) {
+          if (tank.breedingPair) {
+            tank.breedingPair.forEach(function (p) {
+              if (p.id === pairAx.id && p.isInitial) pairIsInitial = true;
+            });
+          }
+        });
+        var sameMonthBought = (pairAx.boughtAtMonth != null && pairAx.boughtAtMonth === state.month);
+        var sameMonthWelcomed = (pairAx.welcomedAtMonth != null && pairAx.welcomedAtMonth === state.month);
+        var cannotSellThisMonth = sameMonthBought || sameMonthWelcomed;
+        if (pairIsInitial) cannotSellThisMonth = (state.month < 2) || cannotSellThisMonth;
+        btn.style.display = 'block';
+        btn.textContent = cannotSellThisMonth ? t('ui.cannotSellThisMonth') : t('ui.sellPrice', { price: formatMoney(calcPrice(pairAx)) });
+        btn.disabled = cannotSellThisMonth;
+        var newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        var targetId = pairAx.id;
+        newBtn.onclick = function () {
+          if (this.disabled) return;
+          sellAxolotlFromDetail(targetId);
+        };
+      });
     } else {
       cancelBtn.textContent = t('ui.close');
+      if (sellPairBtn) sellPairBtn.style.display = 'none';
       if (sellBtn) {
+        if (sellBtn2) sellBtn2.style.display = 'none';
         var sameMonthBought = (displayAx.boughtAtMonth != null && displayAx.boughtAtMonth === state.month);
         var sameMonthWelcomed = (displayAx.welcomedAtMonth != null && displayAx.welcomedAtMonth === state.month);
         var cannotSellThisMonth = sameMonthBought || sameMonthWelcomed;
+        if (isInitialAxolotl) cannotSellThisMonth = (state.month < 2) || cannotSellThisMonth;
         sellBtn.style.display = 'block';
         sellBtn.textContent = cannotSellThisMonth ? t('ui.cannotSellThisMonth') : t('ui.sellPrice', { price: formatMoney(calcPrice(displayAx)) });
         sellBtn.disabled = cannotSellThisMonth;
-        // 既存のイベントリスナーを削除
         var newSellBtn = sellBtn.cloneNode(true);
         sellBtn.parentNode.replaceChild(newSellBtn, sellBtn);
-        // 新しいボタンにイベントリスナーを設定
-        var currentAxolotlId = axolotlId; // クロージャで保持
+        var currentAxolotlId = axolotlId;
         newSellBtn.onclick = function() {
           if (this.disabled) return;
           sellAxolotlFromDetail(currentAxolotlId);
@@ -2118,7 +2399,7 @@
     
     $('axOverlayDetail').classList.add('visible');
   }
-  
+
   function sellAxolotlFromDetail(axolotlId) {
     // 水槽から該当個体を探して販売
     var foundTank = null;
@@ -2179,9 +2460,9 @@
       if (window._namingMode) window._namingMode = null;
     }
     
-    // 最初のウパに名前がつけられたかチェック
+    // 最初のウパに名前がつけられたかチェック（locale非依存：noteは保存時の言語で保存される）
     var initialTank = state.tanks.find(function(tank) {
-      return tank.axolotl && tank.note === '最初のウパ';
+      return tank.axolotl && (tank.note === t('ui.firstAxo') || tank.note === '最初のウパ' || tank.note === 'First axolotl');
     });
     if (initialTank && initialTank.axolotl && initialTank.axolotl.name) {
       // まだメッセージが表示されていない場合のみ表示
@@ -2201,6 +2482,10 @@
     // 名付けモードをクリア
     if (window._namingMode) window._namingMode = null;
     $('axOverlayDetail').classList.remove('visible');
+    if (window._detailFromHatch) {
+      window._detailFromHatch = null;
+      $('axOverlayHatch').classList.add('visible');
+    }
     // モーダルを閉じた後にupdateUI()を呼ぶ（アニメーションを維持するため、少し遅延させる）
     setTimeout(function() {
       updateUI();
@@ -2218,12 +2503,11 @@
       var overlay = document.createElement('div');
       overlay.className = 'ax-overlay';
       overlay.id = 'axOverlayHatch';
-      overlay.innerHTML = '<div class="ax-overlay-box"><h2>' + t('ui.selectHatchTitle') + '</h2><p style="font-size:12px; margin-bottom:8px;">' + t('ui.selectHatchDesc') + '</p><div id="axHatchList" style="margin-bottom:12px; max-height:60vh; overflow-y:auto;"></div><button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axHatchCancel">' + t('ui.cancel') + '</button></div>';
+      overlay.innerHTML = '<div class="ax-overlay-box"><h2>' + t('ui.selectHatchTitle') + '</h2><p style="font-size:12px; margin-bottom:8px;">' + t('ui.selectHatchDesc') + '</p><div id="axHatchList" style="margin-bottom:12px; max-height:60vh; overflow-y:auto;"></div><div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="btn" id="axHatchSellAll" style="background:#dc2626; border-color:#dc2626;">' + t('ui.hatchSellAll') + '</button><button type="button" class="btn" id="axHatchRandom" style="background:#16a34a; border-color:#16a34a;">' + t('ui.hatchRandom') + '</button></div></div>';
       document.body.appendChild(overlay);
       list = $('axHatchList');
-      $('axHatchCancel').addEventListener('click', function() {
-        $('axOverlayHatch').classList.remove('visible');
-      });
+      $('axHatchSellAll').addEventListener('click', function() { var ctx = window._hatchContext; if (ctx) sellAllHatch(ctx.tankIdx, ctx.candidates, ctx.remainingJuveniles); });
+      $('axHatchRandom').addEventListener('click', function() { var ctx = window._hatchContext; if (ctx && ctx.candidates && ctx.candidates.length > 0) { var idx = Math.floor(Math.random() * ctx.candidates.length); selectHatchCandidate(ctx.tankIdx, idx, ctx.candidates, ctx.remainingJuveniles); } });
     }
     
     list.innerHTML = '';
@@ -2242,10 +2526,10 @@
       header.style.gap = '12px';
       header.style.marginBottom = '8px';
       
-      var img = document.createElement('img');
-      img.src = typeImagePath(candidate.type);
-      setPixelArtImageSize(img, 64, 64);
-      header.appendChild(img);
+      var sprite = (candidate.type === 'chimera' && candidate.chimeraTypes && candidate.chimeraTypes.length >= 2)
+        ? createChimeraCanvasSprite(candidate, 64)
+        : createPixelArtCanvasSprite(candidate, 64);
+      header.appendChild(sprite);
       
       var info = document.createElement('div');
       info.style.flex = '1';
@@ -2265,7 +2549,10 @@
       detailBtn.style.minHeight = '44px';
       detailBtn.dataset.axolotlId = String(candidate.id);
       detailBtn.addEventListener('click', function() {
-        openDetailModal(parseInt(this.dataset.axolotlId, 10));
+        var axId = parseInt(this.dataset.axolotlId, 10);
+        $('axOverlayHatch').classList.remove('visible');
+        window._detailFromHatch = true;
+        openDetailModal(axId, { fromHatch: true });
       });
       btnRow.appendChild(detailBtn);
       
@@ -2288,8 +2575,33 @@
     // 一時的に候補と残りを保存
     tank._hatchCandidates = candidates;
     tank._hatchRemaining = remainingJuveniles;
+    window._hatchContext = { tankIdx: tankIdx, candidates: candidates, remainingJuveniles: remainingJuveniles || [] };
     
     $('axOverlayHatch').classList.add('visible');
+  }
+
+  function sellAllHatch(tankIdx, candidates, remainingJuveniles) {
+    var tank = state.tanks[tankIdx];
+    if (!tank) return;
+    var toSell = (candidates || []).concat(remainingJuveniles || []);
+    var totalPrice = 0;
+    toSell.forEach(function(j) {
+      var price = calcPrice(j);
+      totalPrice += price;
+      if (axolotlRegistry[j.id]) axolotlRegistry[j.id].removed = true;
+    });
+    state.money += totalPrice;
+    tank.axolotl = null;
+    tank.juveniles = null;
+    tank.juvenileAge = null;
+    tank._hatchCandidates = null;
+    tank._hatchRemaining = null;
+    tank.note = '空き水槽';
+    logLine(t('game.hatchSoldAll', { count: toSell.length, price: formatMoney(totalPrice) }));
+    $('axOverlayHatch').classList.remove('visible');
+    window._hatchContext = null;
+    updateUI();
+    saveGame();
   }
 
   function selectHatchCandidate(tankIdx, candidateIndex, candidates, remainingJuveniles) {
@@ -2338,6 +2650,7 @@
     // 一時データをクリア
     tank._hatchCandidates = null;
     tank._hatchRemaining = null;
+    window._hatchContext = null;
     
     logLine(t('game.hatchSelected', { type: typeLabel(selected.type), count: toSell.length, price: formatMoney(totalPrice) }));
     $('axOverlayHatch').classList.remove('visible');
@@ -2580,9 +2893,9 @@
         var relationshipColor = getRelationshipColor(relationshipMeter);
         var avgAge = (p1.age + p2.age) / 2;
         var ageNote = '';
-        if (avgAge >= 60) ageNote = '<div style="color:#dc2626; font-size:11px; margin-top:4px;">加齢で産卵しにくくなっています</div>';
-        else if (avgAge >= 48) ageNote = '<div style="color:#f97316; font-size:11px; margin-top:4px;">加齢で産卵率が下がっています</div>';
-        else if (avgAge >= 36) ageNote = '<div style="color:#eab308; font-size:11px; margin-top:4px;">やや加齢の影響があります</div>';
+        if (avgAge >= 60) ageNote = '<div style="color:#dc2626; font-size:11px; margin-top:4px;">' + t('ui.ageNoteLowFertility') + '</div>';
+        else if (avgAge >= 48) ageNote = '<div style="color:#f97316; font-size:11px; margin-top:4px;">' + t('ui.ageNoteLowerFertility') + '</div>';
+        else if (avgAge >= 36) ageNote = '<div style="color:#eab308; font-size:11px; margin-top:4px;">' + t('ui.ageNoteSlightAge') + '</div>';
         
         var p1NamePart = nameForDisplay(p1, getLocale());
         var p2NamePart = nameForDisplay(p2, getLocale());
@@ -2619,8 +2932,7 @@
           });
         });
       } else if (tank.egg) {
-        var eggText = '卵 ' + (tank.eggCount || 500) + '個\n孵化まであと' + (tank.hatchMonthsLeft != null ? tank.hatchMonthsLeft : 1) + 'ヶ月';
-        lines.textContent = eggText;
+        lines.textContent = t('ui.eggDisplayInTank', { count: tank.eggCount || 500, months: tank.hatchMonthsLeft != null ? tank.hatchMonthsLeft : 1 });
       } else if (tank.juveniles && tank.juveniles.length > 0) {
         lines.textContent = t('ui.juvenileCountFormat', { count: tank.juveniles.length }) + '\n' + t('ui.juvenileAgeFormat', { age: tank.juvenileAge || 0 });
         lines.classList.add('clickable');
@@ -2641,7 +2953,7 @@
           '<div class="ax-tank-status-bar"><div class="ax-tank-status-label">' + t('ui.hunger') + '</div><div class="ax-bar"><div class="ax-bar-fill food" style="width:' + Math.round(ax.hunger || 100) + '%;"></div></div></div>' +
           '<div class="ax-tank-status-bar"><div class="ax-tank-status-label">' + t('ui.health') + '</div><div class="ax-bar"><div class="ax-bar-fill" style="width:' + Math.round(ax.health || 100) + '%;background:' + getHealthBarColor(ax.health) + ';"></div></div></div>' +
           '</div>' +
-          '<div style="margin-top:8px;">' + (ax.injured ? '<span style="color:#f97316; font-size:11px;">欠損</span> ' : '') + (ax.sick ? '<span style="color:#dc2626; font-weight:bold; background:#fee2e2; padding:2px 6px; border-radius:4px; font-size:11px;">病気</span> ' : '') + (ax.underTreatment ? '<span style="color:#3b82f6; font-size:11px;">治療中</span>' : '') + '</div>';
+          '<div style="margin-top:8px;">' + (ax.injured ? '<span style="color:#f97316; font-size:11px;">' + t('ui.injured') + '</span> ' : '') + (ax.sick ? '<span style="color:#dc2626; font-weight:bold; background:#fee2e2; padding:2px 6px; border-radius:4px; font-size:11px;">' + t('ui.sick') + '</span> ' : '') + (ax.underTreatment ? '<span style="color:#3b82f6; font-size:11px;">' + t('ui.underTreatment') + '</span>' : '') + '</div>';
         lines.classList.add('clickable');
         lines.dataset.axolotlId = String(ax.id);
         lines.addEventListener('click', function () {
@@ -3028,6 +3340,8 @@
         var msgEl = document.getElementById('axGoalMessage');
         if (titleEl) titleEl.textContent = t('ui.goalTitle');
         if (msgEl) msgEl.textContent = achievementName(ach.id) + '\n\n' + achievementDesc(ach.id) + '\n\n' + t('game.goalPrompt');
+        var quitBtn = document.getElementById('axGoalQuit');
+        if (quitBtn) quitBtn.style.display = 'none';
         var overlay = document.getElementById('axOverlayGoal');
         if (overlay) overlay.classList.add('visible');
         return;
@@ -4190,9 +4504,9 @@
     options.innerHTML = '';
     
     var methods = [
-      { name: '部分水替え', cost: WATER_CHANGE_PARTIAL_COST, bonus: WATER_CHANGE_PARTIAL_BONUS },
-      { name: '通常水替え', cost: WATER_CHANGE_NORMAL_COST, bonus: WATER_CHANGE_NORMAL_BONUS },
-      { name: '全換水', cost: WATER_CHANGE_FULL_COST, bonus: WATER_CHANGE_FULL_BONUS }
+      { name: t('ui.waterChangePartial'), cost: WATER_CHANGE_PARTIAL_COST, bonus: WATER_CHANGE_PARTIAL_BONUS },
+      { name: t('ui.waterChangeNormal'), cost: WATER_CHANGE_NORMAL_COST, bonus: WATER_CHANGE_NORMAL_BONUS },
+      { name: t('ui.waterChangeFull'), cost: WATER_CHANGE_FULL_COST, bonus: WATER_CHANGE_FULL_BONUS }
     ];
     
     methods.forEach(function(method) {
@@ -4514,111 +4828,6 @@
     $('axOverlayBreed').classList.add('visible');
   }
 
-  function openLineageIntroductionOverlay(parent1Idx, parent2Idx) {
-    var t1 = state.tanks[parent1Idx];
-    var t2 = state.tanks[parent2Idx];
-    if (!t1 || !t2 || !t1.axolotl || !t2.axolotl) {
-      logLine(t('game.noPairSelected'));
-      return;
-    }
-    
-    // 外部購入可能な個体を取得（固定化済み種類のみ）
-    var fixedTypes = Object.keys(state.fixedTypes).filter(function(type) {
-      return state.fixedTypes[type] === true;
-    });
-    
-    if (fixedTypes.length === 0) {
-      logLine(t('game.noLineageDonor'));
-      return;
-    }
-    
-    // モーダルを作成または取得
-    var overlay = document.getElementById('axOverlayLineageIntroduction');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.className = 'ax-overlay';
-      overlay.id = 'axOverlayLineageIntroduction';
-      overlay.innerHTML = '<div class="ax-overlay-box"><h2>' + t('ui.lineageIntro') + '</h2><p style="font-size:12px; margin-bottom:8px;">' + t('ui.lineageIntroDesc') + '</p><div id="axLineageIntroductionList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div><button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axLineageIntroductionCancel">' + t('ui.cancel') + '</button></div>';
-      document.body.appendChild(overlay);
-      document.getElementById('axLineageIntroductionCancel').addEventListener('click', function() {
-        $('axOverlayLineageIntroduction').classList.remove('visible');
-      });
-    }
-    
-    var list = document.getElementById('axLineageIntroductionList');
-    list.innerHTML = '';
-    
-    // 固定化済み種類の成体を表示
-    fixedTypes.forEach(function(type) {
-      var bandPrices = sizePriceTable[type] || sizePriceTable.nomal;
-      var price = bandPrices[7] || bandPrices[bandPrices.length - 1]; // 成体価格
-      var totalCost = price + LINEAGE_INTRODUCTION_FEE;
-      
-      var div = document.createElement('div');
-      div.style.marginBottom = '8px';
-      div.style.padding = '8px';
-      div.style.border = '1px solid #bfdbfe';
-      div.style.borderRadius = '6px';
-      
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'ax-btn';
-      btn.style.width = '100%';
-      btn.style.textAlign = 'left';
-      btn.innerHTML = '<img src="' + typeImagePath(type) + '" alt="" style="width:32px;height:32px;vertical-align:middle;margin-right:8px;image-rendering:pixelated;">' +
-        '<span>' + typeLabel(type) + ' ' + t('ui.adultLabel') + '</span>' +
-        '<span style="float:right;">¥' + totalCost.toLocaleString('ja-JP') + '</span>';
-      btn.dataset.type = type;
-      btn.dataset.price = String(price);
-      if (state.money < totalCost) {
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
-      }
-      btn.addEventListener('click', function() {
-        if (!this.disabled) {
-          applyLineageIntroduction(parent1Idx, parent2Idx, this.dataset.type, parseInt(this.dataset.price, 10));
-        }
-      });
-      div.appendChild(btn);
-      list.appendChild(div);
-    });
-    
-    overlay.classList.add('visible');
-  }
-
-  function applyLineageIntroduction(parent1Idx, parent2Idx, donorType, donorPrice) {
-    var t1 = state.tanks[parent1Idx];
-    var t2 = state.tanks[parent2Idx];
-    if (!t1 || !t2 || !t1.axolotl || !t2.axolotl) {
-      logLine(t('game.noPairSelected'));
-      $('axOverlayLineageIntroduction').classList.remove('visible');
-      return;
-    }
-    
-    var totalCost = donorPrice + LINEAGE_INTRODUCTION_FEE;
-    if (state.money < totalCost) {
-      logLine(t('game.notEnoughMoney'));
-      $('axOverlayLineageIntroduction').classList.remove('visible');
-      return;
-    }
-    
-    state.money -= totalCost;
-    
-    // 近親度を計算して減少
-    var parent1Id = t1.axolotl.id;
-    var parent2Id = t2.axolotl.id;
-    var currentInbreeding = calculateInbreedingCoefficient(parent1Id, parent2Id);
-    var newInbreeding = Math.max(0, currentInbreeding - LINEAGE_INTRODUCTION_REDUCTION);
-    
-    // 近親度を保存する方法がないため、ログのみ
-    logLine(t('game.lineageDone', { from: currentInbreeding, to: newInbreeding, type: typeLabel(donorType), cost: formatMoney(totalCost) }));
-    
-    // 注意: 実際の近親度減少は次回の繁殖時に反映されます（現在の実装では近親度は動的に計算されるため）
-    
-    $('axOverlayLineageIntroduction').classList.remove('visible');
-    updateUI();
-  }
-
   function doBreed(parent1Idx, parent2Idx) {
     if (parent1Idx === parent2Idx) {
       logLine(t('game.selectDifferent'));
@@ -4684,7 +4893,7 @@
         label += typeLabel(x.tank.axolotl.type);
       } else if (x.tank.breedingPair) {
         var sickNames = x.tank.breedingPair.filter(function(ax) { return ax.sick && !ax.underTreatment; }).map(function(ax) { return typeLabel(ax.type); });
-        label += sickNames.length > 0 ? sickNames.join('・') + '（同棲中）' : '繁殖ペア';
+        label += sickNames.length > 0 ? sickNames.join('・') + t('ui.breedingPairCohabiting') : t('ui.breedingPairLabel');
       }
       label += '（¥5,000）';
       var btn = document.createElement('button');
@@ -4773,8 +4982,8 @@
         var nameSpan = document.createElement('span');
         nameSpan.className = 'ax-buy-type-name';
         var problemLabel = '';
-        if (item.problemFlags && item.problemFlags.injured) problemLabel = '【欠損】';
-        else if (item.problemFlags && item.problemFlags.sick) problemLabel = '【病気】';
+        if (item.problemFlags && item.problemFlags.injured) problemLabel = t('ui.injuredTag');
+        else if (item.problemFlags && item.problemFlags.sick) problemLabel = t('ui.sickTag');
         var ageLabel = item.age + 'ヶ月';
         nameSpan.textContent = problemLabel + typeLabel(item.type) + ' (' + ageLabel + ')';
         card.appendChild(nameSpan);
@@ -4802,7 +5011,7 @@
           var stats = getRandomShopStats();
           if (item.problemFlags && (item.problemFlags.injured || item.problemFlags.sick)) stats.health = Math.min(stats.health, 50);
           var detailText = '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(item.price) + '</p>';
-          detailText += '<p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + stats.hunger + '% ' + t('ui.healthLabel') + stats.health + '% ' + t('ui.sizeLabel') + '約' + formatSize(calculateSizeFromAge(item.age)) + '</p>';
+          detailText += '<p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + stats.hunger + '% ' + t('ui.healthLabel') + stats.health + '% ' + t('ui.sizeLabel') + formatSize(calculateSizeFromAge(item.age)) + '</p>';
           if (item.problemFlags && item.problemFlags.injured) detailText += '<p><strong>' + t('ui.conditionLabel') + '</strong> ' + t('ui.injured') + '</p>';
           else if (item.problemFlags && item.problemFlags.sick) detailText += '<p><strong>' + t('ui.conditionLabel') + '</strong> ' + t('ui.sick') + '</p>';
           detailText += '<p>' + t('ui.problemRecovery') + '</p>';
@@ -4902,7 +5111,7 @@
       problemDetailBtn.style.padding = '4px 8px';
       problemDetailBtn.addEventListener('click', function (e) {
         e.stopPropagation();
-        openShopDetail(t('ui.problemPrefix') + typeLabel(selectedType) + ' (' + (sizeBand === 7 ? t('ui.adultLabel') : t('ui.threeMonthLabel')) + ')', '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(problemPrice) + '</p><p><strong>' + t('ui.conditionLabel') + '</strong> ' + defectLabel + '</p><p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + problemStats.hunger + '% ' + t('ui.healthLabel') + problemStats.health + '% ' + t('ui.sizeLabel') + '約' + formatSize(getRandomSizeForShopBand(sizeBand || 1)) + '</p><p>' + t('ui.problemRecovery') + '</p>');
+        openShopDetail(t('ui.problemPrefix') + typeLabel(selectedType) + ' (' + (sizeBand === 7 ? t('ui.adultLabel') : t('ui.threeMonthLabel')) + ')', '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(problemPrice) + '</p><p><strong>' + t('ui.conditionLabel') + '</strong> ' + defectLabel + '</p><p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + problemStats.hunger + '% ' + t('ui.healthLabel') + problemStats.health + '% ' + t('ui.sizeLabel') + formatSize(getRandomSizeForShopBand(sizeBand || 1)) + '</p><p>' + t('ui.problemRecovery') + '</p>');
       });
       btnRow.appendChild(problemDetailBtn);
       var problemBuyBtn = document.createElement('button');
@@ -4959,12 +5168,13 @@
     
     var card = document.createElement('div');
     card.className = 'ax-buy-type-card ax-buy-type-btn';
-    var sizeLabel = sizeBand === 7 ? t('ui.adultLabel') : t('ui.threeMonthOld');
+    var sizeLabel = sizeBand === 7 ? t('ui.adultLabel') : t('ui.threeMonthLabel');
     var saleLabel = isOnSale ? t('ui.sale') : '';
     var sexLabel = sex ? (sex === 'オス' ? ' ♂' : ' ♀') : '';
     var stockStatus = isOutOfStock ? ' <span style="color:#dc2626; font-size:10px;">' + t('dialog.outOfStock') + '</span>' : '';
     var shopIconSize = getShopIconSizeFromBand(sizeBand || 1);
     var stats = getRandomShopStats();
+    var detailSizeCm = getRandomSizeForShopBand(sizeBand || 1);
     
     if (selectedType === 'chimera') {
       var fakeAx = { id: 0, type: 'chimera', chimeraTypes: ['nomal', 'marble'] };
@@ -5012,8 +5222,8 @@
     detailBtn.style.padding = '4px 8px';
     detailBtn.addEventListener('click', function (e) {
       e.stopPropagation();
-      var effect = sizeBand === 7 ? t('ui.adultBreedEffect') : t('ui.growEffect');
-      openShopDetail(typeLabel(selectedType) + ' (' + sizeLabel + sexLabel + ')', '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(price) + '</p><p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + stats.hunger + '% ' + t('ui.healthLabel') + stats.health + '% ' + t('ui.sizeLabel') + '約' + formatSize(detailSizeCm) + '</p><p><strong>効果:</strong><br>' + effect + '</p>');
+      if (isOutOfStock) return;
+      openShopDetail(typeLabel(selectedType) + ' (' + sizeLabel + sexLabel + ')', '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(price) + '</p><p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + stats.hunger + '% ' + t('ui.healthLabel') + stats.health + '% ' + t('ui.sizeLabel') + formatSize(detailSizeCm) + '</p>');
     });
     btnRow.appendChild(detailBtn);
     var buyBtn = document.createElement('button');
@@ -5027,6 +5237,7 @@
     buyBtn.dataset.sex = sex || '';
     buyBtn.dataset.price = String(price);
     if (state.money < price || isOutOfStock) buyBtn.disabled = true;
+    if (isOutOfStock) detailBtn.disabled = true;
     buyBtn.addEventListener('click', function (e) {
       e.stopPropagation();
       if (!this.disabled && !isOutOfStock) {
@@ -5035,7 +5246,10 @@
     });
     btnRow.appendChild(buyBtn);
     card.appendChild(btnRow);
-    if (isOutOfStock) card.style.opacity = '0.5';
+    if (isOutOfStock) {
+      card.style.opacity = '0.5';
+      card.style.pointerEvents = 'none';
+    }
     list.appendChild(card);
   }
 
@@ -5301,8 +5515,8 @@
           var nameSpan = document.createElement('span');
           nameSpan.className = 'ax-buy-type-name';
           var problemLabel = '';
-          if (item.problemFlags && item.problemFlags.injured) problemLabel = '【欠損】';
-          else if (item.problemFlags && item.problemFlags.sick) problemLabel = '【病気】';
+          if (item.problemFlags && item.problemFlags.injured) problemLabel = t('ui.injuredTag');
+          else if (item.problemFlags && item.problemFlags.sick) problemLabel = t('ui.sickTag');
           nameSpan.textContent = problemLabel + typeLabel(item.type) + ' (' + item.age + 'ヶ月) 【稀】';
           card.appendChild(nameSpan);
           var priceSpan = document.createElement('span');
@@ -5326,10 +5540,10 @@
             var stats = getRandomShopStats();
             if (item.problemFlags && (item.problemFlags.injured || item.problemFlags.sick)) stats.health = Math.min(stats.health, 50);
             var detailText = '<p><strong>価格:</strong> ' + formatMoney(item.price) + '</p>';
-            detailText += '<p><strong>詳細（個体差あり）:</strong><br>空腹: ' + stats.hunger + '% 健康: ' + stats.health + '% サイズ: 約' + formatSize(calculateSizeFromAge(item.age)) + '</p>';
-            if (item.problemFlags && item.problemFlags.injured) detailText += '<p><strong>状態:</strong> 欠損</p>';
-            else if (item.problemFlags && item.problemFlags.sick) detailText += '<p><strong>状態:</strong> 病気</p>';
-            detailText += '<p>治療や世話で回復の余地があります。未固定種（ミューテーション）です。</p>';
+            detailText += '<p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + stats.hunger + '% ' + t('ui.healthLabel') + stats.health + '% ' + t('ui.sizeLabel') + formatSize(calculateSizeFromAge(item.age)) + '</p>';
+            if (item.problemFlags && item.problemFlags.injured) detailText += '<p><strong>' + t('ui.conditionLabel') + '</strong> ' + t('ui.injured') + '</p>';
+            else if (item.problemFlags && item.problemFlags.sick) detailText += '<p><strong>' + t('ui.conditionLabel') + '</strong> ' + t('ui.sick') + '</p>';
+            detailText += '<p>' + t('ui.mutationRecoveryNote') + '</p>';
             openShopDetail(typeLabel(item.type) + '（稀に入荷）', detailText);
           });
           btnRow.appendChild(detailBtn);
@@ -5392,8 +5606,8 @@
     empty.axolotl = ax;
     empty.baby = age < 12;
     empty.note = 'ミューテーションショップで購入したウパ';
-    if (empty.clean === undefined) empty.clean = 80;
-    if (empty.poop === undefined) empty.poop = false;
+    empty.clean = 80;  // 購入時は水槽を良好な状態にリセット（前の個体の悪い水質を引き継がない）
+    empty.poop = false;
     empty.boughtAtMonth = state.month;
     ax.boughtAtMonth = state.month;
     
@@ -5482,8 +5696,8 @@
       empty.axolotl = ax;
       empty.baby = age < 12;
       empty.note = (problemFlags && (problemFlags.injured || problemFlags.sick)) ? '訳ありで購入したウパ' : 'ショップで購入したウパ';
-      if (empty.clean === undefined) empty.clean = 80;
-      if (empty.poop === undefined) empty.poop = false;
+      empty.clean = 80;  // 購入時は水槽を良好な状態にリセット（前の個体の悪い水質を引き継がない）
+      empty.poop = false;
       empty.boughtAtMonth = state.month;
       ax.boughtAtMonth = state.month;
       
@@ -5790,14 +6004,6 @@
     
     doBreed(parent1Idx, parent2Idx);
   });
-  var axBreedLineageIntroductionBtn = document.getElementById('axBreedLineageIntroduction');
-  if (axBreedLineageIntroductionBtn) {
-    axBreedLineageIntroductionBtn.addEventListener('click', function () {
-      var parent1Idx = parseInt($('axBreedParent1').value, 10);
-      var parent2Idx = parseInt($('axBreedParent2').value, 10);
-      openLineageIntroductionOverlay(parent1Idx, parent2Idx);
-    });
-  }
   $('axBreedCancel').addEventListener('click', function () {
     $('axOverlayBreed').classList.remove('visible');
   });
@@ -6035,10 +6241,21 @@
   $('axJuvenileCancel').addEventListener('click', function () {
     $('axOverlayJuvenile').classList.remove('visible');
   });
-  var axHatchCancelBtn = document.getElementById('axHatchCancel');
-  if (axHatchCancelBtn) {
-    axHatchCancelBtn.addEventListener('click', function () {
-      $('axOverlayHatch').classList.remove('visible');
+  var axHatchSellAllBtn = document.getElementById('axHatchSellAll');
+  if (axHatchSellAllBtn) {
+    axHatchSellAllBtn.addEventListener('click', function () {
+      var ctx = window._hatchContext;
+      if (ctx) sellAllHatch(ctx.tankIdx, ctx.candidates, ctx.remainingJuveniles);
+    });
+  }
+  var axHatchRandomBtn = document.getElementById('axHatchRandom');
+  if (axHatchRandomBtn) {
+    axHatchRandomBtn.addEventListener('click', function () {
+      var ctx = window._hatchContext;
+      if (ctx && ctx.candidates && ctx.candidates.length > 0) {
+        var idx = Math.floor(Math.random() * ctx.candidates.length);
+        selectHatchCandidate(ctx.tankIdx, idx, ctx.candidates, ctx.remainingJuveniles);
+      }
     });
   }
   var btnEncyclopedia = document.getElementById('btnEncyclopedia');

@@ -102,6 +102,11 @@
       if (!window.axolotlShopStartGame(isNew)) return;
       titleScreen.style.display = 'none';
       gameRoot.style.display = '';
+      var bgm = document.getElementById('axBgm');
+      if (bgm) {
+        bgm.loop = true;
+        bgm.play().catch(function () { /* autoplay may be blocked */ });
+      }
     }
 
     if (btnNew) {

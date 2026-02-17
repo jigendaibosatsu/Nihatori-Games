@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-i18n-page-title="site.aboutTitle" data-i18n-desc="site.aboutDescription">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,6 +8,7 @@
   <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)" />
   <link rel="stylesheet" href="/styles.css" />
+  <script src="/assets/i18n.js"></script>
   <link rel="icon" href="/assets/icon/nihatori_icon.png" type="image/png" media="(prefers-color-scheme: light)" />
   <link rel="icon" href="/assets/icon/nihatori_icon.png" type="image/png" media="(prefers-color-scheme: dark)" />
   <style>
@@ -53,37 +54,34 @@
   <div id="site-header"></div>
 
   <main class="article-body">
-    <h1>このサイトについて</h1>
+    <h1 data-i18n="about.title">このサイトについて</h1>
     <p class="meta">Nihatori Games</p>
 
-    <p>
+    <p data-i18n="about.intro">
       Nihatori Games は、ブラウザで遊べるゲームと開発メモを掲載しているサイトです。
       スマホやPCから気軽にアクセスして、楽しんでいただけるゲームを提供しています。
     </p>
 
-    <h2>サイトの特徴</h2>
+    <h2 data-i18n="about.featuresTitle">サイトの特徴</h2>
     <ul>
-      <li><strong>ブラウザゲーム</strong>：インストール不要で、すぐに遊べるゲームを多数掲載</li>
-      <li><strong>開発メモ</strong>：ゲーム開発の過程や技術的な内容をブログ形式で公開</li>
-      <li><strong>スマホ対応</strong>：モバイルファーストで設計し、スマホでも快適にプレイ可能</li>
-      <li><strong>無料</strong>：すべてのゲームは無料で遊べます</li>
+      <li data-i18n="about.feature1"><strong>ブラウザゲーム</strong>：インストール不要で、すぐに遊べるゲームを多数掲載</li>
+      <li data-i18n="about.feature2"><strong>開発メモ</strong>：ゲーム開発の過程や技術的な内容をブログ形式で公開</li>
+      <li data-i18n="about.feature3"><strong>スマホ対応</strong>：モバイルファーストで設計し、スマホでも快適にプレイ可能</li>
+      <li data-i18n="about.feature4"><strong>無料</strong>：すべてのゲームは無料で遊べます</li>
     </ul>
 
-    <h2>ゲームについて</h2>
-    <p>
+    <h2 data-i18n="about.gamesTitle">ゲームについて</h2>
+    <p data-i18n="about.gamesIntro">
       パズル、アクション、シミュレーション、育成など、様々なジャンルのゲームを制作しています。
       小さなゲームから始めて、少しずつ規模を拡大していく予定です。
     </p>
 
-    <h2>開発について</h2>
-    <p>
-      ゲームの開発状況や今後の予定は<a href="/roadmap.html">開発ロードマップ</a>で確認できます。
-      技術的な詳細や開発の過程は、ブログ記事で随時公開しています。
-    </p>
+    <h2 data-i18n="about.devTitle">開発について</h2>
+    <p data-i18n="about.devIntro" data-i18n-html>ゲームの開発状況や今後の予定は<a href="/roadmap.html">開発ロードマップ</a>で確認できます。技術的な詳細や開発の過程は、ブログ記事で随時公開しています。</p>
 
     <div class="social-section">
-      <h2>SNS</h2>
-      <p>最新情報や開発の様子は、以下のSNSでも発信しています。</p>
+      <h2 data-i18n="about.snsTitle">SNS</h2>
+      <p data-i18n="about.snsIntro">最新情報や開発の様子は、以下のSNSでも発信しています。</p>
       <div class="social-links-inline">
         <a href="https://www.instagram.com/nihatori_zeroh/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
           <span>📷</span> Instagram
@@ -94,12 +92,12 @@
       </div>
     </div>
 
-    <h2>お問い合わせ</h2>
-    <p>
+    <h2 data-i18n="about.contactTitle">お問い合わせ</h2>
+    <p data-i18n="about.contactIntro">
       ご意見・ご要望・バグ報告などは、SNSのDMやコメントでお気軽にお寄せください。
     </p>
 
-    <p><a href="/index.html">← トップへ戻る</a></p>
+    <p><a href="/index.html" data-i18n="about.backToTop">← トップへ戻る</a></p>
   </main>
 
   <script src="/assets/header.js"></script>

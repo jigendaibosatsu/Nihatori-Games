@@ -175,9 +175,13 @@
       case 'trending':
         return applySearchFilter(items.slice().sort(byTrendingScore));
       case 'recommended':
-        // おすすめタブ: ウーパールーパーショップのみ
+        // おすすめタブ: 特定タイトルをピックアップ表示
         return applySearchFilter(
-          items.filter(function (i) { return i.id === 'axolotl-shop'; })
+          items.filter(function (i) {
+            return i.id === 'axolotl-shop' ||
+                   i.id === 'mine-tap' ||
+                   i.id === 'japan-war';
+          }).sort(byNewsOrder)
         );
       case 'updates':
         // 更新順: 更新があったゲームや新作ゲームを、公開日時の新しい順で並べる
@@ -215,6 +219,8 @@
     }
   }
 
+  var t = function (key, vars) { return (window.t && window.t(key, vars)) || key; };
+
   function formatTime(item) {
     var raw = item.publishedAt;
     if (!raw) return '';
@@ -222,10 +228,10 @@
     if (isNaN(d.getTime())) return '';
     var now = Date.now();
     var diff = (now - d.getTime()) / 1000;
-    if (diff < 60) return 'たった今';
-    if (diff < 3600) return Math.floor(diff / 60) + '分前';
-    if (diff < 86400) return Math.floor(diff / 3600) + '時間前';
-    if (diff < 604800) return Math.floor(diff / 86400) + '日前';
+    if (diff < 60) return t('time.justNow');
+    if (diff < 3600) return t('time.minutesAgo', { n: Math.floor(diff / 60) });
+    if (diff < 86400) return t('time.hoursAgo', { n: Math.floor(diff / 3600) });
+    if (diff < 604800) return t('time.daysAgo', { n: Math.floor(diff / 86400) });
     return d.getMonth() + 1 + '/' + d.getDate();
   }
 
@@ -266,11 +272,42 @@
     return getRandomAxolotlThumb(itemId) || imagePlaceholderSvg(100, 70);
   }
 
-  function formatHeadline(item) {
-    if (item.type !== 'game') return item.title || '';
-    var tag = item.tag || (item.updating ? '更新' : item.isNew ? '新作' : null);
-    if (tag) return '[' + tag + '] ' + (item.title || '');
+  var FEED_TITLE_KEYS = {
+    'post-site-open': 'articles.site-open.h1',
+    'post-roadmap': 'roadmap.title',
+    'post-2026-02-01-devlog': 'articles.devlog-yahoo.h1',
+    'post-2026-01-31-update-template': 'articles.update-template.h1',
+    'post-2026-01-28-next-game': 'articles.next-game.h1'
+  };
+
+  var TAG_KEYS = { 'アップデート': 'tags.update', '更新': 'tags.updating', '新作': 'tags.new' };
+
+  function getDisplayTitle(item) {
+    if (item.type === 'post' && item.id && FEED_TITLE_KEYS[item.id]) {
+      var translated = t(FEED_TITLE_KEYS[item.id]);
+      if (translated && translated.indexOf('articles.') !== 0 && translated.indexOf('roadmap.') !== 0) {
+        return translated;
+      }
+    }
+    if (item.type === 'game' && item.id) {
+      var gameTitle = t('games.' + item.id);
+      if (gameTitle && gameTitle.indexOf('games.') !== 0) {
+        return gameTitle;
+      }
+    }
     return item.title || '';
+  }
+
+  function translateTag(tag) {
+    return (tag && TAG_KEYS[tag] && t(TAG_KEYS[tag])) || tag;
+  }
+
+  function formatHeadline(item) {
+    if (item.type !== 'game') return getDisplayTitle(item);
+    var tag = item.tag || (item.updating ? '更新' : item.isNew ? '新作' : null);
+    var baseTitle = getDisplayTitle(item);
+    if (tag) return '[' + translateTag(tag) + '] ' + baseTitle;
+    return baseTitle;
   }
 
   function escapeHtml(s) {
@@ -285,17 +322,18 @@
     var src = imageSrc(item.image, item.id);
     var noImg = !hasImage(item);
     var thumbClass = noImg ? ' hero-thumb-placeholder' : '';
-    var prepOverlay = noImg ? '<span class="thumb-prep-text">画像準備中</span>' : '';
+    var prepOverlay = noImg ? '<span class="thumb-prep-text">' + t('ui.imagePreparing') + '</span>' : '';
     var timeStr = formatTime(item);
-    var updatingBadge = item.updating === true ? '<span class="badge-updating">更新中</span>' : '';
-    var newBadge = showNewBadge(item) ? '<span class="badge-new">NEW</span>' : '';
-    var commentStr = (item.commentCount != null && item.commentCount > 0) ? 'コメント' + item.commentCount : '';
+    var updatingBadge = item.updating === true ? '<span class="badge-updating">' + t('badge.updating') + '</span>' : '';
+    var newBadge = showNewBadge(item) ? '<span class="badge-new">' + t('badge.new') + '</span>' : '';
+    var commentStr = (item.commentCount != null && item.commentCount > 0) ? t('badge.comment') + item.commentCount : '';
     var metaParts = [timeStr, updatingBadge, newBadge, commentStr].filter(Boolean);
     var fav = loadFavorites();
     var favEntry = item.id ? fav[item.id] : null;
     var isFav = !!(favEntry && favEntry.favorite);
+    var favAria = t('ui.favorite');
     var favMark = item.id
-      ? '<span class="fav-toggle' + (isFav ? ' is-fav' : '') + '" data-id="' + escapeHtml(item.id) + '" aria-label="お気に入り"> ' + (isFav ? '★' : '☆') + '</span>'
+      ? '<span class="fav-toggle' + (isFav ? ' is-fav' : '') + '" data-id="' + escapeHtml(item.id) + '" aria-label="' + escapeHtml(favAria) + '"> ' + (isFav ? '★' : '☆') + '</span>'
       : '';
     return (
       '<a href="' + escapeHtml(url) + '" class="hero-link" data-id="' + escapeHtml(item.id || '') + '">' +
@@ -316,15 +354,18 @@
     var src = imageSrcRow(item.image, item.id);
     var noImg = !hasImage(item);
     var thumbClass = noImg ? ' row-thumb-placeholder' : '';
-    var prepOverlay = noImg ? '<span class="thumb-prep-text">画像準備中</span>' : '';
+    var prepOverlay = noImg ? '<span class="thumb-prep-text">' + t('ui.imagePreparing') + '</span>' : '';
     var timeStr = formatTime(item);
-    var updatingBadge = item.updating === true ? '<span class="badge-updating">更新中</span> ' : '';
-    var metaStr = updatingBadge + (item.category || '') + (item.category && timeStr ? ' · ' : '') + timeStr;
+    var updatingBadge = item.updating === true ? '<span class="badge-updating">' + t('badge.updating') + '</span> ' : '';
+    var catT = item.category ? t('tabs.' + item.category) : '';
+    var categoryLabel = (catT && catT.indexOf('tabs.') !== 0) ? catT : (item.category || '');
+    var metaText = categoryLabel + (categoryLabel && timeStr ? ' · ' : '') + timeStr;
     var fav = loadFavorites();
     var favEntry = item.id ? fav[item.id] : null;
     var isFav = !!(favEntry && favEntry.favorite);
+    var favAria = t('ui.favorite');
     var favMark = item.id
-      ? '<span class="fav-toggle' + (isFav ? ' is-fav' : '') + '" data-id="' + escapeHtml(item.id) + '" aria-label="お気に入り"> ' + (isFav ? '★' : '☆') + '</span>'
+      ? '<span class="fav-toggle' + (isFav ? ' is-fav' : '') + '" data-id="' + escapeHtml(item.id) + '" aria-label="' + escapeHtml(favAria) + '"> ' + (isFav ? '★' : '☆') + '</span>'
       : '';
     return (
       '<a class="article-row" href="' + escapeHtml(url) + '" data-id="' + escapeHtml(item.id || '') + '">' +
@@ -334,7 +375,7 @@
         '</div>' +
         '<div class="row-body">' +
           '<h3 class="row-title row-title-news">' + favMark + escapeHtml(formatHeadline(item)) + '</h3>' +
-          '<div class="row-meta">' + escapeHtml(metaStr) + '</div>' +
+          '<div class="row-meta">' + updatingBadge + escapeHtml(metaText) + '</div>' +
         '</div>' +
       '</a>'
     );
@@ -351,33 +392,38 @@
     }
     paginationEl.style.display = 'flex';
     var html = '';
-    // 最初のページへ
+    var pagFirst = t('pagination.first');
+    var pagPrev = t('pagination.prev');
+    var pagNext = t('pagination.next');
+    var pagLast = t('pagination.last');
+    var pagPage = t('pagination.page');
+    var pagGoto = t('pagination.goto');
+    var pagAriaFirst = t('pagination.ariaFirst');
+    var pagAriaPrev = t('pagination.ariaPrev');
+    var pagAriaNext = t('pagination.ariaNext');
+    var pagAriaLast = t('pagination.ariaLast');
+    var pagAriaInput = t('pagination.ariaPageInput');
     if (currentPage > 1) {
-      html += '<button type="button" class="pagination-btn" data-page="1" aria-label="最初のページへ">« 最初</button>';
+      html += '<button type="button" class="pagination-btn" data-page="1" aria-label="' + pagAriaFirst + '">' + pagFirst + '</button>';
     }
-    // 前のページへ
     if (currentPage > 1) {
-      html += '<button type="button" class="pagination-btn" data-page="' + (currentPage - 1) + '" aria-label="前のページ">‹ 前へ</button>';
+      html += '<button type="button" class="pagination-btn" data-page="' + (currentPage - 1) + '" aria-label="' + pagAriaPrev + '">' + pagPrev + '</button>';
     }
-    // 現在ページ / 総ページ
     html += '<span class="pagination-info">' + currentPage + ' / ' + totalPages + '</span>';
-    // 次のページへ
     if (currentPage < totalPages) {
-      html += '<button type="button" class="pagination-btn" data-page="' + (currentPage + 1) + '" aria-label="次のページ">次へ ›</button>';
+      html += '<button type="button" class="pagination-btn" data-page="' + (currentPage + 1) + '" aria-label="' + pagAriaNext + '">' + pagNext + '</button>';
     }
-    // 最後のページへ
     if (currentPage < totalPages) {
-      html += '<button type="button" class="pagination-btn" data-page="' + totalPages + '" aria-label="最後のページへ">最後 »</button>';
+      html += '<button type="button" class="pagination-btn" data-page="' + totalPages + '" aria-label="' + pagAriaLast + '">' + pagLast + '</button>';
     }
-    // ページ指定ジャンプ
     html += '' +
       '<div class="pagination-jump">' +
         '<label class="pagination-jump-label">' +
-          'ページ' +
-          '<input type="number" min="1" max="' + totalPages + '" value="' + currentPage + '" class="pagination-jump-input" aria-label="ページ番号を入力" />' +
+          pagPage +
+          '<input type="number" min="1" max="' + totalPages + '" value="' + currentPage + '" class="pagination-jump-input" aria-label="' + pagAriaInput + '" />' +
           '<span class="pagination-jump-total"> / ' + totalPages + '</span>' +
         '</label>' +
-        '<button type="button" class="pagination-btn pagination-jump-btn">移動</button>' +
+        '<button type="button" class="pagination-btn pagination-jump-btn">' + pagGoto + '</button>' +
       '</div>';
 
     paginationEl.innerHTML = html;
@@ -434,8 +480,8 @@
     heroCard.innerHTML =
       '<article class="hero-card">' +
         '<div class="hero-body">' +
-          '<h2 class="hero-title">SNS</h2>' +
-          '<div class="hero-meta">最新情報や日々の制作ログはSNSでも発信中です。</div>' +
+          '<h2 class="hero-title">' + t('ui.snsTitle') + '</h2>' +
+          '<div class="hero-meta">' + t('ui.snsDesc') + '</div>' +
           '<div class="sns-links">' +
             '<a href="https://x.com/Nihatori_Zeroh" target="_blank" rel="noopener" class="sns-link">X (Twitter)</a>' +
             '<a href="https://www.instagram.com/nihatori_zeroh/" target="_blank" rel="noopener" class="sns-link">Instagram</a>' +
@@ -503,7 +549,7 @@
     if (items.length === 0) {
       heroCard.innerHTML = '';
       heroCard.style.display = 'none';
-      articleList.innerHTML = '<p class="empty-message">表示するコンテンツがありません</p>';
+      articleList.innerHTML = '<p class="empty-message">' + t('ui.emptyMessage') + '</p>';
       document.getElementById('pagination').innerHTML = '';
       return;
     }
@@ -663,11 +709,30 @@
 
     var pageContent = document.getElementById('page-content');
     if (pageContent) initSwipe(pageContent);
+
+    // 言語切替時にフィードを再描画する
+    window.onLangChange = function () {
+      var tabId = getTabFromUrl();
+      var page = getPageFromUrl();
+      currentSearchQuery = getSearchFromUrl();
+      var searchInputEl = document.getElementById('search-input');
+      if (searchInputEl) {
+        searchInputEl.value = currentSearchQuery;
+      }
+      setActiveTab(tabId);
+      setUrlTab(tabId, true, page);
+      renderPage(tabId);
+    };
+  }
+
+  function runInit() {
+    var ready = window.nihatoriI18nReady || Promise.resolve();
+    ready.then(init);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', runInit);
   } else {
-    init();
+    runInit();
   }
 })();

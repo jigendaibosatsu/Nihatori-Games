@@ -885,12 +885,20 @@ canvas.ax-axolotl-img.ax-idle {
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 30;
+  z-index: 50;
 }
 
+/* Detail overlay above hatch selection so user can view details while choosing */
+#axOverlayDetail {
+  z-index: 55;
+}
+/* Shop detail (price, stats) above buy overlay so user can view item details */
+#axOverlayShopDetail {
+  z-index: 55;
+}
 /* Ensure treatment overlay appears above the shop overlay */
 #axOverlayTreat {
-  z-index: 40;
+  z-index: 60;
 }
 .ax-overlay.visible { display: flex; }
 .ax-overlay-box {
@@ -902,14 +910,12 @@ canvas.ax-axolotl-img.ax-idle {
   text-align: center;
   box-shadow: 0 18px 35px rgba(0,0,0,0.25);
 }
-/* ショップ用：拡大率を下げてUIを収める */
+/* ショップ用：transform:scale はモバイルでヒット領域がずれるため使用しない */
 #axOverlayBuy .ax-overlay-box {
   max-width: 320px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  transform: scale(0.9);
-  transform-origin: center center;
 }
 #axOverlayBuy #axBuyTypeList {
   flex: 1;
@@ -917,6 +923,8 @@ canvas.ax-axolotl-img.ax-idle {
   max-height: 52vh;
   overflow-y: auto;
   overflow-x: hidden;
+  padding-top: 4px; /* 先頭アイテムのタッチ領域を確保 */
+  -webkit-overflow-scrolling: touch;
 }
 #axOverlayBuy .ax-buy-type-btn {
   min-width: 0;
@@ -996,6 +1004,10 @@ canvas.ax-axolotl-img.ax-idle {
   justify-content: center;
   margin-top: 6px;
 }
+.ax-buy-detail-btn,
+.ax-buy-buy-btn {
+  min-height: 44px;  /* タッチターゲットを確保（モバイルで選択しやすく） */
+}
 .ax-buy-detail-btn { margin-right: 4px; }
 .ax-equipment-card {
   display: flex;
@@ -1045,6 +1057,110 @@ canvas.ax-axolotl-img.ax-idle {
 }
 .ax-tank-lines.clickable {
   cursor: pointer;
+}
+/* 詳細モーダル：ヘッダー（アイコン＋タイトル中央揃え） */
+.ax-detail-overlay-box {
+  max-width: 420px;
+}
+.ax-detail-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.ax-detail-icon-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 8px;
+}
+.ax-detail-icon-wrap canvas {
+  margin-left: auto;
+  margin-right: auto;
+}
+.ax-detail-header h2 {
+  margin-bottom: 0;
+}
+/* 繁殖ペア：左右2カラム */
+.ax-detail-pair-columns {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.ax-detail-pair-column {
+  flex: 1;
+  min-width: 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid #bae6fd;
+}
+.ax-detail-pair-column h4 {
+  font-size: 11px;
+  color: #0369a1;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.ax-detail-pair-column-icon-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 6px;
+}
+.ax-detail-pair-column-icon-wrap canvas {
+  margin-left: auto;
+  margin-right: auto;
+}
+.ax-detail-pair-column-content {
+  width: 100%;
+  text-align: left;
+}
+.ax-detail-pair-family .ax-detail-family-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* 家系図：左右配置 */
+.ax-detail-family-tree {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.ax-detail-family-side {
+  flex: 1;
+  min-width: 0;
+}
+.ax-detail-family-side-label {
+  font-size: 10px;
+  color: #64748b;
+  margin-bottom: 4px;
+  text-align: center;
+}
+.ax-detail-family-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  padding: 6px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.5);
+}
+.ax-detail-family-entry canvas {
+  margin-left: auto;
+  margin-right: auto;
+}
+.ax-detail-family-entry-morph {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0369a1;
+}
+.ax-detail-family-entry-name {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 2px;
 }
 .ax-detail-family {
   margin-top: 12px;

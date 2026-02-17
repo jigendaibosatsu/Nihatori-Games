@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-i18n-article="update-template">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,6 +8,7 @@
   <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)" />
   <link rel="stylesheet" href="/styles.css" />
+  <script src="/assets/i18n.js"></script>
   <link rel="icon" href="/assets/icon/nihatori_icon.png" type="image/png" media="(prefers-color-scheme: light)" />
   <link rel="icon" href="/assets/icon/nihatori_icon.png" type="image/png" media="(prefers-color-scheme: dark)" />
   <style>
@@ -36,69 +37,69 @@
   <div id="site-header"></div>
 
   <main class="article">
-    <h1>日常更新テンプレ（最短・確実）</h1>
+    <h1 data-i18n="articles.update-template.h1">日常更新テンプレ（最短・確実）</h1>
 
-    <p>
+    <p data-i18n="articles.update-template.intro" data-i18n-html>
       Nihatori Games は <strong>Cloudflare Pages + Git</strong> で運用している静的サイトです。<br>
       この手順だけ守れば、<strong>必ず反映され、必ず履歴が残ります。</strong>
     </p>
 
-    <h2>0. 作業開始（毎回）</h2>
+    <h2 data-i18n="articles.update-template.section0Title">0. 作業開始（毎回）</h2>
     <pre><code>cd /Users/hondatarou/Desktop/Game/Nihatori-Games
 git pull</code></pre>
 
-    <h2>1. 編集（Cursor）</h2>
+    <h2 data-i18n="articles.update-template.section1Title">1. 編集（Cursor）</h2>
     <ul>
-      <li>UI：<code>index.html</code> / <code>styles.css</code> / <code>app.js</code></li>
-      <li>記事：<code>blog/*.html</code></li>
-      <li>ゲーム：<code>games/*</code></li>
-      <li>一覧データ：<code>data/feed.json</code></li>
-      <li>画像：<code>assets/*</code></li>
+      <li data-i18n="articles.update-template.section1Item1" data-i18n-html>UI：<code>index.html</code> / <code>styles.css</code> / <code>app.js</code></li>
+      <li data-i18n="articles.update-template.section1Item2" data-i18n-html>記事：<code>blog/*.html</code></li>
+      <li data-i18n="articles.update-template.section1Item3" data-i18n-html>ゲーム：<code>games/*</code></li>
+      <li data-i18n="articles.update-template.section1Item4" data-i18n-html>一覧データ：<code>data/feed.json</code></li>
+      <li data-i18n="articles.update-template.section1Item5" data-i18n-html>画像：<code>assets/*</code></li>
     </ul>
 
-    <h2>2. 反映セット（必ずこの3行）</h2>
+    <h2 data-i18n="articles.update-template.section2Title">2. 反映セット（必ずこの3行）</h2>
     <pre><code>git add .
 git commit -m "update"
 git push</code></pre>
 
     <div class="note">
-      <strong>注意</strong><br>
-      ・<code>git push</code> だけでは反映されない（commit必須）<br>
-      ・この3行は<strong>1セット</strong>
+      <strong data-i18n="articles.update-template.noteTitle">注意</strong><br>
+      <span data-i18n="articles.update-template.note1" data-i18n-html>・<code>git push</code> だけでは反映されない（commit必須）</span><br>
+      <span data-i18n="articles.update-template.note2" data-i18n-html>・この3行は<strong>1セット</strong></span>
     </div>
 
-    <h2>3. 反映確認</h2>
+    <h2 data-i18n="articles.update-template.section3Title">3. 反映確認</h2>
     <pre><code>git status</code></pre>
-    <p>
+    <p data-i18n="articles.update-template.section3Text" data-i18n-html>
       <code>nothing to commit, working tree clean</code><br>
       が出ていればOK。<br>
       Cloudflare Pages の Deployments が <strong>Success</strong> になれば本番反映完了。
     </p>
 
-    <h2>記事を追加する</h2>
+    <h2 data-i18n="articles.update-template.section4Title">記事を追加する</h2>
     <ol>
-      <li><code>blog/YYYY-MM-DD-title.html</code> を作成</li>
-      <li><code>data/feed.json</code> に1件追加</li>
-      <li>反映セット（add / commit / push）</li>
+      <li data-i18n="articles.update-template.section4Item1" data-i18n-html><code>blog/YYYY-MM-DD-title.html</code> を作成</li>
+      <li data-i18n="articles.update-template.section4Item2" data-i18n-html><code>data/feed.json</code> に1件追加</li>
+      <li data-i18n="articles.update-template.section4Item3">反映セット（add / commit / push）</li>
     </ol>
 
-    <h2>ゲームを追加する</h2>
+    <h2 data-i18n="articles.update-template.section5Title">ゲームを追加する</h2>
     <pre><code>games/slug/
   index.html
   main.js
   assets/</code></pre>
-    <p>
+    <p data-i18n="articles.update-template.section5Text" data-i18n-html>
       追加後、<code>feed.json</code> に登録 → 反映セット。
     </p>
 
-    <h2>トラブル時チェック</h2>
+    <h2 data-i18n="articles.update-template.section6Title">トラブル時チェック</h2>
     <ul>
-      <li>反映されない → commit忘れ or Deployments確認</li>
-      <li>画像が出ない → <code>/assets/</code> パス確認</li>
-      <li>表示が古い → ハードリロード（⌘⇧R）</li>
+      <li data-i18n="articles.update-template.section6Item1">反映されない → commit忘れ or Deployments確認</li>
+      <li data-i18n="articles.update-template.section6Item2" data-i18n-html>画像が出ない → <code>/assets/</code> パス確認</li>
+      <li data-i18n="articles.update-template.section6Item3">表示が古い → ハードリロード（⌘⇧R）</li>
     </ul>
 
-    <h2>Cursor用・更新プロンプト（保存用）</h2>
+    <h2 data-i18n="articles.update-template.section7Title">Cursor用・更新プロンプト（保存用）</h2>
     <pre><code>このリポジトリは Cloudflare Pages の静的サイト。
 UIはニュース風、表示は data/feed.json で管理。
 
@@ -111,11 +112,11 @@ UIはニュース風、表示は data/feed.json で管理。
 今回やりたいこと：
 （ここに書く）</code></pre>
 
-    <p>
+    <p data-i18n="articles.update-template.section7Closing" data-i18n-html>
       この流れを守れば、<strong>迷わず・壊さず・戻せる</strong>運用ができます。
     </p>
 
-    <p><a href="/index.html">← トップへ戻る</a></p>
+    <p><a href="/index.html" data-i18n="articles.update-template.backToTop">← トップへ戻る</a></p>
   </main>
 
   <script src="/assets/header.js"></script>
