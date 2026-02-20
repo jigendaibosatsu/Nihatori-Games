@@ -49,6 +49,7 @@
       font-weight: bold;
       cursor: pointer;
       transition: all 0.2s;
+      touch-action: manipulation;
     }
     .tab.active {
       background: #3b82f6;
@@ -102,6 +103,7 @@
       flex-wrap: wrap;
     }
     .depth-travel input[type="number"] {
+      touch-action: manipulation;
       width: 80px;
       padding: 6px 8px;
       border-radius: 6px;
@@ -361,6 +363,7 @@
       font-weight: bold;
       cursor: pointer;
       transition: all 0.2s;
+      touch-action: manipulation;
     }
     .btn:hover { transform: scale(1.02); }
     .btn:active { transform: scale(0.98); }
@@ -1065,48 +1068,7 @@
       return power;
     }
 
-    // タップ音（assets/sound/damege）- ツルハシごとに固定、クリティカルは100%
-    const CRITICAL_SOUND = '014';
-    const TAP_SOUND_CHANCE = 1;
-    const PICKAXE_SOUND_MAP = {
-      rock: '001', used_1: '002', used_2: '003', used_3: '004',
-      iron: '006', silvre: '007', golden: '008', diamond: '009',
-      Platinum: '010', ice: '011', Carmeltazite: '012', Lonsdaleite: '013',
-      'Wurtzite BN': '005'
-    };
-    const TAP_SOUND_IDS = ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010', '011', '012', '013', '014'];
-    const TAP_SOUND_POOL_SIZE = 10;
-    let tapSoundPool = {};
-    // #region agent log
-    function _dbg(m, d, h) { fetch('http://127.0.0.1:7242/ingest/f97df107-e146-4319-9c02-91a03f8f0073',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d9258d'},body:JSON.stringify({sessionId:'d9258d',location:'mine-tap',message:m,data:d||{},hypothesisId:h||'',timestamp:Date.now()})}).catch(function(){}); }
-    // #endregion
-    function preloadTapSounds() {
-      _dbg('preloadTapSounds started', {}, 'A');
-      TAP_SOUND_IDS.forEach(function(id) {
-        tapSoundPool[id] = [];
-        for (var i = 0; i < TAP_SOUND_POOL_SIZE; i++) {
-          var a = new Audio('./assets/sound/damege/se_itemget_' + id + '.ogg');
-          a.volume = 0.5;
-          tapSoundPool[id].push(a);
-        }
-      });
-      _dbg('preloadTapSounds done', { poolCount: Object.keys(tapSoundPool).length }, 'A');
-    }
-    function playTapSound(isCritical, equipped) {
-      var id = isCritical ? CRITICAL_SOUND : (Math.random() < TAP_SOUND_CHANCE ? (PICKAXE_SOUND_MAP[equipped && equipped.nameKey ? equipped.nameKey : 'rock'] || '001') : null);
-      if (!id) { _dbg('playTapSound skipped (no id)', {}, 'B'); return; }
-      var pool = tapSoundPool[id];
-      if (!pool || pool.length === 0) { _dbg('playTapSound no pool', { id: id }, 'B'); return; }
-      var audio = pool.find(function(a) { return a.paused; });
-      var foundPaused = !!audio;
-      if (!audio) audio = pool[0];
-      audio.currentTime = 0;
-      var p = audio.play();
-      if (p && p.catch) { p.then(function() { _dbg('play ok', { id: id, foundPaused: foundPaused }, 'B'); }).catch(function(e) { _dbg('play failed', { id: id, err: String(e) }, 'B'); }); }
-    }
-
     function mine() {
-      _dbg('mine called', {}, 'C');
       // ツルハシがない場合は基本ツルハシを装備
       if (!gameState.tool.equipped) {
         const basePickaxe = createBasePickaxe();
@@ -1123,8 +1085,6 @@
         damage = Math.floor(damage * 2);
         addLog(t('game.critical'), 'epic');
       }
-      
-      playTapSound(isCritical, gameState.tool.equipped);
       
       gameState.currentBlockHp -= damage;
       
@@ -2420,17 +2380,9 @@
     }
 
     // ===== 初期化 =====
-    var _lastTouchEnd = 0;
     function startGame(isNewGame) {
-      preloadTapSounds();
-      if (!window._touchLogBound) {
-        window._touchLogBound = true;
-        document.addEventListener('touchend', function(ev) {
-          var now = Date.now();
-          var dt = now - _lastTouchEnd;
-          if (dt <= 300 && dt > 0) _dbg('double-tap detected', { dt: dt }, 'F');
-          _lastTouchEnd = now;
-        }, { passive: true });
+      if (!window._zoomPreventBound) {
+        window._zoomPreventBound = true;
         ['gesturestart', 'gesturechange', 'gestureend'].forEach(function(name) {
           document.addEventListener(name, function(e) { e.preventDefault(); }, { passive: false });
         });
