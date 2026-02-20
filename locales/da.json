@@ -38,7 +38,8 @@
     "ariaTop": "Top",
     "ariaSearch": "Søg",
     "ariaMenu": "Menu",
-    "ariaClose": "Luk menu"
+    "ariaClose": "Luk menu",
+    "ariaLang": "Sprog: {{lang}}"
   },
   "pagination": {
     "first": "« Første",

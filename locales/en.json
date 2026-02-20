@@ -38,7 +38,8 @@
     "ariaTop": "Top",
     "ariaSearch": "Search",
     "ariaMenu": "Menu",
-    "ariaClose": "Close menu"
+    "ariaClose": "Close menu",
+    "ariaLang": "Language: {{lang}}"
   },
   "pagination": {
     "first": "« First",

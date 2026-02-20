@@ -6,9 +6,8 @@
 (function () {
   'use strict';
 
-  // タブIDの表示順:
-  // おすすめ → お気に入り → 更新順 → ランダム → 残り（トップ / ゲーム / 趣味 / 記事 / 急上昇 / SNS）
-  var TAB_IDS = ['recommended', 'favorites', 'updates', 'random', 'top', 'games', 'hobby', 'posts', 'trending', 'sns'];
+  // タブIDの表示順: TOP を一番左 → おすすめ → お気に入り → 更新順 → ランダム → 残り
+  var TAB_IDS = ['top', 'recommended', 'favorites', 'updates', 'random', 'games', 'hobby', 'posts', 'trending', 'sns'];
   var TAB_PARAM = 'tab';
   var SEARCH_PARAM = 'q';
   var currentSearchQuery = '';
@@ -166,6 +165,13 @@
     var items = feedData.items || [];
     var sortFn = byNewsOrder;
     switch (tabId) {
+      case 'top':
+        // TOPタブ: ウーパールーパーショップ、穴掘りタップゲー、合戦の3つのみ
+        return applySearchFilter(
+          items.filter(function (i) {
+            return i.id === 'axolotl-shop' || i.id === 'mine-tap' || i.id === 'japan-war';
+          }).sort(byNewsOrder)
+        );
       case 'games':
         return applySearchFilter(items.filter(function (i) { return i.type === 'game'; }).sort(sortFn));
       case 'hobby':
@@ -175,12 +181,9 @@
       case 'trending':
         return applySearchFilter(items.slice().sort(byTrendingScore));
       case 'recommended':
-        // おすすめタブ: 特定タイトルをピックアップ表示
         return applySearchFilter(
           items.filter(function (i) {
-            return i.id === 'axolotl-shop' ||
-                   i.id === 'mine-tap' ||
-                   i.id === 'japan-war';
+            return i.id === 'axolotl-shop' || i.id === 'mine-tap' || i.id === 'japan-war';
           }).sort(byNewsOrder)
         );
       case 'updates':
@@ -213,7 +216,6 @@
           .filter(function (i) { return ids.indexOf(i.id) >= 0; })
           .sort(byNewsOrder));
       }
-      case 'top':
       default:
         return applySearchFilter(items.slice().sort(sortFn));
     }

@@ -38,7 +38,8 @@
     "ariaTop": "首",
     "ariaSearch": "検",
     "ariaMenu": "目",
-    "ariaClose": "閉目"
+    "ariaClose": "閉目",
+    "ariaLang": "言語: {{lang}}"
   },
   "pagination": {
     "first": "« 初",

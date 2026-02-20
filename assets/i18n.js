@@ -162,22 +162,57 @@
     }
   }
 
+  var LANG_SHORT = { en: 'EN', ja: 'JA', es: 'ES', da: 'DA', 'zh-classical': 'ZH' };
+
   function renderLangSwitcher(container) {
     if (!container) return;
-    var html = '<div class="lang-switcher" role="group" aria-label="Language">';
+    var currentLabel = t('lang.' + currentLang);
+    var shortLabel = LANG_SHORT[currentLang] || currentLang.toUpperCase().slice(0, 2);
+    var ariaLabel = interpolate(t('header.ariaLang') || 'Language', { lang: currentLabel });
+    var html =
+      '<div class="lang-switcher">' +
+        '<button type="button" class="btn-icon lang-btn" aria-label="' + ariaLabel.replace(/"/g, '&quot;') + '" aria-expanded="false" aria-haspopup="true" title="' + currentLabel.replace(/"/g, '&quot;') + '">' +
+          '<span class="lang-btn-text">🌐 ' + shortLabel + '</span>' +
+        '</button>' +
+        '<div class="lang-dropdown" role="menu" aria-label="Language">';
     SUPPORTED.forEach(function (code) {
       var label = t('lang.' + code);
       var active = code === currentLang ? ' lang-active' : '';
-      var url = new URL(window.location.href);
-      url.searchParams.set(LANG_PARAM, code);
-      html += '<a href="' + url.pathname + '?' + url.searchParams.toString() + '" class="lang-link' + active + '" data-lang="' + code + '" lang="' + (code === 'zh-classical' ? 'zh-Hant' : code) + '">' + label + '</a>';
+      html += '<button type="button" class="lang-option' + active + '" data-lang="' + code + '" role="menuitem">' + label + '</button>';
     });
-    html += '</div>';
+    html += '</div></div>';
     container.innerHTML = html;
-    container.querySelectorAll('.lang-link').forEach(function (a) {
-      a.addEventListener('click', function (e) {
-        e.preventDefault();
-        setLang(a.getAttribute('data-lang'));
+
+    var btn = container.querySelector('.lang-btn');
+    var dropdown = container.querySelector('.lang-dropdown');
+
+    function closeDropdown() {
+      dropdown.classList.remove('lang-dropdown-open');
+      btn.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('click', outsideClick);
+    }
+
+    function outsideClick(e) {
+      if (!container.contains(e.target)) closeDropdown();
+    }
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var isOpen = dropdown.classList.toggle('lang-dropdown-open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      if (isOpen) {
+        setTimeout(function () { document.addEventListener('click', outsideClick); }, 0);
+      } else {
+        document.removeEventListener('click', outsideClick);
+      }
+    });
+
+    container.querySelectorAll('.lang-option').forEach(function (opt) {
+      opt.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var code = opt.getAttribute('data-lang');
+        if (code === currentLang) { closeDropdown(); return; }
+        setLang(code);
         loadLocale(currentLang).then(function (m) {
           messages = m;
           applyToDom();
@@ -190,6 +225,7 @@
             window.refreshMobileDrawer();
           }
         });
+        closeDropdown();
       });
     });
   }

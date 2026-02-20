@@ -38,7 +38,8 @@
     "ariaTop": "トップ",
     "ariaSearch": "検索",
     "ariaMenu": "メニュー",
-    "ariaClose": "メニューを閉じる"
+    "ariaClose": "メニューを閉じる",
+    "ariaLang": "言語: {{lang}}"
   },
   "pagination": {
     "first": "« 最初",
