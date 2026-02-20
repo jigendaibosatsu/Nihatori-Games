@@ -690,7 +690,8 @@
     shopSaleDiscount: 1.0,  // ショップセール割引率（1.0 = 通常価格）
     shopSaleItems: [],  // セール対象の商品リスト（タイプとサイズバンドの組み合わせ）
     settings: {
-      autoReorderTanks: false  // 空になった水槽を自動的に下に移動する
+      autoReorderTanks: false,  // 空になった水槽を自動的に下に移動する
+      simpleNameMode: false  // シンプルな名前運用（幼名のみ、成体になっても変化なし）
     }
   };
   
@@ -795,7 +796,8 @@
       
       // 新しいフィールドの初期化
       if (!saveData.state.usedNames) saveData.state.usedNames = {};
-      if (!saveData.state.settings) saveData.state.settings = { autoReorderTanks: false };
+      if (!saveData.state.settings) saveData.state.settings = { autoReorderTanks: false, simpleNameMode: false };
+      if (saveData.state.settings.simpleNameMode === undefined) saveData.state.settings.simpleNameMode = false;
       if (!saveData.state.mutationShopAvailable) {
         saveData.state.mutationShopAvailable = false;
         saveData.state.mutationShopItems = [];
@@ -1211,9 +1213,23 @@
     return count;
   }
 
-  // 12ヶ月到達時に幼名から成人名へ切り替え
+  function isSimpleNameMode() {
+    return state.settings && state.settings.simpleNameMode === true;
+  }
+
+  // 12ヶ月到達時に幼名から成人名へ切り替え（メスは幼名のまま、オスのみ成人名に）
   function assignAdultNameAt12(ax) {
     if (!ax || !ax.isJuvenile) return;
+    if (isSimpleNameMode()) {
+      ax.isJuvenile = false;
+      if (axolotlRegistry[ax.id]) axolotlRegistry[ax.id].isJuvenile = false;
+      return;
+    }
+    if (ax.sex === 'メス') {
+      ax.isJuvenile = false; /* フラグのみ解除、名前は幼名のまま */
+      if (axolotlRegistry[ax.id]) axolotlRegistry[ax.id].isJuvenile = false;
+      return;
+    }
     var oldName = ax.name;
     if (oldName && state.usedNames && state.usedNames[oldName]) delete state.usedNames[oldName];
     
@@ -1337,7 +1353,7 @@
       name: null,
       isJuvenile: false
     };
-    var useJuvenile = (age == null || age < 12);
+    var useJuvenile = isSimpleNameMode() || (age == null || age < 12);
     
     if (useJuvenile) {
       var juv = generateJuvenileName(type);
@@ -1843,12 +1859,28 @@
   function getShopIconSizeFromBand(band) {
     return band === 7 ? 96 : 64;
   }
-  // ショップ表示用：ランダムな空腹・健康度（55〜100%）
-  function getRandomShopStats() {
-    return {
-      hunger: Math.floor(55 + Math.random() * 46),
-      health: Math.floor(55 + Math.random() * 46)
-    };
+  // ショップ表示用：ランダムなステータス（幼体1-3ヶ月、成体12-21ヶ月、濃さ・健康等で価格変動）
+  function getRandomShopStats(sizeBandOrOpts) {
+    var age;
+    if (sizeBandOrOpts && typeof sizeBandOrOpts === 'object' && sizeBandOrOpts.age != null) {
+      age = sizeBandOrOpts.age;
+    } else {
+      var band = typeof sizeBandOrOpts === 'number' ? sizeBandOrOpts : 1;
+      if (band === 7 || band >= 5) {
+        age = 12 + Math.floor(Math.random() * 10);
+      } else {
+        age = 1 + Math.floor(Math.random() * 3);
+      }
+    }
+    var baseSize = calculateSizeFromAge(age);
+    var sizeCm = Math.round((baseSize * (0.9 + Math.random() * 0.2)) * 10) / 10;
+    var hunger = Math.floor(55 + Math.random() * 46);
+    var health = Math.floor(55 + Math.random() * 46);
+    var water = Math.floor(70 + Math.random() * 31);
+    var shades = ['light', 'normal', 'dark'];
+    var shade = shades[Math.floor(Math.random() * shades.length)];
+    var statusStr = t('ui.healthy');
+    return { age: age, size: sizeCm, hunger: hunger, health: health, water: water, shade: shade, status: statusStr };
   }
 
   // 親のサイズから子のサイズを計算（親の影響を受ける）
@@ -1866,31 +1898,31 @@
     var variation = influencedSize * 0.1 * (Math.random() * 2 - 1);
     return Math.max(2, Math.min(22, influencedSize + variation));
   }
-  // band0〜7（幼生〜成体）、band7=typePriceBase
+  // band0〜7（幼生〜成体）、common相場：子供(3ヶ月)3000円、成体(12ヶ月〜)10000円
   var sizePriceTable = {
-    nomal: [300, 600, 1050, 1500, 1950, 2400, 2700, 3000],
-    albino: [300, 600, 1050, 1500, 1950, 2400, 2700, 3000],
-    gold: [600, 1200, 2100, 3000, 3900, 4800, 5400, 6000],
-    marble: [300, 600, 1050, 1500, 1950, 2400, 2700, 3000],
-    black: [500, 1000, 1750, 2500, 3250, 4000, 4500, 5000],
-    superblack: [3000, 6000, 10500, 15000, 19500, 24000, 27000, 30000],
-    copper: [10000, 20000, 35000, 50000, 65000, 80000, 90000, 100000],
-    goldblackeye: [10000, 20000, 35000, 50000, 65000, 80000, 90000, 100000],
-    chimera: [30000, 60000, 105000, 150000, 195000, 240000, 270000, 300000],
-    yellow: [1000, 2000, 3500, 5000, 6500, 8000, 9000, 10000],
-    dalmatian: [6000, 12000, 21000, 30000, 39000, 48000, 54000, 60000]
+    nomal: [1000, 3000, 4000, 5500, 7000, 8500, 9500, 10000],
+    albino: [1000, 3000, 4000, 5500, 7000, 8500, 9500, 10000],
+    marble: [1000, 3000, 4000, 5500, 7000, 8500, 9500, 10000],
+    gold: [1500, 4500, 6000, 8000, 10000, 12000, 14000, 15000],
+    black: [1300, 4000, 5300, 7000, 9000, 11000, 12500, 13000],
+    superblack: [10000, 30000, 40000, 55000, 70000, 85000, 95000, 100000],
+    copper: [30000, 100000, 130000, 180000, 230000, 280000, 320000, 350000],
+    goldblackeye: [30000, 100000, 130000, 180000, 230000, 280000, 320000, 350000],
+    chimera: [90000, 300000, 400000, 550000, 700000, 850000, 950000, 1000000],
+    yellow: [3000, 10000, 13000, 18000, 23000, 28000, 32000, 35000],
+    dalmatian: [18000, 60000, 80000, 110000, 140000, 170000, 190000, 200000]
   };
   function calcBaseMarketPrice(ax) {
     var band = sizeBandFromAge(ax.age);
     var bandPrices = sizePriceTable[ax.type] || sizePriceTable.nomal;
-    var base = (bandPrices[band] || bandPrices[bandPrices.length - 1]) || 3000;
+    var base = (bandPrices[band] || bandPrices[bandPrices.length - 1]) || 10000;
     return base;
   }
 
   function calcPrice(ax) {
     var band = sizeBandFromAge(ax.age);
     var bandPrices = sizePriceTable[ax.type] || sizePriceTable.nomal;
-    var base = (bandPrices[band] || bandPrices[bandPrices.length - 1]) || 3000;
+    var base = (bandPrices[band] || bandPrices[bandPrices.length - 1]) || 10000;
     
     // 幼生（age=0）の価格を大幅に下げる
     if (ax.age === 0) {
@@ -2334,7 +2366,9 @@
     if (foundTank && foundTank.breedingPair && foundTank.breedingPair.length === 2) {
       nameEditDiv.style.display = 'none';
     }
-    if (getGameLocale() === 'en') {
+    var useSimpleName = isSimpleNameMode() || getGameLocale() === 'en' || displayAx.age < 12 || displayAx.sex === 'メス';
+    if (useSimpleName) {
+      /* 英語／幼名（12ヶ月未満）／メス：要素A/B・通字なし、シンプルな名前入力のみ（メスは幼名のまま） */
       var nameInputId = 'axDetailName_' + axolotlId;
       var nameLabel = document.createElement('label');
       nameLabel.htmlFor = nameInputId;
@@ -2366,7 +2400,7 @@
           }
           var nameEl = $('axDetailName');
           var sexDisplayHtml = displayAx.age >= 12 ? (displayAx.sex === 'オス' ? '<span style="color:#3b82f6;">♂</span>' : '<span style="color:#ef4444;">♀</span>') : '';
-          var namePart = newName ? nameForDisplay({ name: newName, nameElementA: null, nameElementB: null, type: displayAx.type }, 'en') : typeLabel(displayAx.type);
+          var namePart = newName ? nameForDisplay({ name: newName, nameElementA: null, nameElementB: null, type: displayAx.type }, localeForNameDisplay()) : typeLabel(displayAx.type);
           nameEl.innerHTML = (displayAx.familyName ? displayAx.familyName + ' ' : '') + namePart + (sexDisplayHtml ? ' ' + sexDisplayHtml : '');
           saveGame();
         }
@@ -2374,6 +2408,7 @@
       nameEditDiv.appendChild(nameLabel);
       nameEditDiv.appendChild(nameInput);
     } else {
+      /* 日本語・成体（12ヶ月以上）：要素A/B＋通字UI */
       var nameElementsContainer = document.createElement('div');
       nameElementsContainer.style.display = 'flex';
       nameElementsContainer.style.gap = '8px';
@@ -3894,11 +3929,15 @@
     }, 1800);
   }
 
+  var poopCleanAudio = null;
   function playPoopCleanSound() {
     try {
-      var audio = new Audio('./assets/sound/damege/se_itemget_014.wav');
-      audio.volume = 0.6;
-      audio.play().catch(function() {});
+      if (!poopCleanAudio) {
+        poopCleanAudio = new Audio('./assets/sound/damege/se_itemget_014.ogg');
+        poopCleanAudio.volume = 0.6;
+      }
+      poopCleanAudio.currentTime = 0;
+      poopCleanAudio.play().catch(function() {});
     } catch (e) {}
   }
 
@@ -5315,12 +5354,13 @@
       state.mutationShopItems.forEach(function(item) {
         var card = document.createElement('div');
         card.className = 'ax-buy-type-card ax-buy-type-btn';
-        // 年齢からサイズバンドを計算（簡易版：年齢に基づいて適切なサイズを表示）
         var ageBand = item.age <= 3 ? 1 : (item.age <= 6 ? 3 : (item.age <= 12 ? 5 : 7));
         var shopIconSize = getShopIconSizeFromBand(ageBand);
+        var displayStats = getRandomShopStats({ age: item.age });
+        if (item.problemFlags && (item.problemFlags.injured || item.problemFlags.sick)) displayStats.health = Math.min(displayStats.health, 50);
         
         if (item.type === 'chimera') {
-          var fakeAx = { id: 0, type: 'chimera', chimeraTypes: item.chimeraTypes || ['nomal', 'marble'] };
+          var fakeAx = { id: 0, type: 'chimera', chimeraTypes: item.chimeraTypes || ['nomal', 'marble'], shade: displayStats.shade };
           var sprite = createChimeraCanvasSprite(fakeAx, shopIconSize);
           sprite.classList.add('ax-idle');
           sprite.dataset.bobIntervalMs = '500';
@@ -5330,18 +5370,15 @@
           sprite.style.height = shopIconSize + 'px';
           card.appendChild(sprite);
         } else {
-          var img = document.createElement('img');
-          img.src = typeImagePath(item.type);
-          img.alt = '';
-          img.className = 'ax-buy-type-img ax-axolotl-img ax-idle';
-          img.dataset.bobIntervalMs = '500';
-          img.dataset.bobIndex = '0';
-          img.dataset.bobLastStep = '0';
-          img.width = shopIconSize;
-          img.height = shopIconSize;
-          img.style.width = shopIconSize + 'px';
-          img.style.height = shopIconSize + 'px';
-          card.appendChild(img);
+          var fakeAx = { id: 0, type: item.type, shade: displayStats.shade };
+          var sprite = createPixelArtCanvasSprite(fakeAx, shopIconSize);
+          sprite.classList.add('ax-idle');
+          sprite.dataset.bobIntervalMs = '500';
+          sprite.dataset.bobIndex = '0';
+          sprite.dataset.bobLastStep = '0';
+          sprite.style.width = shopIconSize + 'px';
+          sprite.style.height = shopIconSize + 'px';
+          card.appendChild(sprite);
         }
         
         var nameSpan = document.createElement('span');
@@ -5352,6 +5389,14 @@
         var ageLabel = t('ui.ageMonths', { n: item.age });
         nameSpan.textContent = problemLabel + typeLabel(item.type) + ' (' + ageLabel + ')';
         card.appendChild(nameSpan);
+        
+        var briefDiv = document.createElement('div');
+        briefDiv.className = 'ax-buy-type-stats';
+        briefDiv.style.fontSize = '10px';
+        briefDiv.style.color = '#64748b';
+        briefDiv.style.marginTop = '2px';
+        briefDiv.textContent = t('ui.sizeLabel') + formatSize(displayStats.size) + ' / ' + t('ui.ageFormat', { n: displayStats.age });
+        card.appendChild(briefDiv);
         
         var priceSpan = document.createElement('span');
         priceSpan.className = 'ax-buy-type-price';
@@ -5373,10 +5418,13 @@
         detailBtn.style.padding = '4px 8px';
         detailBtn.addEventListener('click', function (e) {
           e.stopPropagation();
-          var stats = getRandomShopStats();
-          if (item.problemFlags && (item.problemFlags.injured || item.problemFlags.sick)) stats.health = Math.min(stats.health, 50);
           var detailText = '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(item.price) + '</p>';
-          detailText += '<p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + stats.hunger + '% ' + t('ui.healthLabel') + stats.health + '% ' + t('ui.sizeLabel') + formatSize(calculateSizeFromAge(item.age)) + '</p>';
+          detailText += '<p><strong>' + t('ui.sizeLabel') + '</strong> ' + formatSize(displayStats.size) + '<br>';
+          detailText += '<strong>' + t('ui.ageFormat', { n: displayStats.age }) + '</strong><br>';
+          detailText += '<strong>' + t('ui.healthLabel') + '</strong> ' + displayStats.health + '/100<br>';
+          detailText += '<strong>' + t('ui.hungerLabelShort') + '</strong> ' + displayStats.hunger + '/100<br>';
+          detailText += '<strong>' + t('ui.waterQualityLabel') + '</strong> ' + displayStats.water + '/100<br>';
+          detailText += '<strong>' + t('ui.shadeLabel') + '</strong> ' + shadeLabel(displayStats.shade) + '</p>';
           if (item.problemFlags && item.problemFlags.injured) detailText += '<p><strong>' + t('ui.conditionLabel') + '</strong> ' + t('ui.injured') + '</p>';
           else if (item.problemFlags && item.problemFlags.sick) detailText += '<p><strong>' + t('ui.conditionLabel') + '</strong> ' + t('ui.sick') + '</p>';
           detailText += '<p>' + t('ui.problemRecovery') + '</p>';
@@ -5427,8 +5475,10 @@
       problemBtn.type = 'button';
       problemBtn.className = 'ax-buy-type-btn ax-buy-type-btn-problem';
       var problemIconSize = getShopIconSizeFromBand(sizeBand || 1);
+      var problemStats = getRandomShopStats(sizeBand || 1);
+      if (options.injured || options.sick) problemStats.health = Math.min(problemStats.health, 50);
       if (selectedType === 'chimera') {
-        var fakeAx = { id: 0, type: 'chimera', chimeraTypes: ['nomal', 'marble'] };
+        var fakeAx = { id: 0, type: 'chimera', chimeraTypes: ['nomal', 'marble'], shade: problemStats.shade };
         var sprite = createChimeraCanvasSprite(fakeAx, problemIconSize);
         sprite.classList.add('ax-idle');
         sprite.dataset.bobIntervalMs = '500';
@@ -5438,26 +5488,28 @@
         sprite.style.height = problemIconSize + 'px';
         problemBtn.appendChild(sprite);
       } else {
-        var img = document.createElement('img');
-        img.src = typeImagePath(selectedType);
-        img.alt = '';
-        img.className = 'ax-buy-type-img ax-axolotl-img ax-idle';
-        img.dataset.bobIntervalMs = '500';
-        img.dataset.bobIndex = '0';
-        img.dataset.bobLastStep = '0';
-        img.width = problemIconSize;
-        img.height = problemIconSize;
-        img.style.width = problemIconSize + 'px';
-        img.style.height = problemIconSize + 'px';
-        problemBtn.appendChild(img);
+        var fakeAx = { id: 0, type: selectedType, shade: problemStats.shade };
+        var sprite = createPixelArtCanvasSprite(fakeAx, problemIconSize);
+        sprite.classList.add('ax-idle');
+        sprite.dataset.bobIntervalMs = '500';
+        sprite.dataset.bobIndex = '0';
+        sprite.dataset.bobLastStep = '0';
+        sprite.style.width = problemIconSize + 'px';
+        sprite.style.height = problemIconSize + 'px';
+        problemBtn.appendChild(sprite);
       }
       var defectLabel = options.injured ? t('ui.injured') : t('ui.sick');
-      var problemStats = getRandomShopStats();
-      if (options.injured || options.sick) problemStats.health = Math.min(problemStats.health, 50);
       var problemName = document.createElement('span');
       problemName.className = 'ax-buy-type-name';
       problemName.innerHTML = t('ui.problemPrefix') + typeLabel(selectedType) + ' (' + (sizeBand === 7 ? t('ui.adultLabel') : t('ui.threeMonthLabel')) + ') … ' + defectLabel;
       problemBtn.appendChild(problemName);
+      var problemBriefDiv = document.createElement('div');
+      problemBriefDiv.className = 'ax-buy-type-stats';
+      problemBriefDiv.style.fontSize = '10px';
+      problemBriefDiv.style.color = '#64748b';
+      problemBriefDiv.style.marginTop = '2px';
+      problemBriefDiv.textContent = t('ui.sizeLabel') + formatSize(problemStats.size) + ' / ' + t('ui.ageFormat', { n: problemStats.age });
+      problemBtn.appendChild(problemBriefDiv);
       var problemPriceSpan = document.createElement('span');
       problemPriceSpan.className = 'ax-buy-type-price';
       problemPriceSpan.textContent = formatMoney(problemPrice);
@@ -5476,7 +5528,16 @@
       problemDetailBtn.style.padding = '4px 8px';
       problemDetailBtn.addEventListener('click', function (e) {
         e.stopPropagation();
-        openShopDetail(t('ui.problemPrefix') + typeLabel(selectedType) + ' (' + (sizeBand === 7 ? t('ui.adultLabel') : t('ui.threeMonthLabel')) + ')', '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(problemPrice) + '</p><p><strong>' + t('ui.conditionLabel') + '</strong> ' + defectLabel + '</p><p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + problemStats.hunger + '% ' + t('ui.healthLabel') + problemStats.health + '% ' + t('ui.sizeLabel') + formatSize(getRandomSizeForShopBand(sizeBand || 1)) + '</p><p>' + t('ui.problemRecovery') + '</p>');
+        var detailHtml = '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(problemPrice) + '</p>';
+        detailHtml += '<p><strong>' + t('ui.conditionLabel') + '</strong> ' + defectLabel + '</p>';
+        detailHtml += '<p><strong>' + t('ui.sizeLabel') + '</strong> ' + formatSize(problemStats.size) + '<br>';
+        detailHtml += '<strong>' + t('ui.ageFormat', { n: problemStats.age }) + '</strong><br>';
+        detailHtml += '<strong>' + t('ui.healthLabel') + '</strong> ' + problemStats.health + '/100<br>';
+        detailHtml += '<strong>' + t('ui.hungerLabelShort') + '</strong> ' + problemStats.hunger + '/100<br>';
+        detailHtml += '<strong>' + t('ui.waterQualityLabel') + '</strong> ' + problemStats.water + '/100<br>';
+        detailHtml += '<strong>' + t('ui.shadeLabel') + '</strong> ' + shadeLabel(problemStats.shade) + '</p>';
+        detailHtml += '<p>' + t('ui.problemRecovery') + '</p>';
+        openShopDetail(t('ui.problemPrefix') + typeLabel(selectedType) + ' (' + (sizeBand === 7 ? t('ui.adultLabel') : t('ui.threeMonthLabel')) + ')', detailHtml);
       });
       btnRow.appendChild(problemDetailBtn);
       var problemBuyBtn = document.createElement('button');
@@ -5505,10 +5566,10 @@
       return;
     }
     
-    // サイズ選択（3ヶ月目または成体）
-    var bandPrices = sizePriceTable[selectedType] || sizePriceTable.nomal;
-    var price = bandPrices[sizeBand || 1]; // デフォルトは3ヶ月目
-    if (!price) return;
+    // 幼体1-3ヶ月 or 成体12-21ヶ月でランダム、濃さ・健康等で価格変動
+    var stats = getRandomShopStats(sizeBand || 1);
+    var priceAx = { type: selectedType, age: stats.age, size: stats.size, health: stats.health, hunger: stats.hunger, shade: stats.shade, sick: false, injured: false };
+    var price = calcPrice(priceAx);
     
     // セール適用（該当商品のみ）
     var isOnSale = false;
@@ -5533,16 +5594,14 @@
     
     var card = document.createElement('div');
     card.className = 'ax-buy-type-card ax-buy-type-btn';
-    var sizeLabel = sizeBand === 7 ? t('ui.adultLabel') : t('ui.threeMonthLabel');
+    var sizeLabel = sizeBand === 7 ? t('ui.adultLabel') : t('ui.youngLabel');
     var saleLabel = isOnSale ? t('ui.sale') : '';
     var sexLabel = sex ? (sex === 'オス' ? ' ♂' : ' ♀') : '';
     var stockStatus = isOutOfStock ? ' <span style="color:#dc2626; font-size:10px;">' + t('dialog.outOfStock') + '</span>' : '';
     var shopIconSize = getShopIconSizeFromBand(sizeBand || 1);
-    var stats = getRandomShopStats();
-    var detailSizeCm = getRandomSizeForShopBand(sizeBand || 1);
     
     if (selectedType === 'chimera') {
-      var fakeAx = { id: 0, type: 'chimera', chimeraTypes: ['nomal', 'marble'] };
+      var fakeAx = { id: 0, type: 'chimera', chimeraTypes: ['nomal', 'marble'], shade: stats.shade };
       var sprite = createChimeraCanvasSprite(fakeAx, shopIconSize);
       sprite.classList.add('ax-idle');
       sprite.dataset.bobIntervalMs = '500';
@@ -5552,23 +5611,27 @@
       sprite.style.height = shopIconSize + 'px';
       card.appendChild(sprite);
     } else {
-      var img = document.createElement('img');
-      img.src = typeImagePath(selectedType);
-      img.alt = '';
-      img.className = 'ax-buy-type-img ax-axolotl-img ax-idle';
-      img.dataset.bobIntervalMs = '500';
-      img.dataset.bobIndex = '0';
-      img.dataset.bobLastStep = '0';
-      img.width = shopIconSize;
-      img.height = shopIconSize;
-      img.style.width = shopIconSize + 'px';
-      img.style.height = shopIconSize + 'px';
-      card.appendChild(img);
+      var fakeAx = { id: 0, type: selectedType, shade: stats.shade };
+      var sprite = createPixelArtCanvasSprite(fakeAx, shopIconSize);
+      sprite.classList.add('ax-idle');
+      sprite.dataset.bobIntervalMs = '500';
+      sprite.dataset.bobIndex = '0';
+      sprite.dataset.bobLastStep = '0';
+      sprite.style.width = shopIconSize + 'px';
+      sprite.style.height = shopIconSize + 'px';
+      card.appendChild(sprite);
     }
     var nameSpan = document.createElement('span');
     nameSpan.className = 'ax-buy-type-name';
     nameSpan.innerHTML = saleLabel + typeLabel(selectedType) + ' (' + sizeLabel + sexLabel + ')' + stockStatus;
     card.appendChild(nameSpan);
+    var briefDiv = document.createElement('div');
+    briefDiv.className = 'ax-buy-type-stats';
+    briefDiv.style.fontSize = '10px';
+    briefDiv.style.color = '#64748b';
+    briefDiv.style.marginTop = '2px';
+    briefDiv.textContent = t('ui.sizeLabel') + formatSize(stats.size) + ' / ' + t('ui.ageFormat', { n: stats.age });
+    card.appendChild(briefDiv);
     var priceSpan = document.createElement('span');
     priceSpan.className = 'ax-buy-type-price';
     priceSpan.textContent = formatMoney(price);
@@ -5588,7 +5651,15 @@
     detailBtn.addEventListener('click', function (e) {
       e.stopPropagation();
       if (isOutOfStock) return;
-      openShopDetail(typeLabel(selectedType) + ' (' + sizeLabel + sexLabel + ')', '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(price) + '</p><p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + stats.hunger + '% ' + t('ui.healthLabel') + stats.health + '% ' + t('ui.sizeLabel') + formatSize(detailSizeCm) + '</p>');
+      var detailHtml = '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(price) + '</p>';
+      detailHtml += '<p><strong>' + t('ui.sizeLabel') + '</strong> ' + formatSize(stats.size) + '<br>';
+      detailHtml += '<strong>' + t('ui.ageFormat', { n: stats.age }) + '</strong><br>';
+      detailHtml += '<strong>' + t('ui.healthLabel') + '</strong> ' + stats.health + '/100<br>';
+      detailHtml += '<strong>' + t('ui.hungerLabelShort') + '</strong> ' + stats.hunger + '/100<br>';
+      detailHtml += '<strong>' + t('ui.waterQualityLabel') + '</strong> ' + stats.water + '/100<br>';
+      detailHtml += '<strong>' + t('ui.shadeLabel') + '</strong> ' + shadeLabel(stats.shade) + '<br>';
+      detailHtml += '<strong>' + t('ui.statusFormat', { status: stats.status }) + '</strong></p>';
+      openShopDetail(typeLabel(selectedType) + ' (' + sizeLabel + sexLabel + ')', detailHtml);
     });
     btnRow.appendChild(detailBtn);
     var buyBtn = document.createElement('button');
@@ -5601,12 +5672,22 @@
     buyBtn.dataset.band = String(sizeBand || 1);
     buyBtn.dataset.sex = sex || '';
     buyBtn.dataset.price = String(price);
+    buyBtn.dataset.stockKey = stockKey;
+    buyBtn.dataset.statsJson = JSON.stringify(stats);
     if (state.money < price || isOutOfStock) buyBtn.disabled = true;
     if (isOutOfStock) detailBtn.disabled = true;
     buyBtn.addEventListener('click', function (e) {
       e.stopPropagation();
       if (!this.disabled && !isOutOfStock) {
-        doBuy(this.dataset.type, parseInt(this.dataset.band, 10), parseInt(this.dataset.price, 10), false, this.dataset.sex || null);
+        var shopStats = null;
+        try {
+          if (this.dataset.statsJson) shopStats = JSON.parse(this.dataset.statsJson);
+        } catch (err) {}
+        doBuy(this.dataset.type, parseInt(this.dataset.band, 10), parseInt(this.dataset.price, 10), false, this.dataset.sex || null, null, shopStats);
+        state.shopStockDaily[this.dataset.stockKey] = false;
+        if ($('axOverlayBuy') && $('axOverlayBuy').classList.contains('visible')) {
+          showBuyTypeList('creature');
+        }
       }
     });
     btnRow.appendChild(buyBtn);
@@ -5917,8 +5998,10 @@
           card.className = 'ax-buy-type-card ax-buy-type-btn';
           var ageBand = item.age <= 3 ? 1 : (item.age <= 6 ? 3 : (item.age <= 12 ? 5 : 7));
           var shopIconSize = getShopIconSizeFromBand(ageBand);
+          var mutDisplayStats = getRandomShopStats({ age: item.age });
+          if (item.problemFlags && (item.problemFlags.injured || item.problemFlags.sick)) mutDisplayStats.health = Math.min(mutDisplayStats.health, 50);
           if (item.type === 'chimera') {
-            var fakeAx = { id: 0, type: 'chimera', chimeraTypes: item.chimeraTypes || ['nomal', 'marble'] };
+            var fakeAx = { id: 0, type: 'chimera', chimeraTypes: item.chimeraTypes || ['nomal', 'marble'], shade: mutDisplayStats.shade };
             var sprite = createChimeraCanvasSprite(fakeAx, shopIconSize);
             sprite.classList.add('ax-idle');
             sprite.dataset.bobIntervalMs = '500';
@@ -5928,18 +6011,15 @@
             sprite.style.height = shopIconSize + 'px';
             card.appendChild(sprite);
           } else {
-            var img = document.createElement('img');
-            img.src = typeImagePath(item.type);
-            img.alt = '';
-            img.className = 'ax-buy-type-img ax-axolotl-img ax-idle';
-            img.dataset.bobIntervalMs = '500';
-            img.dataset.bobIndex = '0';
-            img.dataset.bobLastStep = '0';
-            img.width = shopIconSize;
-            img.height = shopIconSize;
-            img.style.width = shopIconSize + 'px';
-            img.style.height = shopIconSize + 'px';
-            card.appendChild(img);
+            var fakeAx = { id: 0, type: item.type, shade: mutDisplayStats.shade };
+            var sprite = createPixelArtCanvasSprite(fakeAx, shopIconSize);
+            sprite.classList.add('ax-idle');
+            sprite.dataset.bobIntervalMs = '500';
+            sprite.dataset.bobIndex = '0';
+            sprite.dataset.bobLastStep = '0';
+            sprite.style.width = shopIconSize + 'px';
+            sprite.style.height = shopIconSize + 'px';
+            card.appendChild(sprite);
           }
           var nameSpan = document.createElement('span');
           nameSpan.className = 'ax-buy-type-name';
@@ -5948,6 +6028,13 @@
           else if (item.problemFlags && item.problemFlags.sick) problemLabel = t('ui.sickTag');
           nameSpan.textContent = problemLabel + typeLabel(item.type) + ' (' + t('ui.ageMonths', { n: item.age }) + ') ' + t('ui.rareTag');
           card.appendChild(nameSpan);
+          var mutBriefDiv = document.createElement('div');
+          mutBriefDiv.className = 'ax-buy-type-stats';
+          mutBriefDiv.style.fontSize = '10px';
+          mutBriefDiv.style.color = '#64748b';
+          mutBriefDiv.style.marginTop = '2px';
+          mutBriefDiv.textContent = t('ui.sizeLabel') + formatSize(mutDisplayStats.size) + ' / ' + t('ui.ageFormat', { n: mutDisplayStats.age });
+          card.appendChild(mutBriefDiv);
           var priceSpan = document.createElement('span');
           priceSpan.className = 'ax-buy-type-price';
           priceSpan.textContent = formatMoney(item.price);
@@ -5966,10 +6053,13 @@
           detailBtn.style.padding = '4px 8px';
           detailBtn.addEventListener('click', function (e) {
             e.stopPropagation();
-            var stats = getRandomShopStats();
-            if (item.problemFlags && (item.problemFlags.injured || item.problemFlags.sick)) stats.health = Math.min(stats.health, 50);
             var detailText = '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(item.price) + '</p>';
-            detailText += '<p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + stats.hunger + '% ' + t('ui.healthLabel') + stats.health + '% ' + t('ui.sizeLabel') + formatSize(calculateSizeFromAge(item.age)) + '</p>';
+            detailText += '<p><strong>' + t('ui.sizeLabel') + '</strong> ' + formatSize(mutDisplayStats.size) + '<br>';
+            detailText += '<strong>' + t('ui.ageFormat', { n: mutDisplayStats.age }) + '</strong><br>';
+            detailText += '<strong>' + t('ui.healthLabel') + '</strong> ' + mutDisplayStats.health + '/100<br>';
+            detailText += '<strong>' + t('ui.hungerLabelShort') + '</strong> ' + mutDisplayStats.hunger + '/100<br>';
+            detailText += '<strong>' + t('ui.waterQualityLabel') + '</strong> ' + mutDisplayStats.water + '/100<br>';
+            detailText += '<strong>' + t('ui.shadeLabel') + '</strong> ' + shadeLabel(mutDisplayStats.shade) + '</p>';
             if (item.problemFlags && item.problemFlags.injured) detailText += '<p><strong>' + t('ui.conditionLabel') + '</strong> ' + t('ui.injured') + '</p>';
             else if (item.problemFlags && item.problemFlags.sick) detailText += '<p><strong>' + t('ui.conditionLabel') + '</strong> ' + t('ui.sick') + '</p>';
             detailText += '<p>' + t('ui.mutationRecoveryNote') + '</p>';
@@ -6071,11 +6161,14 @@
       openNamingModal(empty.axolotl.id, false);
     }
     
+    if ($('axOverlayBuy') && $('axOverlayBuy').classList.contains('visible')) {
+      showBuyTypeList('creature');
+    }
     updateUI();
     saveGame();
   }
 
-  function doBuy(type, sizeBand, price, isAuction, sex, problemFlags) {
+  function doBuy(type, sizeBand, price, isAuction, sex, problemFlags, shopStats) {
     var empty = state.tanks.find(function (t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; });
     if (!empty) {
       logLine(t('game.noTankSpace'));
@@ -6088,17 +6181,26 @@
       return;
     }
     state.money -= price;
-    var age = ageFromSizeBand(sizeBand);
+    var age = (shopStats && shopStats.age != null) ? shopStats.age : ageFromSizeBand(sizeBand);
     // キメラの場合はchimeraTypesを設定
     var chimeraTypes = null;
     if (type === 'chimera') {
       chimeraTypes = ['nomal', 'marble']; // デフォルトでリューシとマーブルのキメラ
     }
     var ax = createAxolotl(age, type, null, null, chimeraTypes);
-    // サイズを年齢に応じて再計算（ショップで買った個体のサイズを適切に設定）
-    ax.size = calculateSizeFromAge(age);
-    if (axolotlRegistry[ax.id]) {
-      axolotlRegistry[ax.id].size = ax.size;
+    if (shopStats) {
+      ax.size = shopStats.size;
+      ax.health = shopStats.health;
+      ax.hunger = shopStats.hunger;
+      ax.shade = shopStats.shade;
+      if (axolotlRegistry[ax.id]) {
+        axolotlRegistry[ax.id].size = ax.size;
+        axolotlRegistry[ax.id].health = ax.health;
+        axolotlRegistry[ax.id].shade = ax.shade;
+      }
+    } else {
+      ax.size = calculateSizeFromAge(age);
+      if (axolotlRegistry[ax.id]) axolotlRegistry[ax.id].size = ax.size;
     }
     // 性別を指定
     if (sex) {
@@ -6471,6 +6573,10 @@
     if (checkbox) {
       checkbox.checked = state.settings && state.settings.autoReorderTanks || false;
     }
+    var simpleNameCheckbox = document.getElementById('settingSimpleNameMode');
+    if (simpleNameCheckbox) {
+      simpleNameCheckbox.checked = state.settings && state.settings.simpleNameMode || false;
+    }
     // 音楽設定（localStorageから）
     var musicMuted = document.getElementById('settingMusicMuted');
     var musicVolume = document.getElementById('settingMusicVolume');
@@ -6498,6 +6604,14 @@
     settingAutoReorderTanks.addEventListener('change', function () {
       if (!state.settings) state.settings = {};
       state.settings.autoReorderTanks = this.checked;
+      saveGame();
+    });
+  }
+  var settingSimpleNameMode = document.getElementById('settingSimpleNameMode');
+  if (settingSimpleNameMode) {
+    settingSimpleNameMode.addEventListener('change', function () {
+      if (!state.settings) state.settings = {};
+      state.settings.simpleNameMode = this.checked;
       saveGame();
     });
   }

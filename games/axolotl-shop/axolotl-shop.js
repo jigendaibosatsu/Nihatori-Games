@@ -3929,11 +3929,15 @@
     }, 1800);
   }
 
+  var poopCleanAudio = null;
   function playPoopCleanSound() {
     try {
-      var audio = new Audio('/assets/sound/damege/se_itemget_014.wav');
-      audio.volume = 0.6;
-      audio.play().catch(function() {});
+      if (!poopCleanAudio) {
+        poopCleanAudio = new Audio('/assets/sound/damege/se_itemget_014.ogg');
+        poopCleanAudio.volume = 0.6;
+      }
+      poopCleanAudio.currentTime = 0;
+      poopCleanAudio.play().catch(function() {});
     } catch (e) {}
   }
 

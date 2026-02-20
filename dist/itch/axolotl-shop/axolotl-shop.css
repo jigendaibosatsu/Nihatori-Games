@@ -1099,9 +1099,12 @@ canvas.ax-axolotl-img.ax-idle {
 .ax-tank-lines.clickable {
   cursor: pointer;
 }
-/* 詳細モーダル：ヘッダー（アイコン＋タイトル中央揃え） */
+/* 詳細モーダル：ヘッダー（アイコン＋タイトル中央揃え）、長い内容はスクロール */
 .ax-detail-overlay-box {
   max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .ax-detail-header {
   display: flex;
