@@ -12,7 +12,7 @@
 </head>
 <body class="game-page">
   <audio id="axBgm" loop preload="auto">
-    <source src="/assets/sound/songs/bgm_classic_etc_scarboroughfair.ogg" type="audio/ogg" />
+    <source src="./assets/sound/songs/bgm_classic_etc_scarboroughfair.ogg" type="audio/ogg" />
   </audio>
   <div id="site-header"></div>
 
@@ -34,6 +34,16 @@
           </select>
         </label>
       </div>
+      <div class="ax-title-music" style="margin-top:12px; display:flex; flex-direction:column; gap:8px; align-items:center;">
+        <label for="axTitleMusicMuted" style="display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer;">
+          <input type="checkbox" id="axTitleMusicMuted" name="axTitleMusicMuted" style="width:18px; height:18px;">
+          <span data-i18n="ui.musicMuted">音楽をミュート</span>
+        </label>
+        <div style="width:100%; max-width:200px;">
+          <label for="axTitleMusicVolume" style="display:block; margin-bottom:4px; font-size:12px;"><span data-i18n="ui.musicVolume">音楽の音量</span>: <span id="axTitleMusicVolumeValue">70</span>%</label>
+          <input type="range" id="axTitleMusicVolume" name="axTitleMusicVolume" min="0" max="100" value="70" style="width:100%;">
+        </div>
+      </div>
     </div>
   </div>
 
@@ -44,7 +54,7 @@
     <div class="ax-header-content">
       <div class="ax-header-status">
         <span class="ax-day" id="axDay">1月目</span>
-        <span class="ax-money" id="axMoney">¥50,000</span>
+        <span class="ax-money" id="axMoney">Ƀ50,000</span>
         <div class="ax-header-reputation">
           <span class="ax-reputation-label" data-i18n="ui.reputation">評判</span>
           <div class="ax-bar"><div class="ax-bar-fill reputation" id="axRepBar"></div></div>
@@ -85,7 +95,7 @@
       <button type="button" class="ax-menu-item treat ax-menu-item-hidden" id="btnTreat" style="display:none;" aria-hidden="true">
         <span class="ax-menu-icon">💊</span>
         <span class="ax-menu-label" data-i18n="ui.treat">治療</span>
-        <span class="ax-menu-sub">¥5,000</span>
+        <span class="ax-menu-sub">Ƀ5,000</span>
       </button>
       <button type="button" class="ax-menu-item shop" id="btnBuy">
         <span class="ax-menu-icon">🛒</span>
@@ -140,35 +150,43 @@
     <div class="ax-overlay-box">
       <h2 data-i18n="ui.breedingSelectTitle">交配する2匹を選ぶ</h2>
       <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.breedingSelectDesc">オスとメスを1匹ずつ選んでください。選んだ2匹が1つの水槽に入り、毎月産卵を試みます。</p>
-      <div style="margin-bottom:8px;">
-        <label for="axBreedParent1" data-i18n="ui.male">オス</label>
-        <select id="axBreedParent1" name="axBreedParent1" style="display:block; width:100%; padding:6px; margin-top:2px;"></select>
+      <div id="axBreedSeparateList" style="margin-bottom:12px; padding:8px; background:rgba(0,0,0,0.05); border-radius:6px; display:none;"></div>
+      <div id="axBreedForm" style="margin-bottom:12px;">
+        <div style="margin-bottom:8px;">
+          <label for="axBreedParent1" data-i18n="ui.male">オス</label>
+          <select id="axBreedParent1" name="axBreedParent1" style="display:block; width:100%; padding:6px; margin-top:2px;"></select>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label for="axBreedParent2" data-i18n="ui.female">メス</label>
+          <select id="axBreedParent2" name="axBreedParent2" style="display:block; width:100%; padding:6px; margin-top:2px;"></select>
+        </div>
+        <button type="button" class="btn" id="axBreedConfirm" data-i18n="ui.breedingStart">交配する</button>
       </div>
-      <div style="margin-bottom:12px;">
-        <label for="axBreedParent2" data-i18n="ui.female">メス</label>
-        <select id="axBreedParent2" name="axBreedParent2" style="display:block; width:100%; padding:6px; margin-top:2px;"></select>
-      </div>
-      <button type="button" class="btn" id="axBreedConfirm" data-i18n="ui.breedingStart">交配する</button>
       <button type="button" class="btn" style="margin-left:8px; background:#64748b; border-color:#64748b;" id="axBreedCancel" data-i18n="ui.cancel">キャンセル</button>
+    </div>
+  </div>
+
+  <div class="ax-overlay" id="axOverlayBuy">
+    <div class="ax-overlay-box">
+      <div class="ax-shop-header">
+        <img src="./assets/characters/Giant%20Salamander%20Manager.png" alt="Giant Salamander Manager" class="ax-shop-manager" />
+        <div class="ax-shop-header-text">
+          <h2 data-i18n="ui.shopTitleOverlay">ショップ</h2>
+          <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.shopDesc">生体タブに稀に未固定個体が入荷することがあります。</p>
+        </div>
+      </div>
+      <div id="axBuyTabs" class="ax-buy-tabs" style="display:flex; gap:4px; margin-bottom:10px; flex-wrap:wrap;"></div>
+      <div id="axBuyTypeList" class="ax-buy-list" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-bottom:12px; max-height:52vh; overflow-y:auto; overflow-x:hidden;"></div>
+      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axBuyCancel" data-i18n="ui.cancel">キャンセル</button>
     </div>
   </div>
 
   <div class="ax-overlay" id="axOverlayTreat">
     <div class="ax-overlay-box">
       <h2 data-i18n="ui.treatSelectTitle">治療するウパを選ぶ</h2>
-      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.treatSelectDesc">病気のウパを選ぶと¥5,000で治療を開始します。翌月に一定確率で回復します。</p>
+      <p id="axTreatDesc" style="font-size:12px; margin-bottom:8px;" data-i18n="ui.treatSelectDesc">病気のウパを選ぶと治療を開始します。翌月に一定確率で回復します。</p>
       <div id="axTreatTankList" style="margin-bottom:12px;"></div>
       <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axTreatCancel" data-i18n="ui.cancel">キャンセル</button>
-    </div>
-  </div>
-
-  <div class="ax-overlay" id="axOverlayBuy">
-    <div class="ax-overlay-box">
-      <h2 data-i18n="ui.shopTitleOverlay">ショップ</h2>
-      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.shopDesc">生体タブに稀に未固定個体が入荷することがあります。</p>
-      <div id="axBuyTabs" class="ax-buy-tabs" style="display:flex; gap:4px; margin-bottom:10px; flex-wrap:wrap;"></div>
-      <div id="axBuyTypeList" class="ax-buy-list" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-bottom:12px; max-height:52vh; overflow-y:auto; overflow-x:hidden;"></div>
-      <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axBuyCancel" data-i18n="ui.cancel">キャンセル</button>
     </div>
   </div>
 
@@ -222,7 +240,7 @@
   <div class="ax-overlay" id="axOverlayHatch">
     <div class="ax-overlay-box">
       <h2 data-i18n="ui.selectHatchTitle">孵化した幼生から1匹を選ぶ</h2>
-      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.selectHatchDesc">10匹の候補から1匹を選ぶか、全匹を売るか、ランダムで1匹孵化を選んでください。</p>
+      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.selectHatchDesc">孵化した候補（卵の数×1％）から1匹を選ぶか、全匹を売るか、ランダムで1匹孵化を選んでください。</p>
       <div id="axHatchList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
       <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
         <button type="button" class="btn" id="axHatchSellAll" data-i18n="ui.hatchSellAll" style="background:#dc2626; border-color:#dc2626;">全匹を売る</button>
@@ -260,7 +278,7 @@
   <div class="ax-overlay" id="axOverlayClean">
     <div class="ax-overlay-box">
       <h2 data-i18n="ui.cleanSelectTitle">水替えする水槽を選ぶ</h2>
-      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.cleanSelectDesc">水槽を選ぶと¥500で水替えします。水質が上がります。</p>
+      <p style="font-size:12px; margin-bottom:8px;" data-i18n="ui.cleanSelectDesc">水槽を選ぶとɃ500で水替えします。水質が上がります。</p>
       <div id="axCleanTankList" style="margin-bottom:12px; max-height:50vh; overflow-y:auto;"></div>
       <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axCleanCancel" data-i18n="ui.cancel">キャンセル</button>
     </div>
@@ -283,6 +301,14 @@
           <input type="checkbox" id="settingAutoReorderTanks" name="settingAutoReorderTanks" style="width:20px; height:20px;">
           <span data-i18n="ui.autoReorderTanks">空になった水槽を自動的に下に移動する</span>
         </label>
+        <label for="settingMusicMuted" style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer;">
+          <input type="checkbox" id="settingMusicMuted" name="settingMusicMuted" style="width:20px; height:20px;">
+          <span data-i18n="ui.musicMuted">音楽をミュート</span>
+        </label>
+        <div style="margin-bottom:8px;">
+          <label for="settingMusicVolume" style="display:block; margin-bottom:4px; font-size:14px;"><span data-i18n="ui.musicVolume">音楽の音量</span>: <span id="settingMusicVolumeValue">70</span>%</label>
+          <input type="range" id="settingMusicVolume" name="settingMusicVolume" min="0" max="100" value="70" style="width:100%;">
+        </div>
       </div>
       <button type="button" class="btn" style="background:#64748b; border-color:#64748b;" id="axSettingsClose" data-i18n="ui.close">閉じる</button>
     </div>

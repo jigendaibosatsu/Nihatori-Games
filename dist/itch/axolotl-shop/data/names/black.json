@@ -1,0 +1,6 @@
+{
+  "juvenileJa": ["金剛", "比叡", "霧島", "榛名", "妙高", "那智", "足柄", "羽黒", "高雄", "愛宕", "摩耶", "鳥海", "伊吹", "鞍馬", "富士", "葛城", "二上", "信夫", "安達太良"],
+  "juvenileEn": ["London", "Birmingham", "Manchester", "Liverpool", "Leeds", "Sheffield", "Bristol", "Newcastle", "Nottingham", "Leicester", "Coventry", "Hull", "Bradford", "Stoke-on-Trent", "Wolverhampton", "Derby", "Southampton", "Portsmouth", "Brighton", "Cambridge", "Oxford", "Reading", "Luton", "Milton Keynes", "York", "Bath", "Exeter", "Plymouth", "Norwich", "Canterbury"],
+  "maleEn": ["Winston", "Isaac", "Charles", "William", "Henry", "Alfred", "Oliver", "James", "George", "Edward"],
+  "femaleEn": ["Victoria", "Elizabeth", "Florence", "Jane", "Mary", "Anne", "Margaret", "Ada", "Catherine", "Emmeline"]
+}

@@ -23,13 +23,13 @@
   };
   function noteDisplayLabel(tank) {
     var note = tank.note || '';
-    if (note.indexOf('幼生') === 0 && tank.juveniles) {
+    if (tank.juveniles) {
       return t('game.note.juvenileCount', { count: tank.juveniles.length, age: tank.juvenileAge || 0 });
     }
-    if (note.indexOf('卵') === 0 && tank.eggCount) {
+    if (tank.egg && tank.eggCount) {
       return t('game.note.eggCount', { count: tank.eggCount });
     }
-    if (note.indexOf('卵') === 0) {
+    if (tank.egg) {
       return t('game.note.eggCount', { count: tank.eggCount || 500 });
     }
     var key = NOTE_TO_KEY[note];
@@ -40,28 +40,43 @@
   var MAX_FOOD = 100;
   var MAX_REP = 100;
   var MAX_HEALTH = 100;
-  var TARGET_MONEY = 200000;
+  var TARGET_MONEY = 1000000;
   var MAX_TANKS = 15;
   var WATER_CHANGE_COST = 1000;
 
   var AXO_TYPES = ['nomal', 'albino', 'gold', 'marble', 'copper', 'black', 'superblack', 'goldblackeye', 'chimera', 'yellow', 'dalmatian'];
   var typePriceBase = {
-    nomal: 8000,
-    albino: 4000,  // 一番安い
-    gold: 25000,   // 一番高い
-    marble: 12000,
-    copper: 15000,
-    black: 18000,
+    nomal: 3000,   // Leucistic
+    albino: 3000,
+    gold: 6000,
+    marble: 3000,
+    copper: 100000,
+    black: 5000,
     superblack: 30000,
-    goldblackeye: 35000,
-    chimera: 50000,
-    yellow: 28000,
-    dalmatian: 60000  // 激レア
+    goldblackeye: 100000,
+    chimera: 300000,
+    yellow: 10000,
+    dalmatian: 60000
   };
   var MAX_HUNGER = 100;
   var SICK_PRICE_RATE = 0.2;
-  var TREATMENT_COST = 5000;
-  var TREATMENT_RECOVER_CHANCE = 0.35;
+  var MEDICINE_TIERS = [
+    { cost: 500, recoverChance: 0.35, nameKey: 'game.equipment.medicineMedicine' },
+    { cost: 1500, recoverChance: 0.60, nameKey: 'game.equipment.medicineGreatMedicine' },
+    { cost: 3000, recoverChance: 0.85, nameKey: 'game.equipment.medicineSuperMedicine' },
+    { cost: 5000, recoverChance: 1.0, nameKey: 'game.equipment.medicineHiperMedicine' }
+  ];
+  var MAX_MEDICINE_LEVEL = 3;
+  var TREATMENT_COST = 5000;  // legacy fallback
+  var TREATMENT_RECOVER_CHANCE = 0.35;  // legacy fallback
+  function getTreatmentCost() {
+    var lv = (state.medicineLevel != null ? state.medicineLevel : 0);
+    return MEDICINE_TIERS[Math.min(lv, MAX_MEDICINE_LEVEL)].cost;
+  }
+  function getTreatmentRecoverChance(level) {
+    var lv = (level != null ? level : 0);
+    return MEDICINE_TIERS[Math.min(lv, MAX_MEDICINE_LEVEL)].recoverChance;
+  }
   var SICK_CHANCE_PER_DAY = 0.04;
   var SICK_INJURY_CHANCE = 0.03;
   var SICK_DEATH_CHANCE = 0.02;
@@ -80,10 +95,19 @@
   var FEED_ARTIFICIAL_HEALTH = 5;
   var FEED_ARTIFICIAL_HUNGER = 20;
   // 餌レベル倍率（レベルに応じて水質汚染低減・成長率アップ・コスト低減）
-  function getFeedLevelMultipliers(feedType) {
-    if (feedType === 'bloodworm') return { cost: 0.95, health: 1.1, hunger: 1.1, dirt: 0.9 };
-    if (feedType === 'earthworm') return { cost: 0.9, health: 1.2, hunger: 1.2, dirt: 0.8 };
-    return { cost: 1, health: 1, hunger: 1, dirt: 1 };
+  function getAutoFeederTier() {
+    var lv = (state.equipment && state.equipment.autoFeederLevel != null) ? state.equipment.autoFeederLevel : -1;
+    if (lv < 0) return null;
+    return AUTO_FEEDER_TIERS[Math.min(lv, MAX_AUTO_FEEDER_LEVEL)];
+  }
+  function getFilterTier() {
+    var lv = (state.equipment && state.equipment.filterLevel != null) ? state.equipment.filterLevel : -1;
+    if (lv < 0) return null;
+    return FILTER_TIERS[Math.min(lv, MAX_FILTER_LEVEL)];
+  }
+  function getFoodTier() {
+    var lv = (state.foodLevel != null ? state.foodLevel : 0);
+    return FOOD_TIERS[Math.min(lv, 3)];
   }
   
   // うんこ未処理ペナルティ
@@ -93,16 +117,17 @@
   var rarityMultiplierMap = {
     common: 10,
     uncommon: 12,
-    rare: 15,
-    superRare: 20,
-    ultraRare: 25
+    rare: 30,
+    veryrare: 50,
+    superRare: 80,
+    ultraRare: 100
   };
   var typeRarityMap = {
     nomal: 'common',
     albino: 'common',
     gold: 'uncommon',
     marble: 'common',
-    copper: 'rare',
+    copper: 'veryrare',
     black: 'uncommon',
     superblack: 'rare',
     goldblackeye: 'superRare',
@@ -120,23 +145,47 @@
   var WATER_CHANGE_FULL_BONUS = 30;
   
   // 自動設備関連定数（レベル制）
-  var EQUIPMENT_AUTO_FEEDER_COST = 25000;
-  var EQUIPMENT_FILTER_COST = 15000;       // フィルタ Lv0→1
-  var EQUIPMENT_FILTER_COST_LV2 = 8000;   // Lv1→2
-  var EQUIPMENT_FILTER_COST_LV3 = 10000;   // Lv2→3
+  var AUTO_FEEDER_TIERS = [
+    { cost: 5000, costPerFeed: 800, hungerThreshold: 50, health: 5, hunger: 20, dirt: 3, nameKey: 'game.equipment.autoFeederAutoFeeder' },
+    { cost: 10000, costPerFeed: 600, hungerThreshold: 45, health: 6, hunger: 22, dirt: 2, nameKey: 'game.equipment.autoFeederCopper' },
+    { cost: 15000, costPerFeed: 500, hungerThreshold: 40, health: 7, hunger: 24, dirt: 1, nameKey: 'game.equipment.autoFeederSilver' },
+    { cost: 20000, costPerFeed: 400, hungerThreshold: 35, health: 8, hunger: 25, dirt: 0, nameKey: 'game.equipment.autoFeederGolden' }
+  ];
+  var FILTER_TIERS = [
+    { cost: 5000, cleanBonus: 2, ageDeathMult: 1.0, nameKey: 'game.equipment.filterSpongeFilter' },
+    { cost: 10000, cleanBonus: 4, ageDeathMult: 0.75, nameKey: 'game.equipment.filterTopFilter' },
+    { cost: 15000, cleanBonus: 6, ageDeathMult: 0.5, nameKey: 'game.equipment.filterCanisterFilter' }
+  ];
+  var FOOD_TIERS = [
+    { cost: 500, health: 5, hunger: 20, dirt: 3, nameKey: 'game.equipment.foodFood' },
+    { cost: 800, health: 7, hunger: 24, dirt: 2, nameKey: 'game.equipment.foodSilverFood' },
+    { cost: 1200, health: 9, hunger: 28, dirt: 1, nameKey: 'game.equipment.foodGoldenFood' },
+    { cost: 1500, health: 12, hunger: 30, dirt: 0, nameKey: 'game.equipment.foodDiamondFood' }
+  ];
   var EQUIPMENT_BOTTOM_CLEANER_COST = 20000;   // Lv0→1
   var EQUIPMENT_BOTTOM_CLEANER_COST_LV2 = 10000;
   var EQUIPMENT_BOTTOM_CLEANER_COST_LV3 = 12000;
+  // Auto Feeder / Filter use tier costs from AUTO_FEEDER_TIERS / FILTER_TIERS
   var BASE_TANK_COST = 20000;              // 水槽追加の基本料金
   var TANK_COST_SCALE = 0.2;               // 現在の槽数に応じたスケール（cost = BASE_TANK_COST * (1 + TANK_COST_SCALE * n)）
-  var AUTO_FEEDER_HUNGER_THRESHOLD = 50;
-  var AUTO_FEEDER_COST_PER_FEED = 1000;
-  var MAX_FILTER_LEVEL = 3;
+  var AUTO_FEEDER_HUNGER_THRESHOLD = 50;   // legacy
+  var AUTO_FEEDER_COST_PER_FEED = 1000;    // legacy
+  var MAX_AUTO_FEEDER_LEVEL = 3;
+  var MAX_FILTER_LEVEL = 2;  // 0=Sponge, 1=Top, 2=Canister
   var MAX_BOTTOM_CLEANER_LEVEL = 3;
   var MAX_TANK_LEVEL = 14;                 // 最大15槽 = tankLevel+1
   
-  // 共通アセットを使用（ルートの /assets/characters/axolotl/）
+  // 共通アセットを使用（ルートの ./assets/characters/axolotl/）
   var AXOLOTL_IMAGE_BASE = './assets/axolotl/';
+  var EQUIPMENT_IMAGE_BASE = './assets/items/aquarium/';
+  function equipmentImagePath(folder, filename) {
+    var f = folder;
+    var n = filename;
+    if (typeof f === 'string' && typeof n === 'string') {
+      return EQUIPMENT_IMAGE_BASE + encodeURIComponent(f) + '/' + encodeURIComponent(n);
+    }
+    return EQUIPMENT_IMAGE_BASE + (f || '') + '.png';
+  }
   function typeImagePath(t) {
     if (t === 'goldblackeye') return AXOLOTL_IMAGE_BASE + 'axo_gold.png';
     if (t === 'yellow') return AXOLOTL_IMAGE_BASE + 'axo_yellow.png';
@@ -610,7 +659,7 @@
 
   var state = {
     month: 1,
-    money: 60000,
+    money: 30000,
     clean: 80,
     reputation: 30,
     tanks: [],
@@ -629,12 +678,12 @@
     deadAxolotls: [],  // 死んだウパの記録 [{id, type, name, age, deathReason, ...}]
     shopName: null,
     equipment: {  // 自動設備（レベル制）最初から3槽 = tankLevel2
-      autoFeeder: false,
-      filter: false,
-      bottomCleanerLevel: 0,
+      autoFeederLevel: -1,   // -1=none, 0-3=Normal,Copper,Silver,Golden
+      filterLevel: -1,       // -1=none, 0-2=Sponge,Top,Canister
+      bottomCleanerLevel: -1,
       tankLevel: 2
     },
-    feedType: 'artificial',  // デフォルトの餌タイプ: 'artificial', 'bloodworm', 'earthworm'
+    foodLevel: 0,  // 0-3: Copper, Silver, Golden, Diamond
     waterChangeType: 'normal',  // デフォルトの水替えタイプ: 'partial', 'normal', 'full'
     reputation100Celebrated: false,  // 満足度100達成時のポップアップ表示済みフラグ
     shopSale: false,  // ショップセール開催中フラグ
@@ -645,9 +694,24 @@
     }
   };
   
-  // マイグレーション: feedTypeとwaterChangeTypeが無い場合は初期化
-  if (state.feedType === undefined) {
-    state.feedType = 'artificial';
+  // マイグレーション: feedType→foodLevel, equipment tiers
+  if (state.feedType !== undefined) {
+    state.foodLevel = state.feedType === 'artificial' ? 0 : state.feedType === 'bloodworm' ? 1 : 2;
+    delete state.feedType;
+  }
+  if (state.foodLevel === undefined) state.foodLevel = 0;
+  if (state.medicineLevel === undefined) state.medicineLevel = 0;
+  if (state.equipment) {
+    if (state.equipment.autoFeeder === true) {
+      state.equipment.autoFeederLevel = 0;
+      delete state.equipment.autoFeeder;
+    }
+    if (state.equipment.autoFeederLevel === undefined) state.equipment.autoFeederLevel = -1;
+    if (state.equipment.filter === true) {
+      state.equipment.filterLevel = 0;
+      delete state.equipment.filter;
+    }
+    if (state.equipment.filterLevel === undefined) state.equipment.filterLevel = -1;
   }
   if (state.waterChangeType === undefined) {
     state.waterChangeType = 'normal';
@@ -750,6 +814,7 @@
         if (!ax.nameElementB) ax.nameElementB = null;
         if (ax.isHereditaryA === undefined) ax.isHereditaryA = false;
         if (ax.isHereditaryB === undefined) ax.isHereditaryB = false;
+        if (ax.isJuvenile === undefined) ax.isJuvenile = (ax.age < 12 && !ax.nameElementA && !ax.nameElementB);
       }
       
       if (saveData.state.tanks) {
@@ -774,8 +839,28 @@
       }
     }
     
-    // 将来のバージョンアップ時のマイグレーション処理をここに追加
+      // 将来のバージョンアップ時のマイグレーション処理をここに追加
     // if (fromVersion < '1.1.0') { ... }
+    
+    // 設備・餌のレベル制マイグレーション（autoFeeder/filter/feedType → レベル）
+    if (saveData.state.equipment) {
+      var eq = saveData.state.equipment;
+      if (eq.autoFeeder === true && eq.autoFeederLevel == null) {
+        eq.autoFeederLevel = 0;
+      }
+      if (eq.autoFeeder === false && eq.autoFeederLevel == null) {
+        eq.autoFeederLevel = -1;
+      }
+      if (eq.filter === true && eq.filterLevel == null) {
+        eq.filterLevel = 0;
+      }
+      if (eq.filter === false && eq.filterLevel == null) {
+        eq.filterLevel = -1;
+      }
+    }
+    if (saveData.state.feedType != null && saveData.state.foodLevel == null) {
+      saveData.state.foodLevel = saveData.state.feedType === 'artificial' ? 0 : saveData.state.feedType === 'bloodworm' ? 1 : 2;
+    }
     
     return saveData;
   }
@@ -906,11 +991,33 @@
   }
 
   function formatMoney(y) {
-    return '¥' + y.toLocaleString('ja-JP');
+    return 'Ƀ ' + y.toLocaleString('ja-JP');
   }
 
-  // English mode: 100 simple random names (no elementA/B)
+  // English mode: 100 simple random names (no elementA/B) - fallback when name data not loaded
   var ENGLISH_NAMES = ['Albert', 'Isaac', 'Charles', 'Nikola', 'Leonardo', 'Galileo', 'Marie', 'Ada', 'Alfred', 'Louis', 'Thomas', 'James', 'Alexander', 'Julius', 'Marcus', 'Augustus', 'Plato', 'Socrates', 'Dante', 'Marco', 'Pablo', 'Vincent', 'Claude', 'Andy', 'Frida', 'Georgia', 'William', 'Edgar', 'Oscar', 'Franz', 'Johann', 'Ludwig', 'Wolfgang', 'Hector', 'Igor', 'Leo', 'Anton', 'Victor', 'Miguel', 'Rafael', 'Napoleon', 'Winston', 'Abraham', 'George', 'John', 'Franklin', 'Theodore', 'Nelson', 'Martin', 'Mahatma', 'Indira', 'Cleopatra', 'Elizabeth', 'Victoria', 'Diana', 'Catherine', 'Peter', 'Ivan', 'Timur', 'Saladin', 'Edison', 'Henry', 'Wright', 'Orville', 'Wilbur', 'Yuri', 'Neil', 'Buzz', 'Ferdinand', 'Vasco', 'Michael', 'Elvis', 'Freddie', 'David', 'Prince', 'Madonna', 'Whitney', 'Taylor', 'Beyonce', 'Adele', 'Charlie', 'Audrey', 'Marilyn', 'Bruce', 'Jackie', 'Arnold', 'Sylvester', 'Clint', 'Keanu', 'Tom', 'Max', 'Alex', 'Leo', 'Theo', 'Noah', 'Liam', 'Emma', 'Luna', 'Aria', 'Mira'];
+
+  // モーフ→名前データキー（外部JSON）
+  function getMorphNameKey(type) {
+    if (type === 'albino') return 'albino';
+    if (type === 'black' || type === 'superblack') return 'black';
+    if (type === 'nomal') return 'nomal';
+    if (type === 'gold' || type === 'goldblackeye' || type === 'yellow') return 'gold';
+    if (type === 'marble') return 'marble';
+    if (type === 'copper') return 'copper';
+    if (type === 'dalmatian' || type === 'chimera') return 'rare';
+    return 'nomal';
+  }
+  function getMorphNameData(type) {
+    var nd = window.axolotlNameData;
+    if (!nd || !nd.morphs) return null;
+    return nd.morphs[getMorphNameKey(type)] || nd.morphs.nomal;
+  }
+  function getAdultElementsJa() {
+    var nd = window.axolotlNameData;
+    if (!nd || !nd.adultElementsJa) return null;
+    return nd.adultElementsJa;
+  }
 
   // ランダムな人名漢字のリスト
   // 各モーフの初期名A（種限定）
@@ -993,21 +1100,255 @@
 
   // ランダムにB要素を選択（男女関係なく合体リストから）
   function getRandomBElement() {
+    var ae = getAdultElementsJa();
+    if (ae && ae.elementBFemale && ae.elementBMale) {
+      var combined = ae.elementBMale.concat(ae.elementBFemale);
+      return combined[Math.floor(Math.random() * combined.length)];
+    }
     return nameElementB[Math.floor(Math.random() * nameElementB.length)];
   }
+  function getRandomBElementForSex(sex) {
+    var ae = getAdultElementsJa();
+    if (ae && ae.elementBFemale && ae.elementBMale) {
+      var arr = sex === 'オス' ? ae.elementBMale : ae.elementBFemale;
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+    return nameElementB[Math.floor(Math.random() * nameElementB.length)];
+  }
+  function getRandomElementA() {
+    var ae = getAdultElementsJa();
+    if (ae && ae.elementA) {
+      return ae.elementA[Math.floor(Math.random() * ae.elementA.length)];
+    }
+    return maleNameElementA[Math.floor(Math.random() * maleNameElementA.length)];
+  }
 
-  // 名前生成関数（要素A/Bシステム）
-  function generateDefaultName(type, parent1Id, parent2Id, isFirstChild, sex) {
+  // 幼名生成（12ヶ月未満用）
+  function generateJuvenileName(type) {
+    var data = getMorphNameData(type);
+    var isEn = getGameLocale() === 'en';
+    var list = data && (isEn ? data.juvenileEn : data.juvenileJa);
+    if (list && list.length > 0) {
+      var base = list[Math.floor(Math.random() * list.length)];
+      return { name: generateUniqueName(base), isJuvenile: true };
+    }
+    return { name: generateUniqueName(typeLabel(type)), isJuvenile: true };
+  }
+
+  // 成体名生成（英語：オス/メス別）
+  function generateAdultNameEn(type, sex) {
+    var data = getMorphNameData(type);
+    var list = data && (sex === 'オス' ? data.maleEn : data.femaleEn);
+    if (list && list.length > 0) {
+      var base = list[Math.floor(Math.random() * list.length)];
+      return { name: generateUniqueName(base), nameElementA: null, nameElementB: null, isHereditaryA: false, isHereditaryB: false };
+    }
+    return { name: generateUniqueName(getRandomEnglishName()), nameElementA: null, nameElementB: null, isHereditaryA: false, isHereditaryB: false };
+  }
+
+  // 家系図（男系優先）を辿り、使用可能な通字を取得（同時期2匹未満のもの）
+  function getHereditaryFromFamilyTree(parent1Id, parent2Id) {
+    var seen = {};
+    var maleFirst = [];
+    function collect(pid) {
+      if (!pid || !axolotlRegistry[pid] || seen[pid]) return;
+      seen[pid] = true;
+      var p = axolotlRegistry[pid];
+      if (p.sex === 'オス') maleFirst.push(p);
+      if (p.parent1Id) collect(p.parent1Id);
+      if (p.parent2Id) collect(p.parent2Id);
+    }
+    function collectFemale(pid) {
+      if (!pid || !axolotlRegistry[pid] || seen[pid]) return;
+      seen[pid] = true;
+      var p = axolotlRegistry[pid];
+      if (p.sex === 'オス') maleFirst.push(p);
+      if (p.parent1Id) collectFemale(p.parent1Id);
+      if (p.parent2Id) collectFemale(p.parent2Id);
+    }
+    [parent1Id, parent2Id].forEach(function(pid) {
+      if (!pid || !axolotlRegistry[pid]) return;
+      var p = axolotlRegistry[pid];
+      if (p.sex === 'オス') collect(pid);
+    });
+    [parent1Id, parent2Id].forEach(function(pid) {
+      if (!pid || !axolotlRegistry[pid]) return;
+      var p = axolotlRegistry[pid];
+      if (p.sex === 'メス') collectFemale(pid);
+    });
+    for (var i = 0; i < maleFirst.length; i++) {
+      var a = maleFirst[i];
+      if (a.isHereditaryA && a.nameElementA && countMalesWithHereditary(a.nameElementA, 'A') < 2) {
+        return { value: a.nameElementA, pos: 'A' };
+      }
+      if (a.isHereditaryB && a.nameElementB && countMalesWithHereditary(a.nameElementB, 'B') < 2) {
+        return { value: a.nameElementB, pos: 'B' };
+      }
+    }
+    return null;
+  }
+
+  // 生存中のオスで指定通字を持つ個体数をカウント（12ヶ月以上の成体のみ）
+  function countMalesWithHereditary(value, position) {
+    var count = 0;
+    state.tanks.forEach(function(tank) {
+      var ax = tank.axolotl;
+      if (ax && ax.sex === 'オス' && ax.age >= 12 && !ax.isJuvenile) {
+        var match = (position === 'A' && ax.isHereditaryA && ax.nameElementA === value) ||
+          (position === 'B' && ax.isHereditaryB && ax.nameElementB === value);
+        if (match) count++;
+      }
+      if (tank.breedingPair) {
+        tank.breedingPair.forEach(function(p) {
+          if (p && p.sex === 'オス' && p.age >= 12 && !p.isJuvenile) {
+            var m = (position === 'A' && p.isHereditaryA && p.nameElementA === value) ||
+              (position === 'B' && p.isHereditaryB && p.nameElementB === value);
+            if (m) count++;
+          }
+        });
+      }
+    });
+    return count;
+  }
+
+  // 12ヶ月到達時に幼名から成人名へ切り替え
+  function assignAdultNameAt12(ax) {
+    if (!ax || !ax.isJuvenile) return;
+    var oldName = ax.name;
+    if (oldName && state.usedNames && state.usedNames[oldName]) delete state.usedNames[oldName];
+    
+    var sex = ax.sex || 'オス';
+    var type = ax.type;
+    
+    if (getGameLocale() === 'en') {
+      var adult = generateAdultNameEn(type, sex);
+      ax.name = adult.name;
+      ax.nameElementA = null;
+      ax.nameElementB = null;
+      ax.isHereditaryA = false;
+      ax.isHereditaryB = false;
+    } else {
+      var parent1Id = ax.parent1Id;
+      var parent2Id = ax.parent2Id;
+      var maleParent = null;
+      var femaleParent = null;
+      state.tanks.forEach(function(tank) {
+        if (tank.axolotl && tank.axolotl.id === parent1Id) {
+          if (tank.axolotl.sex === 'オス') maleParent = tank.axolotl;
+          else femaleParent = tank.axolotl;
+        }
+        if (tank.axolotl && tank.axolotl.id === parent2Id) {
+          if (tank.axolotl.sex === 'オス') maleParent = tank.axolotl;
+          else femaleParent = tank.axolotl;
+        }
+        if (tank.breedingPair) {
+          tank.breedingPair.forEach(function(p) {
+            if (p.id === parent1Id) p.sex === 'オス' ? (maleParent = p) : (femaleParent = p);
+            if (p.id === parent2Id) p.sex === 'オス' ? (maleParent = p) : (femaleParent = p);
+          });
+        }
+      });
+      [parent1Id, parent2Id].forEach(function(pid) {
+        if (!pid || !axolotlRegistry[pid]) return;
+        var r = axolotlRegistry[pid];
+        if (r.sex === 'オス' && !maleParent) maleParent = r;
+        else if (r.sex === 'メス' && !femaleParent) femaleParent = r;
+      });
+      
+      if (sex === 'メス') {
+        ax.nameElementB = (femaleParent && femaleParent.nameElementB) ? femaleParent.nameElementB : getRandomBElementForSex(sex);
+        ax.isHereditaryB = true;
+        ax.nameElementA = getRandomElementA();
+        ax.isHereditaryA = false;
+      } else {
+        var maleHereditaryA = maleParent && maleParent.isHereditaryA && maleParent.nameElementA;
+        var maleHereditaryB = maleParent && maleParent.isHereditaryB && maleParent.nameElementB;
+        var useA = false;
+        var useB = false;
+        if (maleHereditaryA && maleHereditaryB) {
+          var cntA = countMalesWithHereditary(maleHereditaryA, 'A');
+          var cntB = countMalesWithHereditary(maleHereditaryB, 'B');
+          if (cntA < 2 && cntB >= 2) useA = true;
+          else if (cntB < 2 && cntA >= 2) useB = true;
+          else if (cntA >= 2 && cntB >= 2) {
+            var fromTree = getHereditaryFromFamilyTree(ax.parent1Id, ax.parent2Id);
+            if (fromTree) {
+              useA = fromTree.pos === 'A';
+              useB = fromTree.pos === 'B';
+              if (useA) maleHereditaryA = fromTree.value;
+              if (useB) maleHereditaryB = fromTree.value;
+            }
+            // fromTreeがnullならuseA/useBはfalse→下のelseで初期名+ランダムB（通字なし）
+          } else {
+            useA = Math.random() < 0.5;
+          }
+        } else if (maleHereditaryA) {
+          var cA = countMalesWithHereditary(maleHereditaryA, 'A');
+          useA = cA < 2;
+        } else if (maleHereditaryB) {
+          var cB = countMalesWithHereditary(maleHereditaryB, 'B');
+          useB = cB < 2;
+        }
+        if (useA) {
+          ax.nameElementA = maleHereditaryA || getRandomElementA();
+          ax.isHereditaryA = true;
+          ax.nameElementB = getRandomBElementForSex(sex);
+          ax.isHereditaryB = false;
+        } else if (useB) {
+          ax.nameElementB = maleHereditaryB || getRandomBElementForSex(sex);
+          ax.isHereditaryB = true;
+          ax.nameElementA = getRandomElementA();
+          ax.isHereditaryA = false;
+        } else {
+          var initialA = morphInitialNameA[type] || 'リュウ';
+          ax.nameElementA = initialA;
+          ax.nameElementB = getRandomBElementForSex(sex);
+          if (Math.random() < 0.5) {
+            ax.isHereditaryA = true;
+            ax.isHereditaryB = false;
+          } else {
+            ax.isHereditaryA = false;
+            ax.isHereditaryB = true;
+          }
+        }
+      }
+      ax.name = (ax.nameElementA || '') + (ax.nameElementB || '');
+      if (ax.name) ax.name = generateUniqueName(ax.name);
+    }
+    
+    ax.isJuvenile = false;
+    if (axolotlRegistry[ax.id]) {
+      axolotlRegistry[ax.id].name = ax.name;
+      axolotlRegistry[ax.id].nameElementA = ax.nameElementA;
+      axolotlRegistry[ax.id].nameElementB = ax.nameElementB;
+      axolotlRegistry[ax.id].isHereditaryA = ax.isHereditaryA;
+      axolotlRegistry[ax.id].isHereditaryB = ax.isHereditaryB;
+      axolotlRegistry[ax.id].isJuvenile = false;
+    }
+  }
+
+  // 名前生成関数（要素A/Bシステム）age: 生成時の年齢（12未満なら幼名）
+  function generateDefaultName(type, parent1Id, parent2Id, isFirstChild, sex, age) {
     var result = {
       nameElementA: null,
       nameElementB: null,
       isHereditaryA: false,
       isHereditaryB: false,
-      name: null
+      name: null,
+      isJuvenile: false
     };
+    var useJuvenile = (age == null || age < 12);
+    
+    if (useJuvenile) {
+      var juv = generateJuvenileName(type);
+      result.name = juv.name;
+      result.isJuvenile = true;
+      return result;
+    }
     
     if (getGameLocale() === 'en') {
-      result.name = generateUniqueName(getRandomEnglishName());
+      var adultEn = generateAdultNameEn(type, sex);
+      result.name = adultEn.name;
       return result;
     }
     
@@ -1221,7 +1562,7 @@
       isFirstChild = (siblingCount === 0);
     }
     
-    var defaultNameResult = generateDefaultName(type, parent1Id || null, parent2Id || null, isFirstChild, sex);
+    var defaultNameResult = generateDefaultName(type, parent1Id || null, parent2Id || null, isFirstChild, sex, age);
     var defaultName = defaultNameResult.name;
     
     // 苗字を継承（父から）
@@ -1332,7 +1673,8 @@
       isHereditaryA: defaultNameResult.isHereditaryA || false,  // 要素Aの通字フラグ
       isHereditaryB: defaultNameResult.isHereditaryB || false,  // 要素Bの通字フラグ
       familyName: familyName,  // 苗字（父から継承）
-      isFixedLineage: false  // 固定化血統フラグ（デフォルトfalse）
+      isFixedLineage: false,  // 固定化血統フラグ（デフォルトfalse）
+      isJuvenile: defaultNameResult.isJuvenile || false  // 幼名か（12ヶ月で成人名に切り替え）
     };
     
     // キメラの場合はchimeraTypesを保存
@@ -1360,10 +1702,10 @@
       nameElementB: ax.nameElementB,
       isHereditaryA: ax.isHereditaryA,
       isHereditaryB: ax.isHereditaryB,
-      name: ax.name,
       familyName: ax.familyName,
       removed: false,
-      isFixedLineage: ax.isFixedLineage || false
+      isFixedLineage: ax.isFixedLineage || false,
+      isJuvenile: ax.isJuvenile || false
     };
     return ax;
   }
@@ -1413,8 +1755,10 @@
 
   // 既存個体のマイグレーション処理（isFixedLineageフィールドの追加）
   function migrateAxolotlData(ax) {
-    if (ax && ax.isFixedLineage === undefined) {
-      ax.isFixedLineage = false;
+    if (!ax) return ax;
+    if (ax.isFixedLineage === undefined) ax.isFixedLineage = false;
+    if (ax.isJuvenile === undefined) {
+      ax.isJuvenile = (ax.age < 12 && !ax.nameElementA && !ax.nameElementB);
     }
     return ax;
   }
@@ -1454,7 +1798,8 @@
     if (age === 3) return 6 + Math.random() * 2; // 3か月：6〜8cm
     if (age >= 4 && age <= 6) return 8 + Math.random() * 4; // 4〜6か月：8〜12cm
     if (age >= 7 && age <= 12) return 12 + Math.random() * 6; // 7〜12か月：12〜18cm
-    // 1年以上（13ヶ月以上）：18〜25cm前後で成長緩やか
+    // 1年以上（13ヶ月以上）：18〜25cm前後、まれに40cmまで
+    if (Math.random() < 0.05) return 25 + Math.random() * 15; // 5%で25〜40cm
     return 18 + Math.random() * 7; // 18〜25cm
   }
 
@@ -1521,31 +1866,31 @@
     var variation = influencedSize * 0.1 * (Math.random() * 2 - 1);
     return Math.max(2, Math.min(22, influencedSize + variation));
   }
-  // 価格は全体的に抑えめ。リューシ・マーブル成体は約10000。band0〜7（幼生〜成体）
+  // band0〜7（幼生〜成体）、band7=typePriceBase
   var sizePriceTable = {
-    nomal: [800, 1800, 2500, 3500, 4500, 6000, 7500, 10000],
-    albino: [500, 1000, 1500, 2100, 2800, 3500, 4500, 6000],
-    gold: [1400, 2800, 3800, 5200, 6500, 8500, 10500, 13000],
-    marble: [700, 1500, 2200, 3200, 4200, 5500, 7000, 10000],
-    black: [1000, 2100, 3000, 4100, 5300, 6800, 8500, 10000],
-    superblack: [1700, 3200, 4200, 5600, 7000, 9000, 11000, 13000],
-    copper: [800, 1800, 2500, 3500, 4500, 6000, 7500, 8000],
-    goldblackeye: [1400, 2800, 3800, 5200, 7000, 9000, 11000, 13000],
-    chimera: [2100, 3800, 5200, 7000, 9000, 11000, 14000, 18000],
-    yellow: [1500, 3000, 4100, 5500, 7000, 8800, 11000, 13000],
-    dalmatian: [2800, 4900, 6700, 9100, 12000, 15500, 19500, 25000]
+    nomal: [300, 600, 1050, 1500, 1950, 2400, 2700, 3000],
+    albino: [300, 600, 1050, 1500, 1950, 2400, 2700, 3000],
+    gold: [600, 1200, 2100, 3000, 3900, 4800, 5400, 6000],
+    marble: [300, 600, 1050, 1500, 1950, 2400, 2700, 3000],
+    black: [500, 1000, 1750, 2500, 3250, 4000, 4500, 5000],
+    superblack: [3000, 6000, 10500, 15000, 19500, 24000, 27000, 30000],
+    copper: [10000, 20000, 35000, 50000, 65000, 80000, 90000, 100000],
+    goldblackeye: [10000, 20000, 35000, 50000, 65000, 80000, 90000, 100000],
+    chimera: [30000, 60000, 105000, 150000, 195000, 240000, 270000, 300000],
+    yellow: [1000, 2000, 3500, 5000, 6500, 8000, 9000, 10000],
+    dalmatian: [6000, 12000, 21000, 30000, 39000, 48000, 54000, 60000]
   };
   function calcBaseMarketPrice(ax) {
     var band = sizeBandFromAge(ax.age);
     var bandPrices = sizePriceTable[ax.type] || sizePriceTable.nomal;
-    var base = (bandPrices[band] || bandPrices[bandPrices.length - 1]) || 8000;
+    var base = (bandPrices[band] || bandPrices[bandPrices.length - 1]) || 3000;
     return base;
   }
 
   function calcPrice(ax) {
     var band = sizeBandFromAge(ax.age);
     var bandPrices = sizePriceTable[ax.type] || sizePriceTable.nomal;
-    var base = (bandPrices[band] || bandPrices[bandPrices.length - 1]) || 8000;
+    var base = (bandPrices[band] || bandPrices[bandPrices.length - 1]) || 3000;
     
     // 幼生（age=0）の価格を大幅に下げる
     if (ax.age === 0) {
@@ -1626,7 +1971,7 @@
     return state.fixedTypes[ax.type] === true;
   }
 
-  // 固定化判定（家系図が全部同じ個体の場合に固定化成功）
+  // 固定化判定（家系図の75%以上が同じ種類の場合に固定化成功）
   function checkForFixation(axolotlId) {
     var ax = axolotlRegistry[axolotlId];
     if (!ax || !ax.type) return false;
@@ -1634,34 +1979,39 @@
     // 既に固定化されている場合はスキップ
     if (state.fixedTypes[ax.type]) return false;
     
-    // 親が2人とも同じ種類で、祖父母も全て同じ種類の場合
+    // 親が2人必要
     if (!ax.parent1Id || !ax.parent2Id) return false;
     
     var p1 = axolotlRegistry[ax.parent1Id];
     var p2 = axolotlRegistry[ax.parent2Id];
     if (!p1 || !p2) return false;
     
-    // 両親が同じ種類
-    if (p1.type !== ax.type || p2.type !== ax.type) return false;
-    
-    // 祖父母も全て同じ種類かチェック
-    var allGrandparentsSame = true;
-    var grandparents = [];
-    if (p1.parent1Id && axolotlRegistry[p1.parent1Id]) grandparents.push(axolotlRegistry[p1.parent1Id]);
-    if (p1.parent2Id && axolotlRegistry[p1.parent2Id]) grandparents.push(axolotlRegistry[p1.parent2Id]);
-    if (p2.parent1Id && axolotlRegistry[p2.parent1Id]) grandparents.push(axolotlRegistry[p2.parent1Id]);
-    if (p2.parent2Id && axolotlRegistry[p2.parent2Id]) grandparents.push(axolotlRegistry[p2.parent2Id]);
-    
-    if (grandparents.length === 0) return false; // 祖父母がいない場合は固定化不可
-    
-    for (var i = 0; i < grandparents.length; i++) {
-      if (grandparents[i].type !== ax.type) {
-        allGrandparentsSame = false;
-        break;
+    // 家系図を収集（自分・両親・祖父母、重複除く）
+    var seen = {};
+    var family = [];
+    function addIfNew(axo) {
+      if (axo && axo.id && !seen[axo.id]) {
+        seen[axo.id] = true;
+        family.push(axo);
       }
     }
+    addIfNew(ax);
+    addIfNew(p1);
+    addIfNew(p2);
+    if (p1.parent1Id && axolotlRegistry[p1.parent1Id]) addIfNew(axolotlRegistry[p1.parent1Id]);
+    if (p1.parent2Id && axolotlRegistry[p1.parent2Id]) addIfNew(axolotlRegistry[p1.parent2Id]);
+    if (p2.parent1Id && axolotlRegistry[p2.parent1Id]) addIfNew(axolotlRegistry[p2.parent1Id]);
+    if (p2.parent2Id && axolotlRegistry[p2.parent2Id]) addIfNew(axolotlRegistry[p2.parent2Id]);
     
-    if (allGrandparentsSame) {
+    if (family.length < 3) return false; // 最低3人（自分+両親）必要
+    
+    var sameCount = 0;
+    for (var i = 0; i < family.length; i++) {
+      if (family[i].type === ax.type) sameCount++;
+    }
+    var ratio = sameCount / family.length;
+    
+    if (ratio >= 0.75) {
       // 固定化成功！
       state.fixedTypes[ax.type] = true;
       
@@ -2293,7 +2643,7 @@
             if (pairAx.id === axolotlId && pairAx.isInitial) isInitialAxolotl = true;
           });
         }
-        if (tank.axolotl && tank.axolotl.id === axolotlId && tank.note === '1ヶ月目のウパ' && !tank.axolotl.name) {
+        if (tank.axolotl && tank.axolotl.id === axolotlId && (tank.note === '1ヶ月目のウパ' || tank.note === t('game.note.oneMonth')) && !tank.axolotl.name) {
           isHatchNaming = true;
         }
         if (tank.axolotl && tank.axolotl.id === axolotlId && (tank.note === 'ショップで購入したウパ' || tank.note === 'ミューテーションショップで購入したウパ') && !tank.axolotl.name) {
@@ -2445,10 +2795,10 @@
   function closeDetailModal() {
     // 名付け後の処理
     var hatchTank = state.tanks.find(function(tank) {
-      return tank.axolotl && tank.note === '1ヶ月目のウパ' && tank.axolotl.name;
+      return tank.axolotl && (tank.note === '1ヶ月目のウパ' || tank.note === t('game.note.oneMonth')) && tank.axolotl.name;
     });
     if (hatchTank) {
-      hatchTank.note = '1ヶ月目のウパ';
+      hatchTank.note = t('game.note.oneMonth');
       if (window._namingMode) window._namingMode = null;
     }
     
@@ -2506,8 +2856,8 @@
       overlay.innerHTML = '<div class="ax-overlay-box"><h2>' + t('ui.selectHatchTitle') + '</h2><p style="font-size:12px; margin-bottom:8px;">' + t('ui.selectHatchDesc') + '</p><div id="axHatchList" style="margin-bottom:12px; max-height:60vh; overflow-y:auto;"></div><div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="btn" id="axHatchSellAll" style="background:#dc2626; border-color:#dc2626;">' + t('ui.hatchSellAll') + '</button><button type="button" class="btn" id="axHatchRandom" style="background:#16a34a; border-color:#16a34a;">' + t('ui.hatchRandom') + '</button></div></div>';
       document.body.appendChild(overlay);
       list = $('axHatchList');
-      $('axHatchSellAll').addEventListener('click', function() { var ctx = window._hatchContext; if (ctx) sellAllHatch(ctx.tankIdx, ctx.candidates, ctx.remainingJuveniles); });
-      $('axHatchRandom').addEventListener('click', function() { var ctx = window._hatchContext; if (ctx && ctx.candidates && ctx.candidates.length > 0) { var idx = Math.floor(Math.random() * ctx.candidates.length); selectHatchCandidate(ctx.tankIdx, idx, ctx.candidates, ctx.remainingJuveniles); } });
+      $('axHatchSellAll').addEventListener('click', function() { var ctx = window._hatchContext; if (ctx && ctx.tank) sellAllHatchByTank(ctx.tank, ctx.candidates, ctx.remainingJuveniles); });
+      $('axHatchRandom').addEventListener('click', function() { var ctx = window._hatchContext; if (ctx && ctx.tank && ctx.candidates && ctx.candidates.length > 0) { var idx = Math.floor(Math.random() * ctx.candidates.length); selectHatchCandidateByTank(ctx.tank, idx, ctx.candidates, ctx.remainingJuveniles); } });
     }
     
     list.innerHTML = '';
@@ -2564,7 +2914,7 @@
       selectBtn.style.minHeight = '44px';
       selectBtn.dataset.candidateIndex = String(idx);
       selectBtn.addEventListener('click', function() {
-        selectHatchCandidate(tankIdx, parseInt(this.dataset.candidateIndex, 10), candidates, remainingJuveniles);
+        selectHatchCandidateByTank(tank, parseInt(this.dataset.candidateIndex, 10), candidates, remainingJuveniles);
       });
       btnRow.appendChild(selectBtn);
       
@@ -2572,16 +2922,15 @@
       list.appendChild(div);
     });
     
-    // 一時的に候補と残りを保存
+    // 一時的に候補と残りを保存（tank参照を保存→reorderTanks後も正しい水槽に配置するため）
     tank._hatchCandidates = candidates;
     tank._hatchRemaining = remainingJuveniles;
-    window._hatchContext = { tankIdx: tankIdx, candidates: candidates, remainingJuveniles: remainingJuveniles || [] };
+    window._hatchContext = { tank: tank, tankIdx: tankIdx, candidates: candidates, remainingJuveniles: remainingJuveniles || [] };
     
     $('axOverlayHatch').classList.add('visible');
   }
 
-  function sellAllHatch(tankIdx, candidates, remainingJuveniles) {
-    var tank = state.tanks[tankIdx];
+  function sellAllHatchByTank(tank, candidates, remainingJuveniles) {
     if (!tank) return;
     var toSell = (candidates || []).concat(remainingJuveniles || []);
     var totalPrice = 0;
@@ -2596,16 +2945,20 @@
     tank.juvenileAge = null;
     tank._hatchCandidates = null;
     tank._hatchRemaining = null;
-    tank.note = '空き水槽';
+    tank.note = t('game.note.empty');
     logLine(t('game.hatchSoldAll', { count: toSell.length, price: formatMoney(totalPrice) }));
     $('axOverlayHatch').classList.remove('visible');
     window._hatchContext = null;
+    if (state.settings && state.settings.autoReorderTanks) reorderTanks();
     updateUI();
     saveGame();
   }
 
   function selectHatchCandidate(tankIdx, candidateIndex, candidates, remainingJuveniles) {
-    var tank = state.tanks[tankIdx];
+    selectHatchCandidateByTank(state.tanks[tankIdx], candidateIndex, candidates, remainingJuveniles);
+  }
+
+  function selectHatchCandidateByTank(tank, candidateIndex, candidates, remainingJuveniles) {
     if (!tank || !candidates || candidateIndex < 0 || candidateIndex >= candidates.length) return;
     
     var selected = candidates[candidateIndex];
@@ -2643,8 +2996,15 @@
     tank.axolotl = selected;
     tank.juveniles = null;
     tank.juvenileAge = null;
+    tank.egg = false;
+    tank.eggCount = null;
+    tank.eggParentTypes = null;
+    tank.eggParentIds = null;
+    tank.eggParentShades = null;
+    tank.eggRelationshipMeter = null;
+    tank.hatchMonthsLeft = null;
     tank.baby = true;
-    tank.note = '1ヶ月目のウパ';
+    tank.note = t('game.note.oneMonth');
     selected.welcomedAtMonth = state.month;
     
     // 一時データをクリア
@@ -2654,6 +3014,8 @@
     
     logLine(t('game.hatchSelected', { type: typeLabel(selected.type), count: toSell.length, price: formatMoney(totalPrice) }));
     $('axOverlayHatch').classList.remove('visible');
+    
+    if (state.settings && state.settings.autoReorderTanks) reorderTanks();
     
     // 名付けフェーズを表示
     openNamingModal(selected.id, true);
@@ -2733,9 +3095,9 @@
     if (tank.juveniles.length === 0) {
       tank.juveniles = null;
       tank.juvenileAge = null;
-      tank.note = '空き水槽';
+      tank.note = t('game.note.empty');
     } else {
-      tank.note = '幼生 ' + tank.juveniles.length + '匹（' + (tank.juvenileAge || 0) + '/5ヶ月）';
+      tank.note = t('game.note.juvenileCount', { count: tank.juveniles.length, age: tank.juvenileAge || 0 });
     }
     
     logLine(t('game.juvenileSold', { type: typeLabel(type), count: toSell.length, price: formatMoney(totalPrice) }));
@@ -2809,9 +3171,9 @@
     if (tank.juveniles.length === 0) {
       tank.juveniles = null;
       tank.juvenileAge = null;
-      tank.note = '空き水槽';
+      tank.note = t('game.note.empty');
     } else {
-      tank.note = '幼生 ' + tank.juveniles.length + '匹（' + (tank.juvenileAge || 0) + '/5ヶ月）';
+      tank.note = t('game.note.juvenileCount', { count: tank.juveniles.length, age: tank.juvenileAge || 0 });
     }
     
     logLine(t('game.juvenileMoved', { type: typeLabel(type) }));
@@ -3025,7 +3387,7 @@
           poopEl.dataset.tankIndex = String(idx);
           poopEl.addEventListener('click', function(e) {
             e.stopPropagation();
-            removePoop(parseInt(this.dataset.tankIndex, 10));
+            removePoop(parseInt(this.dataset.tankIndex, 10), this);
           });
           body.style.position = 'relative';
           body.appendChild(poopEl);
@@ -3089,7 +3451,7 @@
           poopEl.dataset.tankIndex = String(idx);
           poopEl.addEventListener('click', function(e) {
             e.stopPropagation();
-            removePoop(parseInt(this.dataset.tankIndex, 10));
+            removePoop(parseInt(this.dataset.tankIndex, 10), this);
           });
           body.style.position = 'relative';
           body.appendChild(poopEl);
@@ -3123,13 +3485,7 @@
         var feedBtn = document.createElement('button');
         feedBtn.type = 'button';
         feedBtn.className = 'ax-tank-action-btn feed';
-        var feedType = state.feedType || 'artificial';
-        var feedCost = FEED_ARTIFICIAL_COST;
-        if (feedType === 'bloodworm') {
-          feedCost = FEED_BLOODWORM_COST;
-        } else if (feedType === 'earthworm') {
-          feedCost = FEED_EARTHWORM_COST;
-        }
+        var feedCost = getFoodTier().cost;
         feedBtn.innerHTML = t('ui.feed') + '<br><span style="font-size:10px; opacity:0.8;">' + formatMoney(feedCost) + '</span>';
         feedBtn.dataset.tankIndex = String(idx);
         feedBtn.addEventListener('click', function () {
@@ -3171,13 +3527,7 @@
         var feedBtn = document.createElement('button');
         feedBtn.type = 'button';
         feedBtn.className = 'ax-tank-action-btn feed';
-        var feedType = state.feedType || 'artificial';
-        var feedCost = FEED_ARTIFICIAL_COST;
-        if (feedType === 'bloodworm') {
-          feedCost = FEED_BLOODWORM_COST;
-        } else if (feedType === 'earthworm') {
-          feedCost = FEED_EARTHWORM_COST;
-        }
+        var feedCost = getFoodTier().cost;
         feedBtn.innerHTML = t('ui.feed') + '<br><span style="font-size:10px; opacity:0.8;">' + formatMoney(feedCost) + '</span>';
         feedBtn.dataset.tankIndex = String(idx);
         feedBtn.addEventListener('click', function () {
@@ -3228,7 +3578,13 @@
   }
 
   function updateUI() {
-    $('axDay').textContent = t('ui.monthLabel', { n: state.month });
+    var seasonM = getSeasonMonth();
+    var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var monthNamesJa = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    var monthStr = (getLocale() === 'ja' ? monthNamesJa : monthNames)[seasonM - 1];
+    var axDayEl = $('axDay');
+    axDayEl.textContent = t('ui.monthLabel', { n: state.month }) + ' (' + monthStr + ')';
+    axDayEl.style.color = isBreedingSeason() ? '#dc2626' : '';
     $('axMoney').textContent = formatMoney(state.money);
     $('axRepBar').style.width = clamp(state.reputation, 0, MAX_REP) / MAX_REP * 100 + '%';
     
@@ -3262,7 +3618,11 @@
       var canBreed = !disabled && adults.length >= 2 && males.length > 0 && females.length > 0;
       btnBreed.disabled = !canBreed;
     }
-    if (btnTreat) btnTreat.disabled = disabled;
+    if (btnTreat) {
+      btnTreat.disabled = disabled;
+      var treatSub = btnTreat.querySelector('.ax-menu-sub');
+      if (treatSub) treatSub.textContent = formatMoney(getTreatmentCost());
+    }
     if (btnBuy) btnBuy.disabled = disabled;
     if (btnEncyclopedia) btnEncyclopedia.disabled = disabled;
     if (btnAchievements) btnAchievements.disabled = disabled;
@@ -3351,9 +3711,13 @@
 
   function logLine(text) {
     var log = $('axLog');
-    var prefix = '【' + state.month + '月目】';
+    var prefix = t('ui.logMonthPrefix', { n: state.month });
     var line = prefix + ' ' + text;
-    log.textContent = line + (log.textContent ? '\n' + log.textContent : '');
+    var wrap = document.createElement('div');
+    wrap.className = 'ax-log-line';
+    wrap.style.whiteSpace = 'pre-line';
+    wrap.textContent = line;
+    log.insertBefore(wrap, log.firstChild);
   }
 
   function checkEnd() {
@@ -3361,24 +3725,46 @@
     // ゴール実績は checkGoalAchievements() で評判100含め「ゴール達成」表示に統一
   }
 
+  function getSeasonMonth() {
+    return ((state.month - 1) % 12) + 1; // 1=1月, 12=12月
+  }
+  function isBreedingSeason() {
+    var m = getSeasonMonth();
+    return m === 12 || m >= 1 && m <= 5; // 12月〜5月が産卵シーズン
+  }
+
   function tryBreeding(tankIdx) {
     var tank = state.tanks[tankIdx];
     if (!tank || !tank.breedingPair) return false;
+    if (!isBreedingSeason()) return false;
+    
     var pair = tank.breedingPair;
     var relationshipMeter = tank.relationshipMeter || 50; // 0-100
     var inbreedingCoeff = calculateInbreedingCoefficient(pair[0].id, pair[1].id);
     
-    // 加齢による繁殖能力の低下
-    var avgAge = (pair[0].age + pair[1].age) / 2;
-    var agePenalty = 0;
-    if (avgAge >= 60) agePenalty = 0.5; // 60ヶ月以上で50%減
-    else if (avgAge >= 48) agePenalty = 0.3; // 48ヶ月以上で30%減
-    else if (avgAge >= 36) agePenalty = 0.15; // 36ヶ月以上で15%減
+    // シーズンごとの産卵回数制限（0-4回、相性と年齢による）
+    if (tank.breedingAttemptsThisSeason === undefined) tank.breedingAttemptsThisSeason = 0;
+    var avgAgeMonths = (pair[0].age + pair[1].age) / 2;
+    var avgAgeYears = avgAgeMonths / 12;
+    var maxAttempts = 0;
+    if (avgAgeYears >= 1 && avgAgeYears <= 4) {
+      maxAttempts = Math.floor(1 + (relationshipMeter / 50) * 2 + (4 - Math.abs(avgAgeYears - 2.5)) * 0.3);
+      maxAttempts = clamp(maxAttempts, 1, 4);
+    } else if (avgAgeYears > 4) {
+      maxAttempts = relationshipMeter >= 80 ? 1 : 0;
+    }
+    if (tank.breedingAttemptsThisSeason >= maxAttempts) return false;
     
-    // 関係メーターに基づいて成功率を調整（毎月試行）
-    var baseSuccessRate = 0.9; // 90%の基本確率（血が濃くない限り）
-    var relationshipBonus = (relationshipMeter - 50) / 200; // -0.25 から +0.25
-    var successRate = clamp(baseSuccessRate + relationshipBonus - agePenalty, 0.1, 0.95);
+    // 加齢による繁殖能力の低下（1-4歳が最盛期、4歳以降は劇的に低下）
+    var agePenalty = 0;
+    if (avgAgeMonths >= 60) agePenalty = 0.7; // 5歳以上で70%減
+    else if (avgAgeMonths >= 48) agePenalty = 0.5; // 4歳以上で50%減
+    else if (avgAgeMonths >= 36) agePenalty = 0.2; // 3歳以上で20%減
+    
+    // 関係メーターに基づいて成功率を調整
+    var baseSuccessRate = 0.5;
+    var relationshipBonus = (relationshipMeter - 50) / 200;
+    var successRate = clamp(baseSuccessRate + relationshipBonus - agePenalty, 0.05, 0.95);
     
     // 近親交配度が高いと成功率が下がる
     var inbreedingPenalty = inbreedingCoeff / 200; // 最大-0.5
@@ -3387,15 +3773,14 @@
     var success = Math.random() < successRate;
     
     if (success) {
-      // 卵の数を決定（300-1000個）
-      // 関係値が高いほど卵の数が多い
-      var baseEggCount = randInt(300, 1000);
+      // 卵の数を決定（平均200-600個、関係値で1000まで変動）
+      var baseEggCount = randInt(200, 600);
       var relationshipMultiplier = 0.7 + (relationshipMeter / 100) * 0.6; // 0.7倍～1.3倍
       var eggCount = Math.floor(baseEggCount * relationshipMultiplier);
       
       // 近親交配度が高いと卵の数が減る
       eggCount = Math.floor(eggCount * (1 - inbreedingCoeff / 200)); // 最大50%減
-      eggCount = Math.max(100, eggCount); // 最低100個
+      eggCount = Math.min(Math.max(100, eggCount), 1000); // 100〜1000個
       
       // 空き水槽を探す
       var emptySlots = [];
@@ -3414,8 +3799,8 @@
         eggTank.eggParentIds = [pair[0].id, pair[1].id];
         eggTank.eggParentShades = [pair[0].shade || 'normal', pair[1].shade || 'normal']; // shadeを保存
         eggTank.eggRelationshipMeter = relationshipMeter; // 関係値を保存
-        eggTank.hatchMonthsLeft = 1;
-        eggTank.note = '卵 ' + eggCount + '個（あと1ヶ月で孵化）';
+        eggTank.hatchMonthsLeft = 1; // 1=今月表示→翌月孵化（1回目の月送りで孵化）
+        eggTank.note = t('game.note.eggCount', { count: eggCount });
         state.reputation = clamp(state.reputation + 3, 0, MAX_REP);
         
         // 実績チェック
@@ -3425,12 +3810,14 @@
         }
         
         logLine(t('game.eggsLaid', { n: emptySlots[0] + 1, count: eggCount }));
+        tank.breedingAttemptsThisSeason = (tank.breedingAttemptsThisSeason || 0) + 1;
         return true;
       } else {
         // 空き水槽がない場合は卵を売却
         var eggPrice = Math.floor(eggCount * 50);
         state.money += eggPrice;
         logLine(t('game.eggsSoldNoSpace', { count: eggCount, price: formatMoney(eggPrice) }));
+        tank.breedingAttemptsThisSeason = (tank.breedingAttemptsThisSeason || 0) + 1;
         return true;
       }
     }
@@ -3442,25 +3829,128 @@
     return state.tanks.filter(function (t) { return t.axolotl || t.breedingPair; }).length;
   }
 
-  function removePoop(tankIdx) {
+  // Poop clean reward: vacuum level sets min (Copper 1000+, Silver 5000+, Gold 10000+). Rare/large individuals can reach 2万+.
+  var POOP_CLEAN_BASE_BY_VACUUM = [30, 2500, 7500, 10000];  // Lv0 Black, Lv1 Copper, Lv2 Silver, Lv3 Gold
+  var POOP_CLEAN_FILTER_MULT = [1, 1.2, 1.4];     // Sponge, Top, Canister
+  function calcPoopCleanReward(tank) {
+    var vacuumLv = Math.max(0, (state.equipment && state.equipment.bottomCleanerLevel != null) ? state.equipment.bottomCleanerLevel : -1);
+    var filterLv = Math.max(0, (state.equipment && state.equipment.filterLevel != null) ? state.equipment.filterLevel : -1);
+    var filterMult = POOP_CLEAN_FILTER_MULT[Math.min(filterLv, 2)] || 1;
+    var maxSize = 0;
+    if (tank.axolotl && tank.axolotl.size != null) maxSize = Math.max(maxSize, tank.axolotl.size);
+    if (tank.breedingPair) {
+      tank.breedingPair.forEach(function(ax) {
+        if (ax && ax.size != null) maxSize = Math.max(maxSize, ax.size);
+      });
+    }
+    if (tank.juveniles && tank.juveniles.length) {
+      tank.juveniles.forEach(function(j) {
+        if (j && j.size != null) maxSize = Math.max(maxSize, j.size);
+      });
+    }
+    var sizeMult = maxSize > 0 ? 0.5 + (maxSize / 25) * 1 : 0.5;  // 0.5~1.5: レアな大型個体で2万超え
+    var base = POOP_CLEAN_BASE_BY_VACUUM[Math.min(vacuumLv, 3)] || 30;
+    var money = Math.floor(base * filterMult * sizeMult);
+    var seed = (maxSize * 100 | 0) + (tank.axolotl ? (tank.axolotl.id || 0) : 0) + (tank.breedingPair ? tank.breedingPair.length * 17 : 0);
+    var variance = 1 + (seed % 397);
+    money += variance;
+    if (vacuumLv >= 1) {
+      if (vacuumLv === 1) money = Math.max(1001, Math.min(4998, money));
+      else if (vacuumLv === 2) money = Math.max(5001, Math.min(9998, money));
+      else if (vacuumLv === 3) money = Math.max(10001, money);
+    }
+    var iconPath = getPoopRewardIcon(money, vacuumLv);
+    return { money: money, iconPath: iconPath, vacuumLv: vacuumLv };
+  }
+
+  // vacuumLv: 0=Black, 1=Copper, 2=Silver, 3=Gold (bottom cleaner level)
+  function getPoopRewardIcon(money, vacuumLv) {
+    if (vacuumLv >= 3 && money >= 10000) return './assets/ores/gold_ingot.png';   // Gold vacuum (Lv3): 10000+
+    if (vacuumLv >= 2 && money >= 5000 && money < 10000) return './assets/ores/silver_ingot.png';  // Silver vacuum (Lv2): 5000-9999
+    if (vacuumLv >= 1 && money >= 1000 && money < 5000) return './assets/ores/copper_ingot.png';   // Copper vacuum (Lv1): 1000-4999
+    if (money >= 500) return './assets/money/500yen.png';
+    if (money >= 100) return './assets/money/100yen.png';
+    if (money >= 10) return './assets/money/10yen.png';
+    return './assets/money/1yen.png';
+  }
+
+  function showPoopRewardAnimation(money, iconPath, anchorEl) {
+    if (!anchorEl) return;
+    var rect = anchorEl.getBoundingClientRect();
+    var x = rect.left + rect.width / 2;
+    var y = rect.top;
+    var rewardEl = document.createElement('div');
+    rewardEl.className = 'ax-poop-reward-anim';
+    rewardEl.style.cssText = 'position:fixed;left:' + x + 'px;top:' + y + 'px;transform:translate(-50%,-100%);z-index:100;display:flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(0,0,0,0.7);border-radius:6px;color:#22c55e;font-weight:bold;font-size:14px;pointer-events:none;animation:ax-poop-reward-float 1.8s ease-out forwards;';
+    var img = document.createElement('img');
+    img.src = iconPath;
+    img.alt = '';
+    img.style.cssText = 'width:20px;height:20px;image-rendering:pixelated;';
+    rewardEl.appendChild(img);
+    rewardEl.appendChild(document.createTextNode('+' + money));
+    document.body.appendChild(rewardEl);
+    setTimeout(function() {
+      if (rewardEl.parentNode) rewardEl.parentNode.removeChild(rewardEl);
+    }, 1800);
+  }
+
+  function playPoopCleanSound() {
+    try {
+      var audio = new Audio('./assets/sound/damege/se_itemget_014.wav');
+      audio.volume = 0.6;
+      audio.play().catch(function() {});
+    } catch (e) {}
+  }
+
+  function logLineWithIcon(text, iconPath) {
+    var log = $('axLog');
+    var prefix = t('ui.logMonthPrefix', { n: state.month });
+    var imgHtml = iconPath ? '<img src="' + iconPath + '" alt="" style="width:14px;height:14px;vertical-align:middle;image-rendering:pixelated;margin-right:2px;">' : '';
+    var line = prefix + ' ' + imgHtml + text;
+    var wrap = document.createElement('div');
+    wrap.className = 'ax-log-line';
+    wrap.style.whiteSpace = 'pre-line';
+    wrap.innerHTML = line;
+    log.insertBefore(wrap, log.firstChild);
+  }
+
+  function removePoop(tankIdx, anchorEl) {
     var tank = state.tanks[tankIdx];
     if (!tank || !tank.poop) return;
+    var reward = calcPoopCleanReward(tank);
     tank.poop = false;
-    logLine(t('ui.cleanedPoop', { n: tankIdx + 1 }));
+    state.money += reward.money;
+    playPoopCleanSound();
+    showPoopRewardAnimation(reward.money, reward.iconPath, anchorEl);
+    logLine(t('ui.cleanedPoop', { n: tankIdx + 1 }) + ' ' + formatMoney(reward.money));
     updateUI();
     saveGame();
   }
 
-  function removeAllPoop() {
+  function removeAllPoop(anchorEl) {
+    var totalMoney = 0;
+    var bestIconPath = null;
+    var bestVacuumLv = -1;
     var cleanedCount = 0;
     state.tanks.forEach(function(tank) {
       if (tank.poop) {
-        tank.poop = false;
         cleanedCount++;
+        var reward = calcPoopCleanReward(tank);
+        totalMoney += reward.money;
+        if (reward.vacuumLv > bestVacuumLv) {
+          bestVacuumLv = reward.vacuumLv;
+          bestIconPath = reward.iconPath;
+        }
+        tank.poop = false;
       }
     });
-    if (cleanedCount > 0) {
-      logLine(t('game.allPoopCleaned', { n: cleanedCount }));
+    if (totalMoney > 0) {
+      state.money += totalMoney;
+      playPoopCleanSound();
+      var iconPath = bestIconPath || getPoopRewardIcon(totalMoney, bestVacuumLv >= 0 ? bestVacuumLv : 0);
+      showPoopRewardAnimation(totalMoney, iconPath, anchorEl);
+      logLine(t('game.allPoopCleaned', { n: cleanedCount }) + ' ' + formatMoney(totalMoney));
+      saveGame();
     } else {
       logLine(t('game.noPoopToClean'));
     }
@@ -3471,8 +3961,8 @@
     // ミューテーション: ごく稀に1匹だけ生体ショップに入荷（生体タブに統合表示）
     state.mutationShopItems = [];
     
-    // 5%の確率で1匹のみ入荷
-    if (Math.random() >= 0.05) return;
+    // 1%の確率で1匹のみ入荷
+    if (Math.random() >= 0.01) return;
     
     (function addOneMutation() {
       // タイプをランダムに選択（全タイプから、固定化の有無に関わらず）
@@ -3569,22 +4059,33 @@
   }
 
   function endOfMonthDrift() {
+    // 12月（産卵シーズン開始）に繁殖回数カウントをリセット
+    if (getSeasonMonth() === 12) {
+      state.tanks.forEach(function(t) {
+        if (t.breedingPair) t.breedingAttemptsThisSeason = 0;
+      });
+    }
     // マイグレーション: equipmentが無い場合は初期化
     if (!state.equipment) {
-      state.equipment = { autoFeeder: false, filter: false, bottomCleaner: false, bottomCleanerLevel: 0, tankLevel: 1 };
+      state.equipment = { autoFeederLevel: -1, filterLevel: -1, bottomCleanerLevel: -1, tankLevel: 1 };
     }
     if (state.equipment.bottomCleanerLevel === undefined) {
-      state.equipment.bottomCleanerLevel = state.equipment.bottomCleaner ? 1 : 0;
+      state.equipment.bottomCleanerLevel = -1;
     }
     if (state.equipment.tankLevel === undefined) {
       state.equipment.tankLevel = 2;  // 最初から3槽
     }
     
+    var bcLevel = Math.max(0, (state.equipment && state.equipment.bottomCleanerLevel != null ? state.equipment.bottomCleanerLevel : -1));
+    
+    // 今月初めに卵があったタンク（今月産まれた卵は即孵化させない）
+    var eggTanksAtStart = {};
+    state.tanks.forEach(function(t, i) { if (t.egg) eggTanksAtStart[i] = true; });
+    
     state.tanks.forEach(function (tank, idx) {
       // 水質の初期化（未設定の場合）
       if (tank.clean === undefined) tank.clean = 80;
       if (tank.poop === undefined) tank.poop = false;
-      var bcLevel = (state.equipment && state.equipment.bottomCleanerLevel) || 0;
       
       // マイグレーション: 個体データのisFixedLineageフィールド
       if (tank.axolotl) {
@@ -3657,10 +4158,12 @@
               }
             }
           }
+          // 12ヶ月で幼名→成人名へ切り替え
+          if (a.age >= 12 && a.isJuvenile) assignAdultNameAt12(a);
           
           // 繁殖ペアの病気処理
           if (a.sick) {
-            if (a.underTreatment && Math.random() < TREATMENT_RECOVER_CHANCE) {
+            if (a.underTreatment && Math.random() < getTreatmentRecoverChance(a.underTreatmentLevel)) {
               a.sick = false;
               a.underTreatment = false;
               logLine(t('game.recovered', { type: typeLabel(a.type) }));
@@ -3720,100 +4223,6 @@
         
         return;
       }
-      if (tank.egg) {
-        // 孵化までの月数を減らす（初期化されていない場合は1ヶ月に設定）
-        if (tank.hatchMonthsLeft === undefined || tank.hatchMonthsLeft === null) {
-          tank.hatchMonthsLeft = 1;
-        }
-        tank.hatchMonthsLeft = tank.hatchMonthsLeft - 1;
-        
-        if (tank.hatchMonthsLeft <= 0) {
-          // 孵化前に必要な情報を保存
-          var parentTypes = tank.eggParentTypes || ['nomal', 'nomal'];
-          var parentIds = tank.eggParentIds || [null, null];
-          var parentShades = tank.eggParentShades || ['normal', 'normal'];
-          var eggCount = tank.eggCount || 500;
-          var relationshipMeter = tank.eggRelationshipMeter || 50;
-          
-          // 卵は同じ水槽内で孵化するため、別の空き水槽は不要（以前の誤ったチェックを削除）
-          
-          // 親の健康度を取得（孵化前に取得）
-          var parent1Health = 100;
-          var parent2Health = 100;
-          state.tanks.forEach(function(t) {
-            if (t.breedingPair) {
-              t.breedingPair.forEach(function(ax) {
-                if (ax.id === parentIds[0]) parent1Health = ax.health || 100;
-                if (ax.id === parentIds[1]) parent2Health = ax.health || 100;
-              });
-            }
-          });
-          
-          var parent1Shade = parentShades[0] || 'normal';
-          var parent2Shade = parentShades[1] || 'normal';
-          
-          // 孵化数の計算（基本90%、健康度や水の汚れ、血の濃さやカップル関係性にも依存）
-          var baseHatchRate = 0.9; // 基本90%
-          var relationshipBonus = (relationshipMeter - 50) / 200; // -0.25 から +0.25
-          var avgHealth = (parent1Health + parent2Health) / 2;
-          var healthBonus = (avgHealth - 70) / 300; // 健康度による補正
-          
-          // 水の汚れによる影響（水槽ごとの水質を使用）
-          var tankClean = tank.clean !== undefined ? tank.clean : 80;
-          var cleanPenalty = (100 - tankClean) / 500; // 汚れがひどいほど減る
-          
-          // 近親交配度による影響
-          var inbreedingCoeff = calculateInbreedingCoefficient(parentIds[0], parentIds[1]);
-          var inbreedingPenalty = inbreedingCoeff / 300; // 血が濃いほど減る
-          
-          var hatchRate = clamp(baseHatchRate + relationshipBonus + healthBonus - cleanPenalty - inbreedingPenalty, 0.1, 0.95);
-          var hatchCount = Math.floor(eggCount * hatchRate);
-          
-          // 幼生を内部的に生成（全数）
-          var allJuveniles = [];
-          for (var i = 0; i < Math.min(hatchCount, 100); i++) { // 最大100匹まで
-            var offspringResult;
-            var parentTraitChance = 0.85 + (inbreedingCoeff / 100) * 0.1;
-            
-            if (Math.random() < parentTraitChance) {
-              offspringResult = { type: parentTypes[Math.floor(Math.random() * parentTypes.length)], inbreedingCoeff: inbreedingCoeff };
-            } else {
-              offspringResult = pickOffspringType(parentTypes[0], parentTypes[1], parentIds[0], parentIds[1], relationshipMeter, parent1Shade, parent2Shade);
-            }
-            var juvenile = createAxolotl(0, offspringResult.type, parentIds[0], parentIds[1], offspringResult.chimeraTypes);
-            juvenile.inbreedingCoeff = offspringResult.inbreedingCoeff || 0;
-            allJuveniles.push(juvenile);
-            
-            // 図鑑に追加
-            state.obtainedTypes[juvenile.type] = true;
-            
-            // 固定化チェック
-            checkForFixation(juvenile.id);
-          }
-          
-          // 卵の状態をクリア（孵化処理の前に）
-          tank.egg = false;
-          tank.eggCount = null;
-          tank.eggParentTypes = null;
-          tank.eggParentIds = null;
-          tank.eggParentShades = null;
-          tank.eggRelationshipMeter = null;
-          tank.hatchMonthsLeft = null;
-          
-          // 10匹の候補をランダムに選択
-          var candidates = [];
-          var maxCandidates = Math.min(10, allJuveniles.length);
-          while (candidates.length < maxCandidates && allJuveniles.length > 0) {
-            var randomIndex = Math.floor(Math.random() * allJuveniles.length);
-            candidates.push(allJuveniles[randomIndex]);
-            allJuveniles.splice(randomIndex, 1);
-          }
-          
-          // 孵化選択モーダルを開く
-          openHatchSelectionModal(idx, candidates, allJuveniles);
-        }
-        return;
-      }
       
       // 幼生の処理（5ヶ月まで）
       if (tank.juveniles && tank.juveniles.length > 0) {
@@ -3851,7 +4260,7 @@
         if (tank.juveniles.length === 0) {
           tank.juveniles = null;
           tank.juvenileAge = null;
-          tank.note = '空き水槽';
+          tank.note = t('game.note.empty');
           logLine(t('game.allJuvenilesDied'));
         } else if (tank.juvenileAge >= 5) {
           // 5ヶ月経過したら、1匹を選んで成体にする
@@ -3864,7 +4273,87 @@
           tank.note = '育ったウパ';
           logLine(t('game.juvenileGrew', { type: typeLabel(selected.type), count: remainingCount }));
         } else {
-          tank.note = '幼生（' + tank.juvenileAge + '/5ヶ月）';
+          tank.note = t('game.note.juvenileCount', { count: tank.juveniles.length, age: tank.juvenileAge });
+        }
+        return;
+      }
+      // 卵の処理は最後に実行（繁殖で空きを埋めた後に孵化→上書きを防ぐ）
+      // 今月産まれた卵はスキップ（翌月からカウント開始）
+      if (tank.egg) {
+        if (!eggTanksAtStart[idx]) {
+          return; // 今月産まれた卵→来月から処理
+        }
+        if (tank.hatchMonthsLeft === undefined || tank.hatchMonthsLeft === null) {
+          tank.hatchMonthsLeft = 1;
+        }
+        tank.hatchMonthsLeft = tank.hatchMonthsLeft - 1;
+        
+        if (tank.hatchMonthsLeft <= 0) {
+          var parentTypes = tank.eggParentTypes || ['nomal', 'nomal'];
+          var parentIds = tank.eggParentIds || [null, null];
+          var parentShades = tank.eggParentShades || ['normal', 'normal'];
+          var eggCount = tank.eggCount || 500;
+          var relationshipMeter = tank.eggRelationshipMeter || 50;
+          
+          var parent1Health = 100;
+          var parent2Health = 100;
+          state.tanks.forEach(function(t) {
+            if (t.breedingPair) {
+              t.breedingPair.forEach(function(ax) {
+                if (ax.id === parentIds[0]) parent1Health = ax.health || 100;
+                if (ax.id === parentIds[1]) parent2Health = ax.health || 100;
+              });
+            }
+          });
+          
+          var parent1Shade = parentShades[0] || 'normal';
+          var parent2Shade = parentShades[1] || 'normal';
+          
+          var baseHatchRate = 0.9;
+          var relationshipBonus = (relationshipMeter - 50) / 200;
+          var avgHealth = (parent1Health + parent2Health) / 2;
+          var healthBonus = (avgHealth - 70) / 300;
+          var tankClean = tank.clean !== undefined ? tank.clean : 80;
+          var cleanPenalty = (100 - tankClean) / 500;
+          var inbreedingCoeff = calculateInbreedingCoefficient(parentIds[0], parentIds[1]);
+          var inbreedingPenalty = inbreedingCoeff / 300;
+          var hatchRate = clamp(baseHatchRate + relationshipBonus + healthBonus - cleanPenalty - inbreedingPenalty, 0.1, 0.95);
+          var hatchCount = Math.floor(eggCount * hatchRate);
+          
+          var allJuveniles = [];
+          for (var i = 0; i < Math.min(hatchCount, 100); i++) {
+            var offspringResult;
+            var parentTraitChance = 0.85 + (inbreedingCoeff / 100) * 0.1;
+            if (Math.random() < parentTraitChance) {
+              offspringResult = { type: parentTypes[Math.floor(Math.random() * parentTypes.length)], inbreedingCoeff: inbreedingCoeff };
+            } else {
+              offspringResult = pickOffspringType(parentTypes[0], parentTypes[1], parentIds[0], parentIds[1], relationshipMeter, parent1Shade, parent2Shade);
+            }
+            var juvenile = createAxolotl(0, offspringResult.type, parentIds[0], parentIds[1], offspringResult.chimeraTypes);
+            juvenile.inbreedingCoeff = offspringResult.inbreedingCoeff || 0;
+            allJuveniles.push(juvenile);
+            state.obtainedTypes[juvenile.type] = true;
+            checkForFixation(juvenile.id);
+          }
+          
+          tank.egg = false;
+          tank.eggCount = null;
+          tank.eggParentTypes = null;
+          tank.eggParentIds = null;
+          tank.eggParentShades = null;
+          tank.eggRelationshipMeter = null;
+          tank.hatchMonthsLeft = null;
+          
+          var candidates = [];
+          var selectableCount = Math.max(1, Math.floor(eggCount * 0.01));
+          var maxCandidates = Math.min(selectableCount, allJuveniles.length);
+          while (candidates.length < maxCandidates && allJuveniles.length > 0) {
+            var randomIndex = Math.floor(Math.random() * allJuveniles.length);
+            candidates.push(allJuveniles[randomIndex]);
+            allJuveniles.splice(randomIndex, 1);
+          }
+          
+          openHatchSelectionModal(idx, candidates, allJuveniles);
         }
         return;
       }
@@ -3909,12 +4398,12 @@
       var baseChance = 0;
       if (W >= 70 && H >= 70) {
         baseChance = 0.01; // 1% - 良好
-      } else if (W >= 50 && H >= 50) {
+      } else if (W >= 50 && H >= 60) {
         baseChance = 0.03; // 3% - 普通
       } else if (W < 50 || H < 50) {
         baseChance = 0.08; // 8% - 悪化
       }
-      if (W < 35 || H < 35) {
+      if (W < 35 || H < 40) {
         baseChance = 0.15; // 15% - 危険
       }
       
@@ -3954,7 +4443,7 @@
         logLine(t('game.gotSick', { name: nameForDisplay(ax, getLocale()), reason: inbreedingCoeff > 50 ? t('game.inbreedingReason') : '' }));
       }
       if (ax.sick) {
-        if (ax.underTreatment && Math.random() < TREATMENT_RECOVER_CHANCE) {
+        if (ax.underTreatment && Math.random() < getTreatmentRecoverChance(ax.underTreatmentLevel)) {
           ax.sick = false;
           ax.underTreatment = false;
           logLine(t('game.recovered', { type: typeLabel(ax.type) }));
@@ -3987,10 +4476,13 @@
           }
         }
       }
-      // 12ヶ月で成体になる
-      if (ax.age >= 12 && tank.baby) {
-        tank.baby = false;
-        tank.note = '育ったウパ';
+      // 12ヶ月で成体になる（幼名→成人名へ切り替え）
+      if (ax.age >= 12) {
+        if (ax.isJuvenile) assignAdultNameAt12(ax);
+        if (tank.baby) {
+          tank.baby = false;
+          tank.note = '育ったウパ';
+        }
       }
       
       // 寿命による死亡（60ヶ月以上で確率が上がる）
@@ -3998,6 +4490,10 @@
       if (ax.age >= 72) ageDeathChance = 0.15; // 72ヶ月以上で15%
       else if (ax.age >= 60) ageDeathChance = 0.08; // 60ヶ月以上で8%
       else if (ax.age >= 48) ageDeathChance = 0.03; // 48ヶ月以上で3%
+      var filterTier = getFilterTier();
+      if (filterTier && filterTier.ageDeathMult != null) {
+        ageDeathChance *= filterTier.ageDeathMult; // 高ランクフィルタで寿命延長
+      }
       
       // 急死の可能性（低確率）
       var suddenDeathChance = 0.005; // 0.5%
@@ -4102,8 +4598,8 @@
     applyAutoEquipment();
     checkMutationShop();
     endOfMonthDrift();
-    // 設定が有効な場合、空の水槽を下に移動
-    if (state.settings && state.settings.autoReorderTanks) {
+    // 設定が有効な場合、空の水槽を下に移動（孵化選択モーダル表示中はスキップ→選択後に正しい水槽に配置するため）
+    if (state.settings && state.settings.autoReorderTanks && !window._hatchContext) {
       reorderTanks();
     }
     checkEnd();
@@ -4127,28 +4623,29 @@
   }
 
   function applyAutoEquipment() {
-    // 自動給餌器
-    if (state.equipment && state.equipment.autoFeeder) {
+    var feederTier = getAutoFeederTier();
+    if (feederTier) {
       var fedCount = 0;
       var totalCost = 0;
+      var thresh = feederTier.hungerThreshold;
       state.tanks.forEach(function(tank) {
-        if (tank.axolotl && tank.axolotl.hunger < AUTO_FEEDER_HUNGER_THRESHOLD) {
-          tank.axolotl.health = clamp(tank.axolotl.health + FEED_ARTIFICIAL_HEALTH, 0, MAX_HEALTH);
-          tank.axolotl.hunger = clamp((tank.axolotl.hunger || 80) + FEED_ARTIFICIAL_HUNGER, 0, MAX_HUNGER);
-          tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - FEED_ARTIFICIAL_DIRT, 0, MAX_CLEAN);
+        if (tank.axolotl && tank.axolotl.hunger < thresh) {
+          tank.axolotl.health = clamp(tank.axolotl.health + feederTier.health, 0, MAX_HEALTH);
+          tank.axolotl.hunger = clamp((tank.axolotl.hunger || 80) + feederTier.hunger, 0, MAX_HUNGER);
+          tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - feederTier.dirt, 0, MAX_CLEAN);
           fedCount++;
-          totalCost += AUTO_FEEDER_COST_PER_FEED;
+          totalCost += feederTier.costPerFeed;
         }
         if (tank.breedingPair) {
           tank.breedingPair.forEach(function(ax) {
-            if (ax.hunger < AUTO_FEEDER_HUNGER_THRESHOLD) {
-              ax.health = clamp(ax.health + FEED_ARTIFICIAL_HEALTH, 0, MAX_HEALTH);
-              ax.hunger = clamp((ax.hunger || 80) + FEED_ARTIFICIAL_HUNGER, 0, MAX_HUNGER);
+            if (ax.hunger < thresh) {
+              ax.health = clamp(ax.health + feederTier.health, 0, MAX_HEALTH);
+              ax.hunger = clamp((ax.hunger || 80) + feederTier.hunger, 0, MAX_HUNGER);
               fedCount++;
-              totalCost += AUTO_FEEDER_COST_PER_FEED;
+              totalCost += feederTier.costPerFeed;
             }
           });
-          tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - FEED_ARTIFICIAL_DIRT, 0, MAX_CLEAN);
+          tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - feederTier.dirt, 0, MAX_CLEAN);
         }
       });
       if (fedCount > 0) {
@@ -4156,12 +4653,11 @@
         logLine(t('game.autoFeederFed', { count: fedCount, cost: formatMoney(totalCost) }));
       }
     }
-    
-    // フィルタ
-    if (state.equipment && state.equipment.filter) {
+    var filterTier = getFilterTier();
+    if (filterTier) {
       state.tanks.forEach(function(tank) {
         if (tank.axolotl || tank.breedingPair || tank.juveniles || tank.egg) {
-          tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) + 2, 0, MAX_CLEAN);
+          tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) + filterTier.cleanBonus, 0, MAX_CLEAN);
         }
       });
     }
@@ -4186,15 +4682,8 @@
     });
   }
 
-  function actFeedArtificial() {
-    // 人工飼料は全体に一気にあげる
-    var occupied = countOccupiedTanks();
-    if (occupied === 0) {
-      logLine(t('game.noTanksToFeed'));
-      return;
-    }
-    
-    // 空腹度が100%の水槽を除外
+  function actFeedAll() {
+    var food = getFoodTier();
     var feedableTanks = state.tanks.filter(function(tank) {
       if (!tank.axolotl && !tank.breedingPair) return false;
       if (tank.axolotl && (tank.axolotl.hunger || 80) >= MAX_HUNGER) return false;
@@ -4207,116 +4696,51 @@
       }
       return true;
     });
-    
     if (feedableTanks.length === 0) {
-      logLine(t('game.allFull'));
+      logLine(t('game.noTanksToFeed'));
+      updateUI();
       return;
     }
-    
-    var totalCost = FEED_ARTIFICIAL_COST * feedableTanks.length;
+    var totalCost = food.cost * feedableTanks.length;
     if (state.money < totalCost) {
-      logLine(t('game.notEnoughFeedCost', { feed: t('feed.artificial'), cost: formatMoney(totalCost) }));
+      logLine(t('game.notEnoughFeedCost', { feed: t(food.nameKey), cost: formatMoney(totalCost) }));
+      updateUI();
       return;
     }
     state.money -= totalCost;
-    
-    // 給餌可能な水槽にのみ人工飼料をあげる
     feedableTanks.forEach(function(tank) {
       if (tank.axolotl) {
-        tank.axolotl.health = clamp(tank.axolotl.health + FEED_ARTIFICIAL_HEALTH, 0, MAX_HEALTH);
-        tank.axolotl.hunger = clamp((tank.axolotl.hunger || 80) + FEED_ARTIFICIAL_HUNGER, 0, MAX_HUNGER);
+        tank.axolotl.health = clamp(tank.axolotl.health + food.health, 0, MAX_HEALTH);
+        tank.axolotl.hunger = clamp((tank.axolotl.hunger || 80) + food.hunger, 0, MAX_HUNGER);
       }
       if (tank.breedingPair) {
         tank.breedingPair.forEach(function(ax) {
-          ax.health = clamp(ax.health + FEED_ARTIFICIAL_HEALTH, 0, MAX_HEALTH);
-          ax.hunger = clamp((ax.hunger || 80) + FEED_ARTIFICIAL_HUNGER, 0, MAX_HUNGER);
+          ax.health = clamp(ax.health + food.health, 0, MAX_HEALTH);
+          ax.hunger = clamp((ax.hunger || 80) + food.hunger, 0, MAX_HUNGER);
         });
       }
-      // 水質を下げる（重要：給餌は水質を下げる）
-      tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - FEED_ARTIFICIAL_DIRT, 0, MAX_CLEAN);
+      tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - food.dirt, 0, MAX_CLEAN);
     });
-    
-    logLine(t('game.fedAllArtificial'));
+    logLine(t('game.fedAllFood', { feed: t(food.nameKey) }));
     updateUI();
   }
 
-  function actFeedBloodworm() {
-    // アカムシは全体にあげる
-    var occupied = countOccupiedTanks();
-    if (occupied === 0) {
-      logLine(t('game.noTanksToFeed'));
-      return;
-    }
-    
-    // 空腹度が100%の水槽を除外
-    var feedableTanks = state.tanks.filter(function(tank) {
-      if (!tank.axolotl && !tank.breedingPair) return false;
-      if (tank.axolotl && (tank.axolotl.hunger || 80) >= MAX_HUNGER) return false;
-      if (tank.breedingPair) {
-        var allFull = true;
-        tank.breedingPair.forEach(function(ax) {
-          if ((ax.hunger || 80) < MAX_HUNGER) allFull = false;
-        });
-        if (allFull) return false;
-      }
-      return true;
-    });
-    
-    if (feedableTanks.length === 0) {
-      logLine(t('game.allFull'));
-      return;
-    }
-    
-    if (state.money < FEED_BLOODWORM_COST) {
-      logLine(t('game.notEnoughFeedCost', { feed: t('feed.bloodworm'), cost: formatMoney(totalCost) }));
-      return;
-    }
-    state.money -= FEED_BLOODWORM_COST;
-    
-    // 給餌可能な水槽にのみアカムシをあげる
-    feedableTanks.forEach(function(tank) {
-      if (tank.axolotl) {
-        tank.axolotl.health = clamp(tank.axolotl.health + FEED_BLOODWORM_HEALTH, 0, MAX_HEALTH);
-        tank.axolotl.hunger = clamp((tank.axolotl.hunger || 80) + FEED_BLOODWORM_HUNGER, 0, MAX_HUNGER);
-      }
-      if (tank.breedingPair) {
-        tank.breedingPair.forEach(function(ax) {
-          ax.health = clamp(ax.health + FEED_BLOODWORM_HEALTH, 0, MAX_HEALTH);
-          ax.hunger = clamp((ax.hunger || 80) + FEED_BLOODWORM_HUNGER, 0, MAX_HUNGER);
-        });
-      }
-      // 水質を下げる（重要：給餌は水質を下げる）
-      tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - FEED_BLOODWORM_DIRT, 0, MAX_CLEAN);
-    });
-    
-    logLine(t('game.fedAllBloodworm'));
-    updateUI();
-  }
-
-  function doFeedTank(tankIdx, feedType) {
+  function doFeedTank(tankIdx) {
     var tank = state.tanks[tankIdx];
     if (!tank) {
       updateUI();
       return;
     }
-    
-    // 給餌対象のチェック
     if (!tank.axolotl && !tank.breedingPair) {
       logLine(t('game.noFeedTarget'));
       updateUI();
       return;
     }
-    
-    // 空腹度が100%なら給餌できない
     var canFeed = false;
-    if (tank.axolotl && (tank.axolotl.hunger || 80) < MAX_HUNGER) {
-      canFeed = true;
-    }
+    if (tank.axolotl && (tank.axolotl.hunger || 80) < MAX_HUNGER) canFeed = true;
     if (tank.breedingPair) {
       tank.breedingPair.forEach(function(ax) {
-        if ((ax.hunger || 80) < MAX_HUNGER) {
-          canFeed = true;
-        }
+        if ((ax.hunger || 80) < MAX_HUNGER) canFeed = true;
       });
     }
     if (!canFeed) {
@@ -4324,40 +4748,12 @@
       updateUI();
       return;
     }
-    
-    var cost = 0;
-    var healthBonus = 0;
-    var hungerBonus = 0;
-    var cleanPenalty = 0;
-    var feedName = '';
-    
-    if (feedType === 'artificial') {
-      cost = FEED_ARTIFICIAL_COST;
-      healthBonus = FEED_ARTIFICIAL_HEALTH;
-      hungerBonus = FEED_ARTIFICIAL_HUNGER;
-      cleanPenalty = FEED_ARTIFICIAL_DIRT;
-      feedName = t('feed.artificial');
-    } else if (feedType === 'bloodworm') {
-      cost = FEED_BLOODWORM_COST;
-      healthBonus = FEED_BLOODWORM_HEALTH;
-      hungerBonus = FEED_BLOODWORM_HUNGER;
-      cleanPenalty = FEED_BLOODWORM_DIRT;
-      feedName = t('feed.bloodworm');
-    } else if (feedType === 'earthworm') {
-      cost = FEED_EARTHWORM_COST;
-      healthBonus = FEED_EARTHWORM_HEALTH;
-      hungerBonus = FEED_EARTHWORM_HUNGER;
-      cleanPenalty = FEED_EARTHWORM_DIRT;
-      feedName = t('feed.earthworm');
-    } else {
-      updateUI();
-      return;
-    }
-    var m = getFeedLevelMultipliers(feedType);
-    cost = Math.floor(cost * m.cost);
-    healthBonus = Math.floor(healthBonus * m.health);
-    hungerBonus = Math.floor(hungerBonus * m.hunger);
-    cleanPenalty = Math.floor(cleanPenalty * m.dirt);
+    var food = getFoodTier();
+    var cost = food.cost;
+    var healthBonus = food.health;
+    var hungerBonus = food.hunger;
+    var cleanPenalty = food.dirt;
+    var feedName = t(food.nameKey);
     
     if (state.money < cost) {
       logLine(t('game.notEnoughFeedCost', { feed: feedName, cost: formatMoney(cost) }));
@@ -4383,60 +4779,6 @@
     tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - cleanPenalty, 0, MAX_CLEAN);
     
     logLine(t('ui.fed', { n: tankIdx + 1, feed: feedName }));
-    updateUI();
-  }
-
-  function actFeedEarthworm() {
-    // ミミズは全体に一気にあげる
-    var occupied = countOccupiedTanks();
-    if (occupied === 0) {
-      logLine(t('game.noTanksToFeed'));
-      return;
-    }
-    
-    // 空腹度が100%の水槽を除外
-    var feedableTanks = state.tanks.filter(function(tank) {
-      if (!tank.axolotl && !tank.breedingPair) return false;
-      if (tank.axolotl && (tank.axolotl.hunger || 80) >= MAX_HUNGER) return false;
-      if (tank.breedingPair) {
-        var allFull = true;
-        tank.breedingPair.forEach(function(ax) {
-          if ((ax.hunger || 80) < MAX_HUNGER) allFull = false;
-        });
-        if (allFull) return false;
-      }
-      return true;
-    });
-    
-    if (feedableTanks.length === 0) {
-      logLine(t('game.allFull'));
-      return;
-    }
-    
-    var totalCost = FEED_EARTHWORM_COST * feedableTanks.length;
-    if (state.money < totalCost) {
-      logLine(t('game.notEnoughFeedCost', { feed: t('feed.earthworm'), cost: formatMoney(totalCost) }));
-      return;
-    }
-    state.money -= totalCost;
-    
-    // 給餌可能な水槽にのみミミズをあげる
-    feedableTanks.forEach(function(tank) {
-      if (tank.axolotl) {
-        tank.axolotl.health = clamp(tank.axolotl.health + FEED_EARTHWORM_HEALTH, 0, MAX_HEALTH);
-        tank.axolotl.hunger = clamp((tank.axolotl.hunger || 80) + FEED_EARTHWORM_HUNGER, 0, MAX_HUNGER);
-      }
-      if (tank.breedingPair) {
-        tank.breedingPair.forEach(function(ax) {
-          ax.health = clamp(ax.health + FEED_EARTHWORM_HEALTH, 0, MAX_HEALTH);
-          ax.hunger = clamp((ax.hunger || 80) + FEED_EARTHWORM_HUNGER, 0, MAX_HUNGER);
-        });
-      }
-      // 水質を下げる（重要：給餌は水質を下げる）
-      tank.clean = clamp((tank.clean !== undefined ? tank.clean : 80) - FEED_EARTHWORM_DIRT, 0, MAX_CLEAN);
-    });
-    
-    logLine(t('game.fedAllEarthworm'));
     updateUI();
   }
 
@@ -4471,20 +4813,11 @@
   }
 
   function openGlobalFeedModal() {
-    // 即発動：デフォルトの餌タイプで全体給餌
-    var feedType = state.feedType || 'artificial';
-    if (feedType === 'artificial') {
-      actFeedArtificial();
-    } else if (feedType === 'bloodworm') {
-      actFeedBloodworm();
-    } else if (feedType === 'earthworm') {
-      actFeedEarthworm();
-    }
+    actFeedAll();
   }
 
   function openTankFeedModal(tankIdx) {
-    // 即発動：デフォルトの餌タイプで給餌
-    doFeedTank(tankIdx, state.feedType || 'artificial');
+    doFeedTank(tankIdx);
   }
 
   function openWaterChangeSelectionModal(tankIdx, isGlobal) {
@@ -4515,7 +4848,7 @@
       btn.className = 'ax-btn';
       btn.style.width = '100%';
       btn.style.marginBottom = '8px';
-      btn.textContent = method.name + ' +' + method.bonus + ' / ¥' + method.cost.toLocaleString('ja-JP');
+      btn.textContent = method.name + ' +' + method.bonus + ' / Ƀ ' + method.cost.toLocaleString('ja-JP');
       btn.dataset.cost = String(method.cost);
       btn.dataset.bonus = String(method.bonus);
       if (state.money < method.cost) {
@@ -4540,7 +4873,7 @@
     
     if (isGlobal) {
       var occupiedTanks = state.tanks.filter(function(t) {
-        return t.axolotl || t.breedingPair || t.juveniles || t.egg;
+        return t.axolotl || t.breedingPair || t.juveniles;
       });
       
       if (occupiedTanks.length === 0) {
@@ -4597,7 +4930,7 @@
       axolotlRegistry[tank.axolotl.id].removed = true;
     }
     tank.axolotl = null;
-    tank.note = '空き水槽';
+    tank.note = t('game.note.empty');
     tank.baby = false;
     state.reputation = clamp(state.reputation + 2, 0, MAX_REP);
     
@@ -4626,7 +4959,7 @@
     state.money += totalPrice;
     tank.breedingPair = null;
     tank.relationshipMeter = null;
-    tank.note = '空き水槽';
+    tank.note = t('game.note.empty');
     logLine(t('game.soldPair', { price: formatMoney(totalPrice) }));
     updateUI();
   }
@@ -4659,7 +4992,7 @@
         tank.note = '繁殖用に分離';
       } else {
         tank.axolotl = null;
-        tank.note = '空き水槽';
+        tank.note = t('game.note.empty');
       }
       tank.breedingPair = null;
       tank.breedingMonthsLeft = null;
@@ -4678,16 +5011,19 @@
       }
     });
     
-    // 空き水槽があれば移動、なければ売却
-    if (emptySlots.length >= pair.length) {
-      for (var i = 0; i < pair.length; i++) {
-        state.tanks[emptySlots[i]].axolotl = pair[i];
-        state.tanks[emptySlots[i]].note = '親ウパ';
-      }
+    // 空き水槽が1つ以上あれば離別（1匹を空きへ、もう1匹は現水槽に残す）
+    if (emptySlots.length >= 1) {
+      state.tanks[emptySlots[0]].axolotl = pair[1];
+      state.tanks[emptySlots[0]].baby = pair[1].age < 12;
+      state.tanks[emptySlots[0]].note = '親ウパ';
+      if (state.tanks[emptySlots[0]].clean === undefined) state.tanks[emptySlots[0]].clean = 80;
+      if (state.tanks[emptySlots[0]].poop === undefined) state.tanks[emptySlots[0]].poop = false;
+      tank.axolotl = pair[0];
+      tank.baby = pair[0].age < 12;
       tank.breedingPair = null;
       tank.breedingMonthsLeft = null;
       tank.relationshipMeter = null;
-      tank.note = '空き水槽';
+      tank.note = '親ウパ';
       logLine(t('game.pairSeparated'));
     } else {
       // 空き水槽が足りない場合は売却
@@ -4703,7 +5039,7 @@
       tank.breedingPair = null;
       tank.breedingMonthsLeft = null;
       tank.relationshipMeter = null;
-      tank.note = '空き水槽';
+      tank.note = t('game.note.empty');
       logLine(t('game.pairSoldNoSpace', { price: formatMoney(totalPrice) }));
     }
     updateUI();
@@ -4722,7 +5058,7 @@
     tank.eggParentShades = null;
     tank.eggRelationshipMeter = null;
     tank.hatchMonthsLeft = null;
-    tank.note = '空き水槽';
+    tank.note = t('game.note.empty');
     logLine(t('ui.eggsSold', { count: eggCount, price: formatMoney(eggPrice) }));
     updateUI();
   }
@@ -4751,7 +5087,10 @@
 
   function openBreedOverlay() {
     var adults = getAdultTanks();
-    if (adults.length < 2) {
+    var breedingPairs = state.tanks.filter(function(t) { return t.breedingPair && t.breedingPair.length === 2; });
+    var emptyCount = state.tanks.filter(function(t) { return !t.axolotl && !t.breedingPair && !t.egg && !t.juveniles; }).length;
+    var canSeparate = breedingPairs.length > 0 && emptyCount >= 1;
+    if (adults.length < 2 && !canSeparate) {
       logLine(t('game.needTwoAdults'));
       return;
     }
@@ -4774,55 +5113,75 @@
     });
     var males = actualAdults.filter(function (x) { return x.tank.axolotl.sex === 'オス'; });
     var females = actualAdults.filter(function (x) { return x.tank.axolotl.sex === 'メス'; });
-    if (males.length === 0 || females.length === 0) {
+    var canBreed = males.length > 0 && females.length > 0;
+    if (!canBreed && !canSeparate) {
       logLine(t('game.needMaleFemale'));
       return;
     }
     var sel1 = $('axBreedParent1');
     var sel2 = $('axBreedParent2');
     
-    // オス項目
-    sel1.innerHTML = '';
-    males.forEach(function (x) {
-      var opt = document.createElement('option');
-      // 繁殖ペアの個体の場合は特別なマーカーを付ける
-      var isBreedingPair = state.tanks[x.idx] && state.tanks[x.idx].breedingPair && state.tanks[x.idx].breedingPair.some(function(ax) { return ax.id === x.tank.axolotl.id; });
-      opt.value = String(x.idx) + (isBreedingPair ? '_bp_' + x.tank.axolotl.id : '');
-      var namePart = nameForDisplay(x.tank.axolotl, getLocale());
-      var displayName = (x.tank.axolotl.familyName ? x.tank.axolotl.familyName + ' ' : '') + namePart;
-      opt.textContent = t('ui.tankWithName', { n: x.idx + 1, name: displayName }) + (isBreedingPair ? ' (' + t('ui.cohabiting') + ')' : '');
-      sel1.appendChild(opt);
-    });
-    
-    // メス項目
-    sel2.innerHTML = '';
-    females.forEach(function (x) {
-      var opt = document.createElement('option');
-      // 繁殖ペアの個体の場合は特別なマーカーを付ける
-      var isBreedingPair = state.tanks[x.idx] && state.tanks[x.idx].breedingPair && state.tanks[x.idx].breedingPair.some(function(ax) { return ax.id === x.tank.axolotl.id; });
-      opt.value = String(x.idx) + (isBreedingPair ? '_bp_' + x.tank.axolotl.id : '');
-      var namePart = nameForDisplay(x.tank.axolotl, getLocale());
-      var displayName = (x.tank.axolotl.familyName ? x.tank.axolotl.familyName + ' ' : '') + namePart;
-      opt.textContent = t('ui.tankWithName', { n: x.idx + 1, name: displayName }) + (isBreedingPair ? ' (' + t('ui.cohabiting') + ')' : '');
-      sel2.appendChild(opt);
-    });
-    
-    // 前回の選択を復元
-    var last1 = state.lastBreedParent1;
-    var last2 = state.lastBreedParent2;
-    var validLast1 = males.some(function (x) { return x.idx === last1; });
-    var validLast2 = females.some(function (x) { return x.idx === last2; });
-    
-    if (validLast1) {
-      sel1.value = String(last1);
-    } else if (males.length > 0) {
-      sel1.value = String(males[0].idx);
+    // 繁殖ペアの離別リスト（空き水槽が1つ以上あれば表示）
+    var breedingPairsForSep = state.tanks.map(function(t, idx) { return { tank: t, idx: idx }; }).filter(function(x) { return x.tank.breedingPair && x.tank.breedingPair.length === 2; });
+    var sepList = document.getElementById('axBreedSeparateList');
+    if (sepList) {
+      if (canSeparate) {
+        sepList.style.display = 'block';
+        sepList.innerHTML = '<div style="font-size:11px; font-weight:600; margin-bottom:6px; color:#64748b;">' + t('ui.currentBreedingPairs') + '</div>';
+        breedingPairsForSep.forEach(function(x) {
+          var pair = x.tank.breedingPair;
+          var names = pair.map(function(ax) { return (ax.familyName ? ax.familyName + ' ' : '') + nameForDisplay(ax, getLocale()); }).join(' × ');
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn';
+          btn.style.cssText = 'font-size:12px; padding:4px 8px; margin:2px 4px 2px 0;';
+          btn.textContent = t('ui.tankSimple', { n: x.idx + 1 }) + ' ' + names + ' ' + t('ui.separatePair');
+          btn.dataset.tankIdx = String(x.idx);
+          btn.addEventListener('click', function() {
+            separateBreedingPair(parseInt(this.dataset.tankIdx, 10));
+            $('axOverlayBreed').classList.remove('visible');
+            updateUI();
+          });
+          sepList.appendChild(btn);
+        });
+      } else {
+        sepList.style.display = 'none';
+        sepList.innerHTML = '';
+      }
     }
     
-    if (validLast2) {
-      sel2.value = String(last2);
-    } else if (females.length > 0) {
-      sel2.value = String(females[0].idx);
+    var breedFormEl = document.getElementById('axBreedForm');
+    if (breedFormEl) breedFormEl.style.display = canBreed ? 'block' : 'none';
+    
+    // オス項目（繁殖可能な場合のみ）
+    sel1.innerHTML = '';
+    if (canBreed) {
+      males.forEach(function (x) {
+        var opt = document.createElement('option');
+        var isBreedingPair = state.tanks[x.idx] && state.tanks[x.idx].breedingPair && state.tanks[x.idx].breedingPair.some(function(ax) { return ax.id === x.tank.axolotl.id; });
+        opt.value = String(x.idx) + (isBreedingPair ? '_bp_' + x.tank.axolotl.id : '');
+        var namePart = nameForDisplay(x.tank.axolotl, getLocale());
+        var displayName = (x.tank.axolotl.familyName ? x.tank.axolotl.familyName + ' ' : '') + namePart;
+        opt.textContent = t('ui.tankWithName', { n: x.idx + 1, name: displayName }) + (isBreedingPair ? ' (' + t('ui.cohabiting') + ')' : '');
+        sel1.appendChild(opt);
+      });
+      females.forEach(function (x) {
+        var opt = document.createElement('option');
+        var isBreedingPair = state.tanks[x.idx] && state.tanks[x.idx].breedingPair && state.tanks[x.idx].breedingPair.some(function(ax) { return ax.id === x.tank.axolotl.id; });
+        opt.value = String(x.idx) + (isBreedingPair ? '_bp_' + x.tank.axolotl.id : '');
+        var namePart = nameForDisplay(x.tank.axolotl, getLocale());
+        var displayName = (x.tank.axolotl.familyName ? x.tank.axolotl.familyName + ' ' : '') + namePart;
+        opt.textContent = t('ui.tankWithName', { n: x.idx + 1, name: displayName }) + (isBreedingPair ? ' (' + t('ui.cohabiting') + ')' : '');
+        sel2.appendChild(opt);
+      });
+      var last1 = state.lastBreedParent1;
+      var last2 = state.lastBreedParent2;
+      var validLast1 = males.some(function (x) { return x.idx === last1; });
+      var validLast2 = females.some(function (x) { return x.idx === last2; });
+      if (validLast1) sel1.value = String(last1);
+      else if (males.length > 0) sel1.value = String(males[0].idx);
+      if (validLast2) sel2.value = String(last2);
+      else if (females.length > 0) sel2.value = String(females[0].idx);
     }
     
     $('axOverlayBreed').classList.add('visible');
@@ -4854,12 +5213,13 @@
     // 空き水槽がなくても、2匹のうちどちらかの水槽にペアを収容できる
     var targetIdx = parent1Idx; // デフォルトで親1の水槽を使用
     t1.axolotl = null;
-    t1.note = '空き水槽';
+    t1.note = t('game.note.empty');
     t2.axolotl = null;
-    t2.note = '空き水槽';
+    t2.note = t('game.note.empty');
     var breedingTank = state.tanks[targetIdx];
     breedingTank.breedingPair = [ax1, ax2];
     breedingTank.relationshipMeter = 50; // 初期関係メーター
+    breedingTank.breedingAttemptsThisSeason = 0;
     breedingTank.note = '同棲中（関係50）';
     logLine(t('ui.breedingStarted', { n: targetIdx + 1, t1: typeLabel(ax1.type), t2: typeLabel(ax2.type) }));
     $('axOverlayBreed').classList.remove('visible');
@@ -4881,10 +5241,13 @@
       logLine(t('game.noSickAxolotl'));
       return;
     }
-    if (state.money < TREATMENT_COST) {
+    var treatmentCost = getTreatmentCost();
+    if (state.money < treatmentCost) {
       logLine(t('game.notEnoughTreatmentCost'));
       return;
     }
+    var descEl = document.getElementById('axTreatDesc');
+    if (descEl) descEl.textContent = t('ui.treatSelectDescDynamic', { cost: formatMoney(treatmentCost) });
     var list = $('axTreatTankList');
     list.innerHTML = '';
     sickTanks.forEach(function (x) {
@@ -4895,7 +5258,7 @@
         var sickNames = x.tank.breedingPair.filter(function(ax) { return ax.sick && !ax.underTreatment; }).map(function(ax) { return typeLabel(ax.type); });
         label += sickNames.length > 0 ? sickNames.join('・') + t('ui.breedingPairCohabiting') : t('ui.breedingPairLabel');
       }
-      label += '（¥5,000）';
+      label += '（' + formatMoney(treatmentCost) + '）';
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'ax-btn treat';
@@ -4912,7 +5275,8 @@
 
   function doTreatment(tankIdx) {
     var tank = state.tanks[tankIdx];
-    if (!tank || state.money < TREATMENT_COST) {
+    var treatmentCost = getTreatmentCost();
+    if (!tank || state.money < treatmentCost) {
       $('axOverlayTreat').classList.remove('visible');
       updateUI();
       return;
@@ -4933,10 +5297,11 @@
       updateUI();
       return;
     }
-    state.money -= TREATMENT_COST;
+    state.money -= treatmentCost;
     targetAx.underTreatment = true;
+    targetAx.underTreatmentLevel = state.medicineLevel != null ? state.medicineLevel : 0;
     if (axolotlRegistry[targetAx.id]) axolotlRegistry[targetAx.id].underTreatment = true;
-    logLine(t('ui.treatmentStarted', { n: tankIdx + 1, type: typeLabel(targetAx.type) }));
+    logLine(t('ui.treatmentStarted', { n: tankIdx + 1, type: typeLabel(targetAx.type), cost: formatMoney(treatmentCost) }));
     $('axOverlayTreat').classList.remove('visible');
     updateUI();
   }
@@ -4984,7 +5349,7 @@
         var problemLabel = '';
         if (item.problemFlags && item.problemFlags.injured) problemLabel = t('ui.injuredTag');
         else if (item.problemFlags && item.problemFlags.sick) problemLabel = t('ui.sickTag');
-        var ageLabel = item.age + 'ヶ月';
+        var ageLabel = t('ui.ageMonths', { n: item.age });
         nameSpan.textContent = problemLabel + typeLabel(item.type) + ' (' + ageLabel + ')';
         card.appendChild(nameSpan);
         
@@ -5256,14 +5621,15 @@
   function openBuyOverlay() {
     state.mutationShopSeenThisPeriod = true;
     updateMutationShopButton();
-    
-    var tabsEl = $('axBuyTabs');
+    var tabsEl = document.getElementById('axBuyTabs');
+    var listEl = document.getElementById('axBuyTypeList');
+    if (!tabsEl || !listEl) return;
     tabsEl.innerHTML = '';
     
-    // 生体タブ（常に最初）
+    // 生体タブ
     var creatureTab = document.createElement('button');
     creatureTab.type = 'button';
-    creatureTab.className = 'ax-buy-tab active';
+    creatureTab.className = 'ax-buy-tab';
     creatureTab.textContent = t('ui.creatureTab');
     creatureTab.dataset.tab = 'creature';
     creatureTab.addEventListener('click', function () {
@@ -5272,12 +5638,11 @@
       showBuyTypeList('creature');
     });
     tabsEl.appendChild(creatureTab);
-    showBuyTypeList('creature');
     
-    // 設備タブ
+    // 設備タブ（水槽追加など・最初に表示）
     var equipmentTab = document.createElement('button');
     equipmentTab.type = 'button';
-    equipmentTab.className = 'ax-buy-tab';
+    equipmentTab.className = 'ax-buy-tab active';
     equipmentTab.textContent = t('ui.equipmentTab');
     equipmentTab.dataset.tab = 'equipment';
     equipmentTab.addEventListener('click', function () {
@@ -5287,18 +5652,31 @@
     });
     tabsEl.appendChild(equipmentTab);
     
-    $('axOverlayBuy').classList.add('visible');
+    showBuyTypeList('equipment');
+    var overlay = document.getElementById('axOverlayBuy');
+    if (overlay) overlay.classList.add('visible');
   }
 
   function showBuyTypeList(tabType) {
-    var list = $('axBuyTypeList');
+    var list = document.getElementById('axBuyTypeList');
+    if (!list) return;
     list.innerHTML = '';
-    
     if (tabType === 'equipment') {
       // 設備タブ：生体と同じく箱ごとに表示し、詳細・効果を見れるようにする
-      function addEquipmentCard(name, statusText, detailTitle, detailBody, buyLabel, cost, disabled, onBuy) {
+      function addEquipmentCard(name, statusText, detailTitle, detailBody, buyLabel, cost, disabled, onBuy, imageSrc) {
         var card = document.createElement('div');
         card.className = 'ax-equipment-card';
+        if (imageSrc) {
+          var imgWrap = document.createElement('div');
+          imgWrap.className = 'ax-equipment-icon-wrap';
+          var img = document.createElement('img');
+          img.className = 'ax-equipment-icon';
+          img.src = imageSrc;
+          img.alt = name;
+          img.onerror = function() { this.style.display = 'none'; };
+          imgWrap.appendChild(img);
+          card.appendChild(imgWrap);
+        }
         var nameEl = document.createElement('div');
         nameEl.className = 'ax-equipment-name';
         nameEl.textContent = name;
@@ -5330,46 +5708,75 @@
         list.appendChild(card);
       }
       var addTankCost = 20000;
-      // 自動給餌器
-      addEquipmentCard(
-        t('game.equipment.autoFeeder'),
-        state.equipment && state.equipment.autoFeeder ? t('ui.purchased') : formatMoney(EQUIPMENT_AUTO_FEEDER_COST),
-        t('game.equipment.autoFeeder'),
-        '<p><strong>' + t('ui.effectLabel') + '</strong><br>' + t('game.equipment.autoFeederDesc', { cost: formatMoney(AUTO_FEEDER_COST_PER_FEED) }) + '</p>',
-        state.equipment && state.equipment.autoFeeder ? t('ui.purchased') : t('dialog.buy'),
-        EQUIPMENT_AUTO_FEEDER_COST,
-        !!(state.equipment && state.equipment.autoFeeder) || state.money < EQUIPMENT_AUTO_FEEDER_COST,
-        function () { buyEquipment('autoFeeder', EQUIPMENT_AUTO_FEEDER_COST); showBuyTypeList('equipment'); updateUI(); }
-      );
-      // フィルタ（従来どおり1回購入）
-      addEquipmentCard(
-        t('game.equipment.filter'),
-        state.equipment && state.equipment.filter ? t('ui.purchased') : formatMoney(EQUIPMENT_FILTER_COST),
-        t('game.equipment.filter'),
-        '<p><strong>' + t('ui.effectLabel') + '</strong><br>' + t('game.equipment.filterDesc') + '</p>',
-        state.equipment && state.equipment.filter ? t('ui.purchased') : t('dialog.buy'),
-        EQUIPMENT_FILTER_COST,
-        !!(state.equipment && state.equipment.filter) || state.money < EQUIPMENT_FILTER_COST,
-        function () { buyEquipment('filter', EQUIPMENT_FILTER_COST); showBuyTypeList('equipment'); updateUI(); }
-      );
-      // 底面掃除機（Lv0→1→2→3、うんこ発生率低減）
+      // 自動給餌器（Lv1 Auto Feeder→Lv2 Copper→Lv3 Silver→Lv4 Golden、4段階）
       (function () {
-        var bcLv = (state.equipment && state.equipment.bottomCleanerLevel) || 0;
-        var nextCost = bcLv === 0 ? EQUIPMENT_BOTTOM_CLEANER_COST : bcLv === 1 ? EQUIPMENT_BOTTOM_CLEANER_COST_LV2 : EQUIPMENT_BOTTOM_CLEANER_COST_LV3;
-        var maxed = bcLv >= MAX_BOTTOM_CLEANER_LEVEL;
+        var afLv = (state.equipment && state.equipment.autoFeederLevel != null) ? state.equipment.autoFeederLevel : -1;
+        var maxed = afLv >= MAX_AUTO_FEEDER_LEVEL;
+        var nextCost = maxed ? 0 : AUTO_FEEDER_TIERS[afLv + 1].cost;
+        var tierName = afLv < 0 ? t('game.equipment.none') : t(AUTO_FEEDER_TIERS[afLv].nameKey);
+        var nextTierName = afLv < 0 ? t(AUTO_FEEDER_TIERS[0].nameKey) : (afLv + 1 <= MAX_AUTO_FEEDER_LEVEL ? t(AUTO_FEEDER_TIERS[afLv + 1].nameKey) : '');
+        var statusText = afLv < 0 ? 'Lv0 → Lv1 ' + formatMoney(nextCost) : tierName + (maxed ? ' (' + t('game.equipment.maxLevel') + ')' : ' → ' + nextTierName + ' ' + formatMoney(nextCost));
+        var afIcon = afLv < 0 ? null : afLv === 0 ? 'Auto_Feeder.png' : afLv === 1 ? 'Copper_Feeder.png' : afLv === 2 ? 'Silver_Feeder.png' : 'Golden_Feeder.png';
         addEquipmentCard(
-          t('game.equipment.bottomCleaner'),
-          'Lv' + bcLv + (maxed ? '（' + t('game.equipment.maxLevel') + '）' : ' → Lv' + (bcLv + 1) + ' ' + formatMoney(nextCost)),
-          t('game.equipment.bottomCleaner'),
-          '<p><strong>レベル:</strong> Lv0〜Lv3<br><strong>' + t('ui.effectLabel') + '</strong><br>' + t('game.equipment.bottomCleanerDesc') + '</p>',
-          maxed ? t('game.equipment.maxLevel') : t('game.equipment.levelUp'),
+          t('game.equipment.autoFeeder'),
+          statusText,
+          t('game.equipment.autoFeeder'),
+          '<p><strong>' + t('ui.effectLabel') + '</strong><br>' + t('game.equipment.autoFeederDescTier') + '</p>',
+          maxed ? t('game.equipment.lvMax') : (afLv < 0 ? t('game.equipment.buyFirst') : t('game.equipment.levelUp')),
           nextCost,
           maxed || state.money < nextCost,
-          maxed ? null : function () { buyEquipment('bottomCleaner', nextCost); showBuyTypeList('equipment'); updateUI(); }
+          maxed ? null : function () { buyEquipment('autoFeeder', nextCost); showBuyTypeList('equipment'); updateUI(); },
+          afIcon ? equipmentImagePath('Auto Feeder', afIcon) : null
         );
       })();
-      // 薬（治療：対象を選んで購入）
+      // フィルタ（Lv1 Sponge→Lv2 Top→Lv3 Canister、3段階）
       (function () {
+        var flLv = (state.equipment && state.equipment.filterLevel != null) ? state.equipment.filterLevel : -1;
+        var maxed = flLv >= MAX_FILTER_LEVEL;
+        var nextCost = maxed ? 0 : FILTER_TIERS[flLv + 1].cost;
+        var tierName = flLv < 0 ? t('game.equipment.none') : t(FILTER_TIERS[flLv].nameKey);
+        var nextTierName = flLv < 0 ? t(FILTER_TIERS[0].nameKey) : (flLv + 1 <= MAX_FILTER_LEVEL ? t(FILTER_TIERS[flLv + 1].nameKey) : '');
+        var statusText = flLv < 0 ? 'Lv0 → Lv1 ' + formatMoney(nextCost) : tierName + (maxed ? ' (' + t('game.equipment.maxLevel') + ')' : ' → ' + nextTierName + ' ' + formatMoney(nextCost));
+        var flIcon = flLv < 0 ? null : flLv === 0 ? 'Sponge Filiter.png' : flLv === 1 ? 'Top Filter.png' : 'Canister Filter.png';
+        addEquipmentCard(
+          t('game.equipment.filter'),
+          statusText,
+          t('game.equipment.filter'),
+          '<p><strong>' + t('ui.effectLabel') + '</strong><br>' + t('game.equipment.filterDescTier') + '</p>',
+          maxed ? t('game.equipment.lvMax') : (flLv < 0 ? t('game.equipment.buyFirst') : t('game.equipment.levelUp')),
+          nextCost,
+          maxed || state.money < nextCost,
+          maxed ? null : function () { buyEquipment('filter', nextCost); showBuyTypeList('equipment'); updateUI(); },
+          flIcon ? equipmentImagePath('Filter', flIcon) : null
+        );
+      })();
+      // 底面掃除機（Lv0→1→2→3、Black→Copper→Silver→Gold、4段階）
+      (function () {
+        var bcLv = (state.equipment && state.equipment.bottomCleanerLevel) != null ? state.equipment.bottomCleanerLevel : -1;
+        var nextCost = bcLv === -1 ? EQUIPMENT_BOTTOM_CLEANER_COST : bcLv === 0 ? EQUIPMENT_BOTTOM_CLEANER_COST_LV2 : bcLv === 1 ? EQUIPMENT_BOTTOM_CLEANER_COST_LV3 : 0;
+        var maxed = bcLv >= MAX_BOTTOM_CLEANER_LEVEL;
+        var tierName = bcLv < 0 ? t('game.equipment.none') : 'Lv' + bcLv;
+        var nextTierName = bcLv < 0 ? 'Lv0' : (bcLv + 1 <= MAX_BOTTOM_CLEANER_LEVEL ? 'Lv' + (bcLv + 1) : '');
+        var statusText = bcLv < 0 ? 'Lv0 → Lv1 ' + formatMoney(nextCost) : tierName + (maxed ? '（' + t('game.equipment.maxLevel') + '）' : ' → ' + nextTierName + ' ' + formatMoney(nextCost));
+        var bcIcon = bcLv < 0 ? null : bcLv === 0 ? 'Black_Vacuum.png' : bcLv === 1 ? 'Copper_Vacuum.png' : bcLv === 2 ? 'Silver_Vacuum.png' : 'Golden_Vacuum.png';
+        addEquipmentCard(
+          t('game.equipment.bottomCleaner'),
+          statusText,
+          t('game.equipment.bottomCleaner'),
+          '<p><strong>' + t('ui.levelLabel') + '</strong> Lv0〜Lv3<br><strong>' + t('ui.effectLabel') + '</strong><br>' + t('game.equipment.bottomCleanerDesc') + '</p>',
+          maxed ? t('game.equipment.maxLevel') : (bcLv < 0 ? t('game.equipment.buyFirst') : t('game.equipment.levelUp')),
+          nextCost,
+          maxed || state.money < nextCost,
+          maxed ? null : function () { buyEquipment('bottomCleaner', nextCost); showBuyTypeList('equipment'); updateUI(); },
+          bcIcon ? equipmentImagePath('Vacuum', bcIcon) : null
+        );
+      })();
+      // 薬（治療：Normal→Great→Super→Hiper、ランクで回復率上昇・最大100%）
+      (function () {
+        var medLv = state.medicineLevel != null ? state.medicineLevel : 0;
+        var maxed = medLv >= MAX_MEDICINE_LEVEL;
+        var nextCost = maxed ? 0 : MEDICINE_TIERS[medLv + 1].cost;
+        var tierName = t(MEDICINE_TIERS[medLv].nameKey);
         var sickCount = 0;
         state.tanks.forEach(function(t) {
           if (t.axolotl && t.axolotl.sick && !t.axolotl.underTreatment) sickCount++;
@@ -5379,43 +5786,65 @@
             });
           }
         });
-        var canBuy = sickCount > 0 && state.money >= TREATMENT_COST;
+        var treatmentCost = getTreatmentCost();
+        var statusText = tierName + ' ' + formatMoney(treatmentCost) + '/' + t('game.equipment.perTreatment');
+        if (!maxed) statusText += ' → ' + t(MEDICINE_TIERS[medLv + 1].nameKey) + ' ' + formatMoney(nextCost);
+        var detailBody = '<p><strong>' + t('ui.effectLabel') + '</strong><br>' + t('game.equipment.medicineDescTier') + '</p>';
+        var primaryAction = sickCount > 0 ? t('game.equipment.selectTarget') : (maxed ? t('game.equipment.lvMax') : t('game.equipment.levelUp'));
+        var canUpgrade = !maxed && state.money >= nextCost;
+        var canTreat = sickCount > 0 && state.money >= treatmentCost;
+        var onPrimary = sickCount > 0 ? function() { openTreatmentOverlay(); showBuyTypeList('equipment'); updateUI(); } : (maxed ? null : function() { buyEquipment('medicine', nextCost); showBuyTypeList('equipment'); updateUI(); });
+        var medIcon = medLv === 0 ? 'Medicine.png' : medLv === 1 ? 'Great Medicine.png' : medLv === 2 ? 'Super Medicine.png' : 'Hiper Medicine.png';
         addEquipmentCard(
           t('game.equipment.medicine'),
-          formatMoney(TREATMENT_COST) + (sickCount > 0 ? ' ' + t('ui.targetCount', { n: sickCount }) : ' ' + t('ui.noTarget')),
+          statusText,
           t('game.equipment.medicine'),
-          '<p><strong>' + t('ui.effectLabel') + '</strong><br>' + t('game.equipment.medicineDesc') + '</p>',
-          sickCount > 0 ? t('game.equipment.selectTarget') : t('ui.noTarget'),
-          TREATMENT_COST,
-          !canBuy,
-          function () {
-            openTreatmentOverlay();
-            showBuyTypeList('equipment');
-            updateUI();
-          }
+          detailBody,
+          primaryAction,
+          sickCount > 0 ? treatmentCost : nextCost,
+          !canTreat && !canUpgrade,
+          onPrimary,
+          equipmentImagePath('Medicine', medIcon)
         );
       })();
-      // 餌（現在＋アップグレードを1カードに）
-      var currentFeedName = state.feedType === 'artificial' ? t('game.feedDisplay.artificial') : state.feedType === 'bloodworm' ? t('game.feedDisplay.bloodworm') : t('game.feedDisplay.earthworm');
-      var nextFeed = state.feedType === 'artificial' ? { type: 'bloodworm', name: t('game.feedDisplay.bloodworm'), cost: 5000 } : state.feedType === 'bloodworm' ? { type: 'earthworm', name: t('game.feedDisplay.earthworm'), cost: 15000 } : null;
-      var feedDetailBody = '<p>' + t('game.equipment.feedDetail') + '</p>';
-      addEquipmentCard(
-        t('game.equipment.feedTab'),
-        t('game.equipment.currentLabel') + currentFeedName,
-        t('game.equipment.feedTab'),
-        feedDetailBody,
-        nextFeed ? nextFeed.name + ' ' + formatMoney(nextFeed.cost) : t('ui.inUse'),
-        0,
-        !nextFeed || state.money < nextFeed.cost,
-        nextFeed ? function() { upgradeFeedType(nextFeed.type, nextFeed.cost); showBuyTypeList('equipment'); updateUI(); } : null
-      );
+      // 餌（Food→Silver Food→Golden Food→Diamond Food）
+      (function () {
+        var fdLv = (state.foodLevel != null ? state.foodLevel : 0);
+        var maxed = fdLv >= 3;
+        var nextCost = maxed ? 0 : FOOD_TIERS[fdLv + 1].cost;
+        var tierName = t(FOOD_TIERS[fdLv].nameKey);
+        var statusText = tierName + (maxed ? ' (' + t('game.equipment.maxLevel') + ')' : ' → ' + t(FOOD_TIERS[fdLv + 1].nameKey) + ' ' + formatMoney(nextCost));
+        var fdIcon = fdLv === 0 ? 'Copper_Food.png' : fdLv === 1 ? 'Silver_Food.png' : fdLv === 2 ? 'Golden_Food.png' : 'Diamond_food.png';
+        addEquipmentCard(
+          t('game.equipment.foodTab'),
+          statusText,
+          t('game.equipment.foodTab'),
+          '<p><strong>' + t('ui.effectLabel') + '</strong><br>' + t('game.equipment.foodDetailTier') + '</p>',
+          maxed ? t('game.equipment.lvMax') : t('game.equipment.levelUp'),
+          nextCost,
+          maxed || state.money < nextCost,
+          maxed ? null : function () { buyEquipment('food', nextCost); showBuyTypeList('equipment'); updateUI(); },
+          equipmentImagePath('Food', fdIcon)
+        );
+      })();
       // 水槽を増やす（金額のみ・スケール料金で最大MAX_TANKSまで）
       (function () {
         var maxT = getMaxTanks();
         var addCost = getAddTankCost();
         var atMax = state.tanks.length >= maxT;
+        var tankCount = state.tanks.length;
+        var tankIconName = tankCount <= 4 ? 'Tank.png' : tankCount <= 9 ? 'Silver_Tank.png' : 'Golden_Tank.png';
         var card = document.createElement('div');
         card.className = 'ax-equipment-card';
+        var imgWrap = document.createElement('div');
+        imgWrap.className = 'ax-equipment-icon-wrap';
+        var img = document.createElement('img');
+        img.className = 'ax-equipment-icon';
+        img.src = equipmentImagePath('Tank', tankIconName);
+        img.alt = t('game.equipment.addTank');
+        img.onerror = function() { this.style.display = 'none'; };
+        imgWrap.appendChild(img);
+        card.appendChild(imgWrap);
         var nameEl = document.createElement('div');
         nameEl.className = 'ax-equipment-name';
         nameEl.textContent = t('game.equipment.addTank');
@@ -5517,7 +5946,7 @@
           var problemLabel = '';
           if (item.problemFlags && item.problemFlags.injured) problemLabel = t('ui.injuredTag');
           else if (item.problemFlags && item.problemFlags.sick) problemLabel = t('ui.sickTag');
-          nameSpan.textContent = problemLabel + typeLabel(item.type) + ' (' + item.age + 'ヶ月) 【稀】';
+          nameSpan.textContent = problemLabel + typeLabel(item.type) + ' (' + t('ui.ageMonths', { n: item.age }) + ') ' + t('ui.rareTag');
           card.appendChild(nameSpan);
           var priceSpan = document.createElement('span');
           priceSpan.className = 'ax-buy-type-price';
@@ -5539,12 +5968,12 @@
             e.stopPropagation();
             var stats = getRandomShopStats();
             if (item.problemFlags && (item.problemFlags.injured || item.problemFlags.sick)) stats.health = Math.min(stats.health, 50);
-            var detailText = '<p><strong>価格:</strong> ' + formatMoney(item.price) + '</p>';
+            var detailText = '<p><strong>' + t('ui.priceLabel') + '</strong> ' + formatMoney(item.price) + '</p>';
             detailText += '<p><strong>' + t('ui.problemDetailLabel') + '</strong><br>' + t('ui.hungerLabelShort') + stats.hunger + '% ' + t('ui.healthLabel') + stats.health + '% ' + t('ui.sizeLabel') + formatSize(calculateSizeFromAge(item.age)) + '</p>';
             if (item.problemFlags && item.problemFlags.injured) detailText += '<p><strong>' + t('ui.conditionLabel') + '</strong> ' + t('ui.injured') + '</p>';
             else if (item.problemFlags && item.problemFlags.sick) detailText += '<p><strong>' + t('ui.conditionLabel') + '</strong> ' + t('ui.sick') + '</p>';
             detailText += '<p>' + t('ui.mutationRecoveryNote') + '</p>';
-            openShopDetail(typeLabel(item.type) + '（稀に入荷）', detailText);
+            openShopDetail(typeLabel(item.type) + ' ' + t('ui.rareArrival'), detailText);
           });
           btnRow.appendChild(detailBtn);
           var buyBtn = document.createElement('button');
@@ -5738,42 +6167,36 @@
     }
     
     if (!state.equipment) {
-      state.equipment = { autoFeeder: false, filter: false, bottomCleanerLevel: 0, tankLevel: 1 };
+      state.equipment = { autoFeederLevel: -1, filterLevel: -1, bottomCleanerLevel: -1, tankLevel: 1 };
     }
-    if (state.equipment.bottomCleanerLevel === undefined) state.equipment.bottomCleanerLevel = 0;
+    if (state.equipment.bottomCleanerLevel === undefined) state.equipment.bottomCleanerLevel = -1;
     if (state.equipment.tankLevel === undefined) state.equipment.tankLevel = 1;
+    if (state.equipment.autoFeederLevel === undefined) state.equipment.autoFeederLevel = -1;
+    if (state.equipment.filterLevel === undefined) state.equipment.filterLevel = -1;
     
     state.money -= cost;
     if (equipmentType === 'bottomCleaner') {
-      state.equipment.bottomCleanerLevel = (state.equipment.bottomCleanerLevel || 0) + 1;
+      state.equipment.bottomCleanerLevel = (state.equipment.bottomCleanerLevel != null ? state.equipment.bottomCleanerLevel : -1) + 1;
       logLine(t('game.bottomCleanerUpgrade', { level: state.equipment.bottomCleanerLevel }));
+    } else if (equipmentType === 'medicine') {
+      state.medicineLevel = (state.medicineLevel != null ? state.medicineLevel : 0) + 1;
+      logLine(t('game.medicineUpgrade', { tier: t(MEDICINE_TIERS[state.medicineLevel].nameKey) }));
+    } else if (equipmentType === 'autoFeeder') {
+      var nextLv = (state.equipment.autoFeederLevel == null ? -1 : state.equipment.autoFeederLevel) + 1;
+      state.equipment.autoFeederLevel = nextLv;
+      logLine(t('game.autoFeederUpgrade', { tier: t(AUTO_FEEDER_TIERS[nextLv].nameKey) }));
+    } else if (equipmentType === 'filter') {
+      var nextLv = (state.equipment.filterLevel == null ? -1 : state.equipment.filterLevel) + 1;
+      state.equipment.filterLevel = nextLv;
+      logLine(t('game.filterUpgrade', { tier: t(FILTER_TIERS[nextLv].nameKey) }));
+    } else if (equipmentType === 'food') {
+      var nextLv = (state.foodLevel != null ? state.foodLevel : 0) + 1;
+      state.foodLevel = nextLv;
+      logLine(t('game.feedUpgraded', { feed: t(FOOD_TIERS[nextLv].nameKey) }));
     } else {
       state.equipment[equipmentType] = true;
       logLine(t('game.equipmentBought', { equipment: t('game.equipment.' + equipmentType) }));
     }
-    updateUI();
-  }
-
-  function upgradeFeedType(newFeedType, cost) {
-    if (state.money < cost) {
-      logLine(t('game.notEnoughMoney'));
-      return;
-    }
-    
-    // アップグレード可能かチェック
-    if (state.feedType === 'artificial' && newFeedType === 'bloodworm') {
-      // OK: 人工餌 → アカムシ
-    } else if (state.feedType === 'bloodworm' && newFeedType === 'earthworm') {
-      // OK: アカムシ → みみず
-    } else {
-      logLine(t('game.cannotUpgradeFeed'));
-      return;
-    }
-    
-    state.money -= cost;
-    state.feedType = newFeedType;
-    
-    logLine(t('game.feedUpgraded', { feed: t('game.feedDisplay.' + newFeedType) }));
     updateUI();
   }
 
@@ -5816,7 +6239,7 @@
 
   function resetGame() {
     state.month = 1;
-    state.money = 60000;
+    state.money = 30000;
     state.reputation = 30;
     state.ended = false;
     state.lastBreedParent1 = null;
@@ -5835,8 +6258,9 @@
     state.shopName = t('game.defaultShopName');
     state.shopStockDaily = {};  // 日ごとの在庫状態をリセット
     state.initialNamingMessageShown = false;  // 最初のウパの名前付けメッセージ表示フラグをリセット
-    state.equipment = { autoFeeder: false, filter: false, bottomCleanerLevel: 0, tankLevel: 2 };  // 設備をリセット（最初から3槽）
-    state.feedType = 'artificial';  // デフォルトの餌タイプをリセット
+    state.equipment = { autoFeederLevel: -1, filterLevel: -1, bottomCleanerLevel: -1, tankLevel: 2 };  // 設備をリセット（最初から3槽）
+    state.foodLevel = 0;  // 餌レベル（Copper=0）
+    state.medicineLevel = 0;  // 薬レベルをリセット（Normal）
     state.waterChangeType = 'normal';  // デフォルトの水替えタイプをリセット
     state.reputation100Celebrated = false;  // 満足度100達成時のポップアップ表示済みフラグをリセット
     state.shopSale = false;  // ショップセールをリセット
@@ -5869,7 +6293,7 @@
         registerName(reg.name);
       }
     });
-    $('axLog').textContent = t('ui.initialLogName');
+    $('axLog').textContent = t('ui.initialLog');
     $('axOverlayEnd').classList.remove('visible');
     $('axOverlayBreed').classList.remove('visible');
     $('axOverlayBuy').classList.remove('visible');
@@ -5918,7 +6342,7 @@
   var btnRemoveAllPoop = document.getElementById('btnRemoveAllPoop');
   if (btnRemoveAllPoop) {
     btnRemoveAllPoop.addEventListener('click', function () {
-      if (!state.ended) removeAllPoop();
+      if (!state.ended) removeAllPoop(this);
     });
   }
   
@@ -6047,6 +6471,18 @@
     if (checkbox) {
       checkbox.checked = state.settings && state.settings.autoReorderTanks || false;
     }
+    // 音楽設定（localStorageから）
+    var musicMuted = document.getElementById('settingMusicMuted');
+    var musicVolume = document.getElementById('settingMusicVolume');
+    var musicVolumeValue = document.getElementById('settingMusicVolumeValue');
+    if (musicMuted && window.axolotlShopGetMusicMuted) {
+      musicMuted.checked = window.axolotlShopGetMusicMuted();
+    }
+    if (musicVolume && musicVolumeValue && window.axolotlShopGetMusicVolume) {
+      var volPct = Math.round(window.axolotlShopGetMusicVolume() * 100);
+      musicVolume.value = volPct;
+      musicVolumeValue.textContent = volPct;
+    }
     overlay.classList.add('visible');
   }
 
@@ -6063,6 +6499,24 @@
       if (!state.settings) state.settings = {};
       state.settings.autoReorderTanks = this.checked;
       saveGame();
+    });
+  }
+
+  var settingMusicMuted = document.getElementById('settingMusicMuted');
+  if (settingMusicMuted) {
+    settingMusicMuted.addEventListener('change', function () {
+      if (window.axolotlShopSetMusicMuted) window.axolotlShopSetMusicMuted(this.checked);
+      if (window.axolotlShopApplyBgmSettings) window.axolotlShopApplyBgmSettings();
+    });
+  }
+  var settingMusicVolume = document.getElementById('settingMusicVolume');
+  var settingMusicVolumeValue = document.getElementById('settingMusicVolumeValue');
+  if (settingMusicVolume && settingMusicVolumeValue) {
+    settingMusicVolume.addEventListener('input', function () {
+      var v = parseInt(this.value, 10) / 100;
+      if (window.axolotlShopSetMusicVolume) window.axolotlShopSetMusicVolume(v);
+      settingMusicVolumeValue.textContent = this.value;
+      if (window.axolotlShopApplyBgmSettings) window.axolotlShopApplyBgmSettings();
     });
   }
 
@@ -6245,16 +6699,16 @@
   if (axHatchSellAllBtn) {
     axHatchSellAllBtn.addEventListener('click', function () {
       var ctx = window._hatchContext;
-      if (ctx) sellAllHatch(ctx.tankIdx, ctx.candidates, ctx.remainingJuveniles);
+      if (ctx && ctx.tank) sellAllHatchByTank(ctx.tank, ctx.candidates, ctx.remainingJuveniles);
     });
   }
   var axHatchRandomBtn = document.getElementById('axHatchRandom');
   if (axHatchRandomBtn) {
     axHatchRandomBtn.addEventListener('click', function () {
       var ctx = window._hatchContext;
-      if (ctx && ctx.candidates && ctx.candidates.length > 0) {
+      if (ctx && ctx.tank && ctx.candidates && ctx.candidates.length > 0) {
         var idx = Math.floor(Math.random() * ctx.candidates.length);
-        selectHatchCandidate(ctx.tankIdx, idx, ctx.candidates, ctx.remainingJuveniles);
+        selectHatchCandidateByTank(ctx.tank, idx, ctx.candidates, ctx.remainingJuveniles);
       }
     });
   }
@@ -6456,10 +6910,10 @@
       var nameText = nameForDisplay(dead, getLocale());
       info.innerHTML = '<div style="font-weight:bold; font-size:14px;">' + nameText + '</div>';
       info.innerHTML += '<div style="font-size:12px; color:#64748b; margin-top:4px;">';
-      info.innerHTML += '年齢: ' + dead.age + 'ヶ月';
+      info.innerHTML += t('ui.ageLabel') + ' ' + t('ui.ageMonths', { n: dead.age });
       if (dead.sex) info.innerHTML += ' / ' + dead.sex;
       info.innerHTML += '</div>';
-      info.innerHTML += '<div style="font-size:12px; color:#dc2626; margin-top:4px;">★ ' + dead.deathReason + '（' + dead.deathMonth + 'ヶ月目）</div>';
+      info.innerHTML += '<div style="font-size:12px; color:#dc2626; margin-top:4px;">★ ' + dead.deathReason + ' (' + t('ui.deathMonthSuffix', { n: dead.deathMonth }) + ')</div>';
       itemHeader.appendChild(info);
       
       item.appendChild(itemHeader);

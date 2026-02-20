@@ -1,0 +1,6 @@
+{
+  "juvenileJa": ["白雪", "初雪", "深雪", "雪風", "残雪", "粉雪", "小雪", "豪雪", "細雪", "大雪", "氷雪", "吹雪", "雪崩", "雪見", "雪国", "雪雲", "雪原", "冠雪", "雪解", "早雪", "雪代", "雪椿", "雪柳", "雪玉", "銀雪"],
+  "juvenileEn": ["Tokyo", "Yokohama", "Osaka", "Nagoya", "Sapporo", "Fukuoka", "Kobe", "Kyoto", "Kawasaki", "Saitama", "Hiroshima", "Sendai", "Kitakyushu", "Chiba", "Sakai", "Niigata", "Hamamatsu", "Kumamoto", "Sagamihara", "Okayama"],
+  "maleEn": ["Nobunaga", "Ieyasu", "Hideyoshi", "Yoritomo", "Ryoma", "Takamori", "Masamune", "Musashi", "Yukichi", "Hirobumi"],
+  "femaleEn": ["Himiko", "Murasaki", "Shonagon", "Tomoe", "Masako", "Yodo", "Takeko", "Umeko", "Raicho", "Taki"]
+}

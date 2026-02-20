@@ -1,0 +1,6 @@
+{
+  "juvenileJa": ["扶桑", "総国", "毛野", "越国", "吉備", "筑紫", "豊国", "火国", "陸奥", "出羽", "常陸", "武蔵", "相模", "安房", "甲斐", "信濃", "飛騨", "美濃", "尾張", "三河", "遠江", "駿河", "加賀", "能登", "若狭", "山城", "大和", "河内", "和泉", "摂津", "近江", "伊賀", "紀伊", "淡路", "丹波", "丹後", "但馬", "因幡", "伯耆", "出雲", "石見", "隠岐", "播磨", "美作", "安芸", "周防", "長門", "阿波", "讃岐", "伊予", "土佐", "日向", "大隅", "薩摩", "対馬", "壱岐"],
+  "juvenileEn": ["Mexico", "Guadalajara", "Monterrey", "Puebla", "Tijuana", "León", "Ciudad Juárez", "Zapopan", "Mérida", "San Luis Potosí", "Querétaro", "Cancún", "Chihuahua", "Toluca", "Morelia", "Aguascalientes", "Hermosillo", "Veracruz", "Oaxaca", "Acapulco"],
+  "maleEn": ["Benito", "Miguel", "Emiliano", "Francisco", "Porfirio", "Vicente", "Antonio", "Ignacio", "Guadalupe", "Carlos"],
+  "femaleEn": ["Frida", "Juana", "Josefa", "Leona", "Guadalupe", "Carlota", "Dolores", "Carmen", "María", "Adela"]
+}

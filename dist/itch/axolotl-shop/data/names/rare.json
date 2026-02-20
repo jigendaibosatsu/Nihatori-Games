@@ -1,0 +1,6 @@
+{
+  "juvenileJa": ["紅玉", "青玉", "翠玉", "金剛", "黄玉", "紫水晶", "水晶", "石英", "翡翠", "藍玉", "琥珀", "瑠璃", "玻璃", "瑪瑙", "玫瑰", "真珠", "珊瑚", "歴山", "雲砕", "迦密", "藍梯", "黒曜"],
+  "juvenileEn": ["Diamond", "Ruby", "Sapphire", "Emerald", "Topaz", "Amethyst", "Aquamarine", "Garnet", "Peridot", "Opal", "Turquoise", "Jade", "Pearl", "Coral", "Quartz", "Citrine", "Spinel", "Onyx", "Lapis Lazuli", "Moonstone", "Sunstone", "Tourmaline", "Tanzanite", "Zircon", "Alexandrite", "Malachite", "Obsidian", "Fluorite", "Agate", "Carnelian"],
+  "maleEn": ["Zeus", "Poseidon", "Hades", "Apollo", "Ares", "Hermes", "Hephaestus", "Dionysus", "Eros", "Cronus"],
+  "femaleEn": ["Hera", "Athena", "Artemis", "Aphrodite", "Demeter", "Persephone", "Hestia", "Gaia", "Nyx", "Rhea"]
+}

@@ -127,6 +127,39 @@ body.article-page .site-header {
   z-index: 10;
 }
 
+.lang-switcher-wrap {
+  margin-right: 4px;
+}
+
+.lang-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  font-size: 11px;
+}
+
+.lang-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.lang-link:hover {
+  color: var(--text);
+  background: var(--sidebar-border);
+}
+
+.lang-link.lang-active {
+  font-weight: 600;
+  color: var(--tab-active);
+}
+
+@media (max-width: 480px) {
+  .lang-switcher { font-size: 10px; gap: 1px 4px; }
+}
+
 .btn-icon {
   display: flex;
   align-items: center;

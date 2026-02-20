@@ -46,8 +46,35 @@
     }
   }
 
+  function loadNameData() {
+    var base = 'data/names/';
+    var files = [
+      { key: 'adultElementsJa', file: 'adult-elements-ja.json' },
+      { key: 'albino', file: 'albino.json' },
+      { key: 'black', file: 'black.json' },
+      { key: 'nomal', file: 'nomal.json' },
+      { key: 'gold', file: 'gold.json' },
+      { key: 'marble', file: 'marble.json' },
+      { key: 'copper', file: 'copper.json' },
+      { key: 'rare', file: 'rare.json' }
+    ];
+    window.axolotlNameData = { morphs: {}, adultElementsJa: null };
+    return Promise.all(files.map(function (f) {
+      return fetch(base + f.file).then(function (r) { return r.json(); }).then(function (data) {
+        if (f.key === 'adultElementsJa') {
+          window.axolotlNameData.adultElementsJa = data;
+        } else {
+          window.axolotlNameData.morphs[f.key] = data;
+        }
+      });
+    })).catch(function (err) {
+      console.warn('[names] Failed to load name data, using fallback:', err);
+      window.axolotlNameData = window.axolotlNameData || { morphs: {}, adultElementsJa: null };
+    });
+  }
+
   window.i18n.init();
-  Promise.all([window.i18n.loadLocale('ja'), window.i18n.loadLocale('en')])
+  Promise.all([window.i18n.loadLocale('ja'), window.i18n.loadLocale('en'), loadNameData()])
     .then(function () {
       document.title = window.i18n.t('ui.pageTitle');
       runI18nDevCheck();
@@ -69,6 +96,46 @@
       document.body.appendChild(script);
     });
 
+  var MUSIC_STORAGE_KEY = 'axolotlShop_musicMuted';
+  var VOLUME_STORAGE_KEY = 'axolotlShop_musicVolume';
+
+  function getMusicMuted() {
+    try {
+      var v = localStorage.getItem(MUSIC_STORAGE_KEY);
+      return v === 'true';
+    } catch (e) { return false; }
+  }
+
+  function getMusicVolume() {
+    try {
+      var v = parseFloat(localStorage.getItem(VOLUME_STORAGE_KEY));
+      return (v >= 0 && v <= 1) ? v : 0.7;
+    } catch (e) { return 0.7; }
+  }
+
+  function setMusicMuted(muted) {
+    try { localStorage.setItem(MUSIC_STORAGE_KEY, String(muted)); } catch (e) {}
+  }
+
+  function setMusicVolume(vol) {
+    try { localStorage.setItem(VOLUME_STORAGE_KEY, String(vol)); } catch (e) {}
+  }
+
+  function applyBgmSettings() {
+    var bgm = document.getElementById('axBgm');
+    if (!bgm) return;
+    var muted = getMusicMuted();
+    var vol = getMusicVolume();
+    bgm.muted = muted;
+    bgm.volume = vol;
+  }
+
+  window.axolotlShopApplyBgmSettings = applyBgmSettings;
+  window.axolotlShopGetMusicMuted = getMusicMuted;
+  window.axolotlShopGetMusicVolume = getMusicVolume;
+  window.axolotlShopSetMusicMuted = setMusicMuted;
+  window.axolotlShopSetMusicVolume = setMusicVolume;
+
   function setupTitleScreen() {
     var titleScreen = document.getElementById('axTitleScreen');
     var gameRoot = document.getElementById('axGameRoot');
@@ -76,6 +143,9 @@
     var btnContinue = document.getElementById('axBtnContinue');
     var mascotContainer = document.getElementById('axTitleMascot');
     var langSelect = document.getElementById('axTitleLangSelect');
+    var musicMutedCheck = document.getElementById('axTitleMusicMuted');
+    var musicVolumeSlider = document.getElementById('axTitleMusicVolume');
+    var musicVolumeValue = document.getElementById('axTitleMusicVolumeValue');
 
     if (!titleScreen || !gameRoot) return;
 
@@ -98,12 +168,33 @@
       });
     }
 
+    // タイトル画面の音楽設定
+    if (musicMutedCheck) {
+      musicMutedCheck.checked = getMusicMuted();
+      musicMutedCheck.addEventListener('change', function () {
+        setMusicMuted(this.checked);
+        applyBgmSettings();
+      });
+    }
+    if (musicVolumeSlider && musicVolumeValue) {
+      var volPct = Math.round(getMusicVolume() * 100);
+      musicVolumeSlider.value = volPct;
+      musicVolumeValue.textContent = volPct;
+      musicVolumeSlider.addEventListener('input', function () {
+        var v = parseInt(this.value, 10) / 100;
+        setMusicVolume(v);
+        musicVolumeValue.textContent = this.value;
+        applyBgmSettings();
+      });
+    }
+
     function startAndHide(isNew) {
       if (!window.axolotlShopStartGame(isNew)) return;
       titleScreen.style.display = 'none';
       gameRoot.style.display = '';
       var bgm = document.getElementById('axBgm');
       if (bgm) {
+        applyBgmSettings();
         bgm.loop = true;
         bgm.play().catch(function () { /* autoplay may be blocked */ });
       }

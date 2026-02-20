@@ -1,0 +1,6 @@
+{
+  "juvenileJa": ["天龍", "龍田", "球磨", "多摩", "北上", "大井", "木曽", "長良", "五十鈴", "名取", "由良", "鬼怒", "阿武隈", "阿賀野", "能代", "矢矧", "酒匂"],
+  "juvenileEn": ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose", "Austin", "Jacksonville", "Fort Worth", "Columbus", "Charlotte", "San Francisco", "Indianapolis", "Seattle", "Denver", "Boston"],
+  "maleEn": ["George", "Abraham", "Martin", "Thomas", "Benjamin", "Theodore", "Franklin", "Alexander", "John", "Ulysses"],
+  "femaleEn": ["Harriet", "Eleanor", "Rosa", "Amelia", "Susan", "Clara", "Helen", "Maya", "Michelle", "Dolores"]
+}
