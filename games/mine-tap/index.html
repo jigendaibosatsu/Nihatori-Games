@@ -1075,23 +1075,25 @@
       'Wurtzite BN': '005'
     };
     const TAP_SOUND_IDS = ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010', '011', '012', '013', '014'];
+    const TAP_SOUND_POOL_SIZE = 4;
     let tapSoundPool = {};
     function preloadTapSounds() {
       TAP_SOUND_IDS.forEach(function(id) {
-        const a = new Audio('/assets/sound/damege/se_itemget_' + id + '.ogg');
-        a.volume = 0.5;
-        tapSoundPool[id] = a;
+        tapSoundPool[id] = [];
+        for (var i = 0; i < TAP_SOUND_POOL_SIZE; i++) {
+          var a = new Audio('/assets/sound/damege/se_itemget_' + id + '.ogg');
+          a.volume = 0.5;
+          tapSoundPool[id].push(a);
+        }
       });
     }
     function playTapSound(isCritical, equipped) {
-      const id = isCritical ? CRITICAL_SOUND : (Math.random() < TAP_SOUND_CHANCE ? (PICKAXE_SOUND_MAP[equipped && equipped.nameKey ? equipped.nameKey : 'rock'] || '001') : null);
+      var id = isCritical ? CRITICAL_SOUND : (Math.random() < TAP_SOUND_CHANCE ? (PICKAXE_SOUND_MAP[equipped && equipped.nameKey ? equipped.nameKey : 'rock'] || '001') : null);
       if (!id) return;
-      let audio = tapSoundPool[id];
-      if (!audio) {
-        audio = new Audio('/assets/sound/damege/se_itemget_' + id + '.ogg');
-        audio.volume = 0.5;
-        tapSoundPool[id] = audio;
-      }
+      var pool = tapSoundPool[id];
+      if (!pool || pool.length === 0) return;
+      var audio = pool.find(function(a) { return a.paused; });
+      if (!audio) audio = pool[0];
       audio.currentTime = 0;
       audio.play().catch(function() {});
     }
