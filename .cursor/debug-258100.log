@@ -1,0 +1,22 @@
+{"sessionId":"258100","location":"japan-war/index.html:btnStart","message":"btnStart clicked","data":{},"timestamp":1771673771869,"hypothesisId":"H1"}
+{"sessionId":"258100","location":"japan-war/index.html:resizeCanvas","message":"after resizeCanvas","data":{"canvasW":1008,"canvasH":868,"innerW":504,"innerH":434},"timestamp":1771673771873,"hypothesisId":"H3"}
+{"sessionId":"258100","location":"japan-war/index.html:initMap","message":"initMap start","data":{},"timestamp":1771673771874,"hypothesisId":"H2"}
+{"sessionId":"258100","location":"japan-war/index.html:initMap","message":"initMap after spawnBalls","data":{"ballsLength":8,"ownerLength":340},"timestamp":1771673771874,"hypothesisId":"H2"}
+{"sessionId":"258100","location":"japan-war/index.html:waitForElementA","message":"waitForElementA cb invoked","data":{"hasElementA":true},"timestamp":1771673771869,"hypothesisId":"H1"}
+{"sessionId":"258100","location":"japan-war/index.html:btnStart","message":"btnStart clicked","data":{},"timestamp":1771673786869,"hypothesisId":"H1"}
+{"sessionId":"258100","location":"japan-war/index.html:resizeCanvas","message":"after resizeCanvas","data":{"canvasW":1008,"canvasH":868,"innerW":504,"innerH":434},"timestamp":1771673786873,"hypothesisId":"H3"}
+{"sessionId":"258100","location":"japan-war/index.html:initMap","message":"initMap start","data":{},"timestamp":1771673786873,"hypothesisId":"H2"}
+{"sessionId":"258100","location":"japan-war/index.html:initMap","message":"initMap after spawnBalls","data":{"ballsLength":8,"ownerLength":340},"timestamp":1771673786874,"hypothesisId":"H2"}
+{"sessionId":"258100","location":"japan-war/index.html:waitForElementA","message":"waitForElementA cb invoked","data":{"hasElementA":true},"timestamp":1771673786870,"hypothesisId":"H1"}
+{"sessionId":"258100","location":"japan-war/index.html:btnStart","message":"btnStart clicked","data":{},"timestamp":1771673859056,"hypothesisId":"H1"}
+{"sessionId":"258100","location":"japan-war/index.html:waitForElementA","message":"waitForElementA cb invoked","data":{"hasElementA":true},"timestamp":1771673859057,"hypothesisId":"H1"}
+{"sessionId":"258100","location":"japan-war/index.html:resizeCanvas","message":"after resizeCanvas","data":{"canvasW":1008,"canvasH":868,"innerW":504,"innerH":434},"timestamp":1771673859061,"hypothesisId":"H3"}
+{"sessionId":"258100","location":"japan-war/index.html:initMap","message":"initMap start","data":{},"timestamp":1771673859061,"hypothesisId":"H2"}
+{"sessionId":"258100","location":"japan-war/index.html:initMap","message":"initMap after spawnBalls","data":{"ballsLength":8,"ownerLength":340},"timestamp":1771673859062,"hypothesisId":"H2"}
+{"sessionId":"258100","location":"japan-war/index.html:gameLoop","message":"gameLoop first frame","data":{"canvasW":1008,"canvasH":868},"timestamp":1771673859069,"hypothesisId":"H4"}
+{"sessionId":"258100","location":"japan-war/index.html:btnStart","message":"btnStart clicked","data":{},"timestamp":1771674121107,"hypothesisId":"H1"}
+{"sessionId":"258100","location":"japan-war/index.html:initMap","message":"initMap after spawnBalls","data":{"ballsLength":8,"ownerLength":340},"timestamp":1771674121116,"hypothesisId":"H2"}
+{"sessionId":"258100","location":"japan-war/index.html:resizeCanvas","message":"after resizeCanvas","data":{"canvasW":1008,"canvasH":868,"innerW":504,"innerH":434},"timestamp":1771674121114,"hypothesisId":"H3"}
+{"sessionId":"258100","location":"japan-war/index.html:waitForElementA","message":"waitForElementA cb invoked","data":{"hasElementA":true},"timestamp":1771674121110,"hypothesisId":"H1"}
+{"sessionId":"258100","location":"japan-war/index.html:initMap","message":"initMap start","data":{},"timestamp":1771674121114,"hypothesisId":"H2"}
+{"sessionId":"258100","location":"japan-war/index.html:gameLoop","message":"gameLoop first frame","data":{"canvasW":1008,"canvasH":868},"timestamp":1771674121118,"hypothesisId":"H4"}

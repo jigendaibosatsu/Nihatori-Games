@@ -48,8 +48,8 @@
 
   function loadNameData() {
     var base = 'data/names/';
+    var assetsBase = '/assets/data/names/';
     var files = [
-      { key: 'adultElementsJa', file: 'adult-elements-ja.json' },
       { key: 'albino', file: 'albino.json' },
       { key: 'black', file: 'black.json' },
       { key: 'nomal', file: 'nomal.json' },
@@ -59,15 +59,30 @@
       { key: 'rare', file: 'rare.json' }
     ];
     window.axolotlNameData = { morphs: {}, adultElementsJa: null };
-    return Promise.all(files.map(function (f) {
-      return fetch(base + f.file).then(function (r) { return r.json(); }).then(function (data) {
-        if (f.key === 'adultElementsJa') {
+    var loadAdultElements = function () {
+      var elemA = fetch(assetsBase + 'element-a-ja.json').then(function (r) { return r.ok ? r.json() : Promise.reject(); });
+      var elemB = fetch(base + 'adult-elements-ja.json').then(function (r) { return r.ok ? r.json() : Promise.reject(); });
+      return Promise.all([elemA, elemB]).then(function (arr) {
+        var a = arr[0], b = arr[1];
+        window.axolotlNameData.adultElementsJa = {
+          elementA: (a && a.elementA) ? a.elementA : (b && b.elementA) ? b.elementA : null,
+          elementBMale: (b && b.elementBMale) ? b.elementBMale : null,
+          elementBFemale: (b && b.elementBFemale) ? b.elementBFemale : null
+        };
+      }).catch(function () {
+        return fetch(base + 'adult-elements-ja.json').then(function (r) { return r.json(); }).then(function (data) {
           window.axolotlNameData.adultElementsJa = data;
-        } else {
-          window.axolotlNameData.morphs[f.key] = data;
-        }
+        });
       });
-    })).catch(function (err) {
+    };
+    return Promise.all([loadAdultElements()].concat(files.map(function (f) {
+      return fetch(base + f.file).then(function (r) {
+        if (!r.ok) throw new Error('fetch ' + base + f.file);
+        return r.json();
+      }).then(function (data) {
+        window.axolotlNameData.morphs[f.key] = data;
+      });
+    }))).catch(function (err) {
       console.warn('[names] Failed to load name data, using fallback:', err);
       window.axolotlNameData = window.axolotlNameData || { morphs: {}, adultElementsJa: null };
     });
